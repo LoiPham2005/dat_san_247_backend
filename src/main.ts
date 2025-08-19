@@ -7,6 +7,9 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
+  // Global Prefix
+  app.setGlobalPrefix('api'); // <- Thêm dòng này
+
   // Global Pipes
   app.useGlobalPipes(new ValidationPipe());
 
@@ -15,6 +18,6 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  logger.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`Application is running on: http://localhost:${port}/api`);
 }
 bootstrap();

@@ -6,16 +6,15 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { UsersModule } from '../users/users.module';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
+import { User } from './entities/user.entity';
 
 @Module({
     imports: [
-        UsersModule,
         PassportModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
@@ -25,7 +24,7 @@ import { FacebookStrategy } from './strategies/facebook.strategy';
             }),
             inject: [ConfigService],
         }),
-        TypeOrmModule.forFeature([RefreshToken]),
+        TypeOrmModule.forFeature([User, RefreshToken]), 
     ],
     controllers: [AuthController],
     providers: [

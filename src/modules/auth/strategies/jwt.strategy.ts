@@ -1,17 +1,17 @@
-// src/auth/strategies/jwt.strategy.ts
-// định nghĩa cách xác thực (JWT, Google, Facebook...).
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from '../../users/users.service';
-import { User } from '../../users/entities/user.entity';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
-        private usersService: UsersService,
-        private configService: ConfigService
+        private configService: ConfigService,
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -21,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: any): Promise<User> {
-        const user = await this.usersService.findOne(payload.id);
+        const user = await this.userRepository.findOne({ where: { id: payload.id } });
         if (!user || !user.status) {
             throw new UnauthorizedException('Người dùng không tồn tại hoặc đã bị vô hiệu hóa');
         }

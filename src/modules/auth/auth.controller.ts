@@ -10,6 +10,7 @@ import { ForgotPasswordDto, ResetPasswordDto, VerifyOTPDto } from './dto/forgot-
 import { AuthGuard } from '@nestjs/passport';
 import { fail, success } from 'src/common/helper/response.helper';
 import { LoggingInterceptor } from 'src/common/interceptors/logging.interceptor';
+import { LoginDto } from './dto/login.dto';
 
 // Add interface to extend Express Request
 interface AuthRequest extends Request {
@@ -33,8 +34,8 @@ export class AuthController {
 
     @UseGuards(LocalAuthGuard)
     @Post('login')
-    async login(@Req() req: AuthRequest) {
-        return this.authService.login(req.user, req);
+    async login(@Req() req: Request, @Body() loginDto: LoginDto) {
+        return this.authService.login(loginDto, req);
     }
 
     @Post('refresh')
@@ -98,13 +99,4 @@ export class AuthController {
         return this.authService.login(req.user, req);
     }
 
-    //   @UseGuards(JwtAuthGuard)
-    //   @Get('profile')
-    //   getProfile(@Req() req: Request) {
-    //     return {
-    //       status: true,
-    //       message: 'Success',
-    //       data: req.user,
-    //     };
-    //   }
 }

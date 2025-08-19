@@ -8,12 +8,12 @@ import { AuthService } from '../auth.service';
 export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(private authService: AuthService) {
     super({
-      usernameField: 'usernameOrEmail', // Cập nhật tên field
+      usernameField: 'email', 
     });
   }
 
-  async validate(usernameOrEmail: string, password: string): Promise<any> {
-    const user = await this.authService.validateUserCredentials(usernameOrEmail, password);
+  async validate(email: string, password: string): Promise<any> {
+    const user = await this.authService.validateUserCredentials(email, password);
     if (!user) {
       throw new UnauthorizedException('Thông tin đăng nhập không chính xác');
     }

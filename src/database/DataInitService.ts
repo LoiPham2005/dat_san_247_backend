@@ -2,7 +2,7 @@ import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as argon2 from 'argon2';
-import { User } from 'src/modules/users/entities/user.entity';
+import { User } from 'src/modules/auth/entities/user.entity';
 import { Role } from 'src/modules/common/enums/role.enum';
 import { Sex } from 'src/modules/common/enums/sex.enums';
 
@@ -10,7 +10,7 @@ import { Sex } from 'src/modules/common/enums/sex.enums';
 export class DataInitService implements OnApplicationBootstrap {
     constructor(
         @InjectRepository(User)
-        private userRepository: Repository<User>
+        private readonly userRepository: Repository<User>
     ) { }
 
     async onApplicationBootstrap() {
