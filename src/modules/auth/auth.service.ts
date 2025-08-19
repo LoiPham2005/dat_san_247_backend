@@ -14,6 +14,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { ResetPasswordDto } from './dto/forgot-password.dto';
 import { InvalidCredentialsException, TokenExpiredException } from 'src/common/exceptions/custom-exceptions';
 import { success } from 'src/common/helper/response.helper';
+import * as argon2 from 'argon2'; 
 
 @Injectable()
 export class AuthService {
@@ -43,7 +44,7 @@ export class AuthService {
         }
 
         // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await argon2.hash(password);
 
         // Create new user
         const newUser = await this.usersService.create({
@@ -57,7 +58,7 @@ export class AuthService {
         // Create access token
         const accessToken = this.jwtService.sign(payload, {
             secret: this.configService.get<string>('JWT_SECRET'),
-            expiresIn: '15m',
+            expiresIn: '2h',
         });
 
         // Create refresh token
@@ -114,8 +115,8 @@ export class AuthService {
             throw new InvalidCredentialsException();
         }
 
-        // Kiểm tra password
-        const passwordValid = await bcrypt.compare(password, user.password);
+ // ✅ Verify password với argon2
+        const passwordValid = await argon2.verify(user.password, password);
         if (!passwordValid) {
             throw new InvalidCredentialsException();
         }
@@ -343,7 +344,7 @@ export class AuthService {
         }
 
         // Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const hashedPassword = await argon2.hash(newPassword);
 
         // Update password in database
         await this.usersService.updatePassword(user.id, hashedPassword);
