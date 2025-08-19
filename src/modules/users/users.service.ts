@@ -6,7 +6,7 @@ import { EditUserDto } from './dto/edit-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcrypt';
 import { UserNotFoundException } from 'src/common/exceptions/custom-exceptions';
-import { Sex } from '../roles/role.enum';
+import { Sex } from '../common/enums/role.enum';
 
 @Injectable()
 export class UsersService {

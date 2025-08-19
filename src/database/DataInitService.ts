@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as argon2 from 'argon2';
 import { User } from 'src/modules/users/entities/user.entity';
-import { Role } from 'src/modules/roles/role.enum';
-import { Sex } from 'src/modules/roles/sex.enums';
+import { Role } from 'src/modules/common/enums/role.enum';
+import { Sex } from 'src/modules/common/enums/sex.enums';
 
 @Injectable()
 export class DataInitService implements OnApplicationBootstrap {

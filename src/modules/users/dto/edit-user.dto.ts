@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsEnum } from 'class-validator';
-import { Sex } from '../../roles/role.enum';
+import { Sex } from '../../common/enums/role.enum';
 
 export class EditUserDto {
     @IsOptional()

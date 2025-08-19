@@ -4,21 +4,19 @@ import { UsersService } from './users.service';
 import { EditUserDto } from './dto/edit-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForbiddenException } from '@nestjs/common';
-import { AbilityFactory } from 'src/casl/abilities/ability.factory';
-import { Roles } from 'src/casl/decorators/roles.decorator';
 import { LoggingInterceptor } from 'src/common/interceptors/logging.interceptor';
-import { Role } from '../roles/role.enum';
+import { Role } from '../common/enums/role.enum';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserNotFoundException } from 'src/common/exceptions/custom-exceptions';
 import { fail, success } from 'src/common/helper/response.helper';
-import { Action } from 'src/casl/types/casl-types';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('users')
 @UseInterceptors(LoggingInterceptor)
 export class UsersController {
     constructor(
         private readonly usersService: UsersService,
-        private abilityFactory: AbilityFactory
     ) { }
 
     @Get()
@@ -80,16 +78,15 @@ export class UsersController {
     }
 
     @Get(':id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.VENUE_OWNER)
     async getUser(@Param('id') id: string, @Req() req: User) {
         const user = await this.usersService.findOne(+id);
         if (!user) {
             throw new UserNotFoundException(id);
         }
 
-        const ability = this.abilityFactory.createForUser(req);
-
-        if (ability.can(Action.Read, user)) {
+        if (req.role === Role.VENUE_OWNER) {
             const { password, ...result } = user;
             return success(result, 'Lấy thông tin người dùng thành công');
         }

@@ -1,7 +1,7 @@
 // src/users/entities/user.entity.ts
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
-import { Sex } from 'src/modules/roles/sex.enums';
+import { Sex } from 'src/modules/common/enums/sex.enums';
 
 
 @Entity('users')
