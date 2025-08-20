@@ -14,6 +14,9 @@ export class User {
 
   // Thông tin cơ bản
   @Column({ unique: true })
+  fullname: string;
+
+  @Column({ unique: true })
   username: string;
 
   @Column({ unique: true })
@@ -57,8 +60,8 @@ export class User {
   longitude: number;
 
   // Trạng thái tài khoản
-  @Column({ default: true })
-  status: boolean;
+  @Column({ enum: ['active', 'inactive', 'banned'], default: 'active'  })
+  status: string;
 
   // Quản lý refresh token
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
