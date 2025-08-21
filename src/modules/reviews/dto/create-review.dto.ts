@@ -1,19 +1,37 @@
-// src/modules/reviews/dto/create-review.dto.ts
-import { IsNumber, IsString, IsInt, Min, Max, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsInt, IsOptional, IsEnum, IsArray, Max, Min, IsString } from 'class-validator';
+import { ReviewStatus } from '../entities/review.entity';
 
 export class CreateReviewDto {
-  @IsNumber()
-  field_id: number;
+  @IsNotEmpty()
+  bookingId: number;
 
-  @IsNumber()
-  customer_id: number;
+  @IsNotEmpty()
+  customerId: number;
 
+  @IsNotEmpty()
+  venueId: number;
+
+  @IsNotEmpty()
   @IsInt()
   @Min(1)
   @Max(5)
   rating: number;
 
-  @IsString()
   @IsOptional()
-  comment?: string;
+  @IsString()
+  reviewText?: string;
+
+  @IsOptional()
+  pros?: string;
+
+  @IsOptional()
+  cons?: string;
+
+  @IsOptional()
+  @IsArray()
+  images?: string[];
+
+  @IsOptional()
+  @IsEnum(ReviewStatus)
+  status?: ReviewStatus;
 }

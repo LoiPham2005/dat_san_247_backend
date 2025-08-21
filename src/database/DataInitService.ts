@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as argon2 from 'argon2';
 import { User } from 'src/modules/auth/entities/user.entity';
-import { Role } from 'src/modules/common/enums/role.enum';
-import { Sex } from 'src/modules/common/enums/sex.enums';
+import { Role } from 'src/modules/auth/enums/role.enum';
+import { Gender } from 'src/modules/auth/enums/gender.enums';
 
 @Injectable()
 export class DataInitService implements OnApplicationBootstrap {
@@ -24,6 +24,7 @@ export class DataInitService implements OnApplicationBootstrap {
 
                 // Tạo admin
                 await this.userRepository.save({
+                    fullname: "Admin",
                     username: 'admin',
                     email: 'admin@example.com',
                     password: adminPassword,
@@ -38,24 +39,26 @@ export class DataInitService implements OnApplicationBootstrap {
 
                 await this.userRepository.save([
                     {
+                        fullname: "User One",
                         username: 'user1',
                         email: 'user1@example.com',
                         password: userPassword,
                         phone: '0123456789',
-                        sex: Sex.MALE,
-                        birth_date: '1990-01-01',
+                        gender: Gender.MALE,
+                        birthDate: new Date('1990-01-01'),
                         role: Role.USER,
-                        status: true,
+                        is_active: true,
                     },
                     {
+                        fullname: "User Two",
                         username: 'user2',
                         email: 'user2@example.com',
                         password: userPassword,
                         phone: '0987654321',
-                        sex: Sex.FEMALE,
-                        birth_date: '1995-01-01',
+                        gender: Gender.FEMALE,
+                        birthDate: new Date('1995-01-01'),
                         role: Role.USER,
-                        status: true,
+                        is_active: true,
                     },
                 ]);
 

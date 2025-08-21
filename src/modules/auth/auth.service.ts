@@ -2,17 +2,17 @@ import { Injectable, UnauthorizedException, BadRequestException, NotFoundExcepti
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RefreshToken } from './entities/refresh-token.entity';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from '@nestjs-modules/mailer';
 import * as argon2 from 'argon2';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { RefreshTokenDto } from '../refresh-tokens/dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/forgot-password.dto';
 import { success } from 'src/common/helper/response.helper';
 import { User } from './entities/user.entity';
+import { RefreshToken } from '../refresh-tokens/entities/refresh-token.entity';
 
 @Injectable()
 export class AuthService {
@@ -62,8 +62,7 @@ export class AuthService {
         const refreshTokenEntity = this.refreshTokenRepository.create({
             token: refreshToken,
             userId: newUser.id,
-            deviceInfo: 'Registration',
-            ipAddress: '0.0.0.0',
+            
             expiresAt
         });
         await this.refreshTokenRepository.save(refreshTokenEntity);
@@ -100,8 +99,6 @@ export class AuthService {
         const refreshTokenEntity = this.refreshTokenRepository.create({
             token: refreshToken,
             userId: user.id,
-            deviceInfo: req.headers['user-agent'] || 'Unknown',
-            ipAddress: req.ip,
             expiresAt
         });
         await this.refreshTokenRepository.save(refreshTokenEntity);
@@ -138,8 +135,6 @@ export class AuthService {
         const newRefreshTokenEntity = this.refreshTokenRepository.create({
             token: newRefreshToken,
             userId: tokenEntity.user.id,
-            deviceInfo: tokenEntity.deviceInfo,
-            ipAddress: tokenEntity.ipAddress,
             expiresAt
         });
         await this.refreshTokenRepository.save(newRefreshTokenEntity);
@@ -245,8 +240,6 @@ export class AuthService {
         const refreshTokenEntity = this.refreshTokenRepository.create({
             token: refreshToken,
             userId: user.id,
-            deviceInfo: `${provider} OAuth`,
-            ipAddress: '0.0.0.0',
             expiresAt
         });
         await this.refreshTokenRepository.save(refreshTokenEntity);

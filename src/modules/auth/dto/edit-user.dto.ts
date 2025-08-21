@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsEnum } from 'class-validator';
-import { Sex } from 'src/modules/common/enums/sex.enums';
+import { Gender } from 'src/modules/auth/enums/gender.enums';
 
 export class EditUserDto {
     @IsOptional()
@@ -15,8 +15,8 @@ export class EditUserDto {
     phone?: string;
 
     @IsOptional()
-    @IsEnum(Sex)
-    sex?: Sex;
+    @IsEnum(Gender)
+    gender?: Gender;
 
     @IsOptional()
     @IsString()

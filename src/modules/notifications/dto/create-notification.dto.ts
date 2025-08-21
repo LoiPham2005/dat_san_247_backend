@@ -1,17 +1,36 @@
-// src/modules/notifications/dto/create-notification.dto.ts
-import { IsNumber, IsString, IsBoolean, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsInt, IsOptional, IsEnum, IsString, IsBoolean } from 'class-validator';
+import { NotificationType } from '../entities/notification.entity';
 
 export class CreateNotificationDto {
-  @IsNumber()
-  user_id: number;
+  @IsNotEmpty()
+  @IsInt()
+  userId: number;
 
+  @IsNotEmpty()
   @IsString()
   title: string;
 
+  @IsNotEmpty()
   @IsString()
   message: string;
 
-  @IsBoolean()
+  @IsNotEmpty()
+  @IsEnum(NotificationType)
+  notificationType: NotificationType;
+
   @IsOptional()
-  is_read?: boolean;
+  @IsInt()
+  relatedId?: number;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  deepLink?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isRead?: boolean;
 }

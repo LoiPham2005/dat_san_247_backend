@@ -1,27 +1,70 @@
-// src/modules/reviews/entities/review.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
-import { SportsField } from '../../sports-fields/entities/sports-fields.entities';
-import { User } from '../../auth/entities/user.entity';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Booking } from '../../bookings/entities/booking.entity';
+import { Venue } from '../../venues/entities/venue.entity';
+import { User } from 'src/modules/auth/entities/user.entity';
+import { ReviewReply } from 'src/modules/review-replies/entities/review-reply.entity';
+
+export enum ReviewStatus {
+    ACTIVE = 'active',
+    HIDDEN = 'hidden',
+    REPORTED = 'reported',
+    DELETED = 'deleted',
+}
 
 @Entity('reviews')
 export class Review {
-  @PrimaryGeneratedColumn('increment')
-  id: number;
+    @PrimaryGeneratedColumn({ name: 'review_id' })
+    reviewId: number;
 
-  @ManyToOne(() => SportsField, field => field.reviews, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'field_id' })
-  field: SportsField;
+    @Column({ name: 'booking_id' })
+    bookingId: number;
 
-  @ManyToOne(() => User, user => user.reviews, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'customer_id' })
-  customer: User;
+    @ManyToOne(() => Booking)
+    @JoinColumn({ name: 'booking_id' })
+    booking: Booking;
 
-  @Column({ type: 'int' })
-  rating: number;
+    @Column({ name: 'customer_id' })
+    customerId: number;
 
-  @Column({ type: 'text', nullable: true })
-  comment: string;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'customer_id' })
+    customer: User;
 
-  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
-  createdAt: Date;
+    @Column({ name: 'venue_id' })
+    venueId: number;
+
+    @ManyToOne(() => Venue)
+    @JoinColumn({ name: 'venue_id' })
+    venue: Venue;
+
+    @Column({ type: 'int' })
+    rating: number;
+
+    @Column({ type: 'text', nullable: true })
+    reviewText: string;
+
+    @Column({ type: 'text', nullable: true })
+    pros: string;
+
+    @Column({ type: 'text', nullable: true })
+    cons: string;
+
+    @Column({ type: 'json', nullable: true })
+    images: string[];
+
+    @Column({ type: 'enum', enum: ReviewStatus, default: ReviewStatus.ACTIVE })
+    status: ReviewStatus;
+
+    @Column({ type: 'int', default: 0, name: 'helpful_count' })
+    helpfulCount: number;
+
+    @CreateDateColumn({ name: 'created_at' })
+    createdAt: Date;
+
+    @UpdateDateColumn({ name: 'updated_at' })
+    updatedAt: Date;
+
+    @OneToMany(() => ReviewReply, (reply) => reply.review)
+    replies: ReviewReply[];
+
 }

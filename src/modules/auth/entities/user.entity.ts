@@ -1,11 +1,15 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { RefreshToken } from './refresh-token.entity';
-import { Sex } from 'src/modules/common/enums/sex.enums';
-import { SportsField } from 'src/modules/sports-fields/entities/sports-fields.entities';
+import { UserSession } from 'src/modules/user-sessions/entities/user-session.entity';
+import { RefreshToken } from 'src/modules/refresh-tokens/entities/refresh-token.entity';
+import { UserWallet } from 'src/modules/user-wallet/entities/user-wallet.entity';
+import { Venue } from 'src/modules/venues/entities/venue.entity';
 import { Booking } from 'src/modules/bookings/entities/booking.entity';
+import { WalletTransaction } from 'src/modules/wallet-transactions/entities/wallet-transaction.entity';
 import { Review } from 'src/modules/reviews/entities/review.entity';
-import { Notification } from '../../notifications/entities/notification.entity';
-import { Complaint } from 'src/modules/complaints/entities/complaint.entity';
+import { SystemSetting } from 'src/modules/system-settings/entities/system-setting.entity';
+import { AuditLog } from 'src/modules/audit-log/entities/audit-log.entity';
+import { Report } from 'src/modules/report/entities/report.entity';
+
 
 @Entity('users')
 export class User {
@@ -28,12 +32,8 @@ export class User {
   @Column({ nullable: true })
   phone: string;
 
-  @Column({
-    type: 'enum',
-    enum: Sex,
-    nullable: true
-  })
-  sex: Sex;
+  @Column({ type: 'enum', enum: ['male', 'female', 'other'], nullable: true })
+  gender: string;
 
   @Column({ nullable: true, name: 'birth_date' })
   birthDate: Date;
@@ -60,12 +60,17 @@ export class User {
   longitude: number;
 
   // Trạng thái tài khoản
-  @Column({ enum: ['active', 'inactive', 'banned'], default: 'active'  })
-  status: string;
+  @Column({ default: true, name: 'is_active' })
+  isActive: boolean;
 
-  // Quản lý refresh token
-  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
-  refreshTokens: RefreshToken[];
+  @Column({ type: 'enum', enum: ['banned', 'suspended'], nullable: true, name: 'special_status' })
+  specialStatus?: string;
+
+  @Column({ default: false })
+  emailVerified: boolean;
+
+  @Column({ default: false })
+  phoneVerified: boolean;
 
   // OAuth
   @Column({ nullable: true })
@@ -85,19 +90,39 @@ export class User {
   @Column({ type: 'timestamp', nullable: true, name: 'deleted_at' })
   deletedAt: Date;
 
-  @OneToMany(() => SportsField, sportsField => sportsField.owner)
-  sportsFields: SportsField[];
 
-  @OneToMany(() => Booking, booking => booking.customer)
+  // --- Thêm phần này để tạo quan hệ với UserSession ---
+  @OneToMany(() => UserSession, (session) => session.user)
+  sessions: UserSession[];
+
+  @OneToMany(() => RefreshToken, (token) => token.user)
+  refreshTokens: RefreshToken[];
+
+  @OneToMany(() => UserWallet, (wallet) => wallet.user)
+  wallet: UserWallet[];
+
+  @OneToMany(() => Venue, (venue) => venue.owner)
+  venues: Venue[];
+
+  @OneToMany(() => Booking, (booking) => booking.customer)
   bookings: Booking[];
 
-  @OneToMany(() => Review, review => review.customer)
+  @OneToMany(() => WalletTransaction, (tx) => tx.user)
+  walletTransactions: WalletTransaction[];
+
+  @OneToMany(() => Review, (review) => review.customer)
   reviews: Review[];
 
-  @OneToMany(() => Notification, notification => notification.user)
-  notifications: Notification[];
+  @OneToMany(() => SystemSetting, (setting) => setting.updatedBy)
+  updatedSettings: SystemSetting[];
 
-  @OneToMany(() => Complaint, complaint => complaint.user)
-  complaints: Complaint[];
+  @OneToMany(() => AuditLog, (auditLog) => auditLog.user)
+  auditLogs: AuditLog[];
+
+  @OneToMany(() => Report, (report) => report.reporter)
+reportedReports: Report[];
+
+@OneToMany(() => Report, (report) => report.reportedUser)
+receivedReports: Report[];
 
 }

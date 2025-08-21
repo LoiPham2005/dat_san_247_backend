@@ -8,10 +8,10 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { RefreshToken } from './entities/refresh-token.entity';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
 import { User } from './entities/user.entity';
+import { RefreshToken } from '../refresh-tokens/entities/refresh-token.entity';
 
 @Module({
     imports: [

@@ -3,8 +3,8 @@
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
+import { RefreshToken } from 'src/modules/refresh-tokens/entities/refresh-token.entity';
 import { Repository, LessThan } from 'typeorm';
-import { RefreshToken } from '../entities/refresh-token.entity';
 
 @Injectable()
 export class RefreshTokenTasks {

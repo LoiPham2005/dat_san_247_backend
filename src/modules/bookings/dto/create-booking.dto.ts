@@ -1,29 +1,61 @@
-// src/modules/bookings/dto/create-booking.dto.ts
-import { IsNumber, IsEnum, IsDateString, IsString } from 'class-validator';
-import { BookingStatus, PaymentStatus } from '../entities/booking.entity';
+import { IsNotEmpty, IsEnum, IsNumber, IsString, IsOptional } from 'class-validator';
+import { BookingStatus, PaymentStatus, PaymentMethod } from '../entities/booking.entity';
 
 export class CreateBookingDto {
-  @IsNumber()
-  field_id: number;
+  @IsNotEmpty()
+  customerId: number;
 
-  @IsNumber()
-  customer_id: number;
+  @IsNotEmpty()
+  venueId: number;
 
-  @IsDateString()
-  date: string;
+  @IsNotEmpty()
+  bookingDate: string; // YYYY-MM-DD
 
-  @IsString()
-  start_time: string;
+  @IsNotEmpty()
+  startTime: string; // HH:mm:ss
 
-  @IsString()
-  end_time: string;
+  @IsNotEmpty()
+  endTime: string; // HH:mm:ss
 
+  @IsNotEmpty()
+  totalAmount: number;
+
+  @IsNotEmpty()
+  commissionFee: number;
+
+  @IsOptional()
+  discountAmount?: number;
+
+  @IsNotEmpty()
+  finalAmount: number;
+
+  @IsOptional()
   @IsEnum(BookingStatus)
   status?: BookingStatus;
 
-  @IsNumber()
-  total_price: number;
-
+  @IsOptional()
   @IsEnum(PaymentStatus)
-  payment_status?: PaymentStatus;
+  paymentStatus?: PaymentStatus;
+
+  @IsNotEmpty()
+  @IsEnum(PaymentMethod)
+  paymentMethod: PaymentMethod;
+
+  @IsNotEmpty()
+  @IsString()
+  bookingCode: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsString()
+  cancellationReason?: string;
+
+  @IsOptional()
+  cancelledAt?: string;
+
+  @IsOptional()
+  cancellationPolicy?: any;
 }
