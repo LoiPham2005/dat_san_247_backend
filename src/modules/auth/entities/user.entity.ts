@@ -120,9 +120,9 @@ export class User {
   auditLogs: AuditLog[];
 
   @OneToMany(() => Report, (report) => report.reporter)
-reportedReports: Report[];
+  reportedReports: Report[];
 
-@OneToMany(() => Report, (report) => report.reportedUser)
-receivedReports: Report[];
+  @OneToMany(() => Report, (report) => report.reportedUser)
+  receivedReports: Report[];
 
 }

@@ -4,32 +4,43 @@ import { Repository } from 'typeorm';
 import { PartnerRequest } from './entities/partner-request.entity';
 import { CreatePartnerRequestDto } from './dto/create-partner-request.dto';
 import { UpdatePartnerRequestDto } from './dto/update-partner-request.dto';
+import { success } from 'src/common/helper/response.helper';
 
 @Injectable()
 export class PartnerRequestsService {
-  constructor(
-    @InjectRepository(PartnerRequest)
-    private readonly repo: Repository<PartnerRequest>,
-  ) {}
+    constructor(
+        @InjectRepository(PartnerRequest)
+        private readonly repo: Repository<PartnerRequest>,
+    ) { }
 
-  create(createDto: CreatePartnerRequestDto) {
-    const entity = this.repo.create(createDto);
-    return this.repo.save(entity);
-  }
+    async create(createDto: CreatePartnerRequestDto) {
+        const entity = this.repo.create(createDto);
+        const saved = await this.repo.save(entity);
+        return success(saved, 'Tạo yêu cầu hợp tác thành công');
+    }
 
-  findAll() {
-    return this.repo.find({ relations: ['requester', 'venue', 'sportCategory'] });
-  }
+    async findAll() {
+        const requests = await this.repo.find({
+            relations: ['requester', 'venue', 'sportCategory'],
+        });
+        return success(requests, 'Lấy danh sách yêu cầu hợp tác thành công');
+    }
 
-  findOne(requestId: number) {
-    return this.repo.findOne({ where: { requestId }, relations: ['requester', 'venue', 'sportCategory'] });
-  }
+    async findOne(requestId: number) {
+        const request = await this.repo.findOne({
+            where: { requestId },
+            relations: ['requester', 'venue', 'sportCategory'],
+        });
+        return success(request, 'Lấy chi tiết yêu cầu hợp tác thành công');
+    }
 
-  update(requestId: number, updateDto: UpdatePartnerRequestDto) {
-    return this.repo.update(requestId, updateDto);
-  }
+    async update(requestId: number, updateDto: UpdatePartnerRequestDto) {
+        const result = await this.repo.update(requestId, updateDto);
+        return success(result, 'Cập nhật yêu cầu hợp tác thành công');
+    }
 
-  remove(requestId: number) {
-    return this.repo.delete(requestId);
-  }
+    async remove(requestId: number) {
+        const result = await this.repo.delete(requestId);
+        return success(result, 'Xóa yêu cầu hợp tác thành công');
+    }
 }

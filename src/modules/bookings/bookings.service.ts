@@ -4,40 +4,60 @@ import { Repository } from 'typeorm';
 import { Booking } from './entities/booking.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
+import { success } from 'src/common/helper/response.helper';
 
 @Injectable()
 export class BookingsService {
-  constructor(
-    @InjectRepository(Booking)
-    private readonly bookingRepo: Repository<Booking>,
-  ) {}
+    constructor(
+        @InjectRepository(Booking)
+        private readonly bookingRepo: Repository<Booking>,
+    ) { }
 
-  create(createDto: CreateBookingDto) {
-    const booking = this.bookingRepo.create(createDto);
-    return this.bookingRepo.save(booking);
-  }
+    async create(createDto: CreateBookingDto) {
+        const booking = this.bookingRepo.create(createDto);
+        const saved = await this.bookingRepo.save(booking);
+        return success(saved, 'Tạo booking thành công');
+    }
 
-  findAll() {
-    return this.bookingRepo.find({ relations: ['customer', 'venue'], order: { bookingDate: 'DESC' } });
-  }
+    async findAll() {
+        const bookings = await this.bookingRepo.find({
+            relations: ['customer', 'venue'],
+            order: { bookingDate: 'DESC' },
+        });
+        return success(bookings, 'Lấy danh sách booking thành công');
+    }
 
-  findOne(bookingId: number) {
-    return this.bookingRepo.findOne({ where: { bookingId }, relations: ['customer', 'venue'] });
-  }
+    async findOne(bookingId: number) {
+        const booking = await this.bookingRepo.findOne({
+            where: { bookingId },
+            relations: ['customer', 'venue'],
+        });
+        return success(booking, 'Lấy chi tiết booking thành công');
+    }
 
-  findByCustomer(customerId: number) {
-    return this.bookingRepo.find({ where: { customerId }, order: { bookingDate: 'DESC' } });
-  }
+    async findByCustomer(customerId: number) {
+        const bookings = await this.bookingRepo.find({
+            where: { customerId },
+            order: { bookingDate: 'DESC' },
+        });
+        return success(bookings, 'Lấy danh sách booking theo khách hàng thành công');
+    }
 
-  findByVenue(venueId: number) {
-    return this.bookingRepo.find({ where: { venueId }, order: { bookingDate: 'DESC' } });
-  }
+    async findByVenue(venueId: number) {
+        const bookings = await this.bookingRepo.find({
+            where: { venueId },
+            order: { bookingDate: 'DESC' },
+        });
+        return success(bookings, 'Lấy danh sách booking theo sân thành công');
+    }
 
-  update(bookingId: number, updateDto: UpdateBookingDto) {
-    return this.bookingRepo.update({ bookingId }, updateDto);
-  }
+    async update(bookingId: number, updateDto: UpdateBookingDto) {
+        const result = await this.bookingRepo.update({ bookingId }, updateDto);
+        return success(result, 'Cập nhật booking thành công');
+    }
 
-  remove(bookingId: number) {
-    return this.bookingRepo.delete({ bookingId });
-  }
+    async remove(bookingId: number) {
+        const result = await this.bookingRepo.delete({ bookingId });
+        return success(result, 'Xóa booking thành công');
+    }
 }

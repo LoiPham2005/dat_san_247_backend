@@ -4,36 +4,43 @@ import { Repository } from 'typeorm';
 import { ReviewReply } from './entities/review-reply.entity';
 import { CreateReviewReplyDto } from './dto/create-review-reply.dto';
 import { UpdateReviewReplyDto } from './dto/update-review-reply.dto';
+import { success } from 'src/common/helper/response.helper';
 
 @Injectable()
 export class ReviewRepliesService {
-  constructor(
-    @InjectRepository(ReviewReply)
-    private readonly replyRepo: Repository<ReviewReply>,
-  ) {}
+    constructor(
+        @InjectRepository(ReviewReply)
+        private readonly replyRepo: Repository<ReviewReply>,
+    ) { }
 
-  create(createDto: CreateReviewReplyDto) {
-    const reply = this.replyRepo.create(createDto);
-    return this.replyRepo.save(reply);
-  }
+    async create(createDto: CreateReviewReplyDto) {
+        const reply = this.replyRepo.create(createDto);
+        const saved = await this.replyRepo.save(reply);
+        return success(saved, 'Tạo reply thành công');
+    }
 
-  findAll() {
-    return this.replyRepo.find({ relations: ['review', 'user'], order: { createdAt: 'DESC' } });
-  }
+    async findAll() {
+        const replies = await this.replyRepo.find({ relations: ['review', 'user'], order: { createdAt: 'DESC' } });
+        return success(replies, 'Lấy danh sách reply thành công');
+    }
 
-  findOne(replyId: number) {
-    return this.replyRepo.findOne({ where: { replyId }, relations: ['review', 'user'] });
-  }
+    async findOne(replyId: number) {
+        const reply = await this.replyRepo.findOne({ where: { replyId }, relations: ['review', 'user'] });
+        return success(reply, 'Lấy chi tiết reply thành công');
+    }
 
-  findByReview(reviewId: number) {
-    return this.replyRepo.find({ where: { reviewId }, order: { createdAt: 'DESC' } });
-  }
+    async findByReview(reviewId: number) {
+        const replies = await this.replyRepo.find({ where: { reviewId }, order: { createdAt: 'DESC' } });
+        return success(replies, 'Lấy danh sách reply theo review thành công');
+    }
 
-  update(replyId: number, updateDto: UpdateReviewReplyDto) {
-    return this.replyRepo.update({ replyId }, updateDto);
-  }
+    async update(replyId: number, updateDto: UpdateReviewReplyDto) {
+        const result = await this.replyRepo.update({ replyId }, updateDto);
+        return success(result, 'Cập nhật reply thành công');
+    }
 
-  remove(replyId: number) {
-    return this.replyRepo.delete({ replyId });
-  }
+    async remove(replyId: number) {
+        const result = await this.replyRepo.delete({ replyId });
+        return success(result, 'Xóa reply thành công');
+    }
 }

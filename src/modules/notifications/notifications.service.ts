@@ -4,44 +4,58 @@ import { Repository } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { success } from 'src/common/helper/response.helper';
 
 @Injectable()
 export class NotificationsService {
-  constructor(
-    @InjectRepository(Notification)
-    private readonly repo: Repository<Notification>,
-  ) {}
+    constructor(
+        @InjectRepository(Notification)
+        private readonly repo: Repository<Notification>,
+    ) { }
 
-  create(createDto: CreateNotificationDto) {
-    const entity = this.repo.create(createDto);
-    return this.repo.save(entity);
-  }
+    async create(createDto: CreateNotificationDto) {
+        const entity = this.repo.create(createDto);
+        const saved = await this.repo.save(entity);
+        return success(saved, 'Tạo thông báo thành công');
+    }
 
-  findAll() {
-    return this.repo.find({ relations: ['user'], order: { createdAt: 'DESC' } });
-  }
+    async findAll() {
+        const notifications = await this.repo.find({
+            relations: ['user'],
+            order: { createdAt: 'DESC' },
+        });
+        return success(notifications, 'Lấy danh sách thông báo thành công');
+    }
 
-  findOne(notificationId: number) {
-    return this.repo.findOne({ where: { notificationId }, relations: ['user'] });
-  }
+    async findOne(notificationId: number) {
+        const notification = await this.repo.findOne({
+            where: { notificationId },
+            relations: ['user'],
+        });
+        return success(notification, 'Lấy chi tiết thông báo thành công');
+    }
 
-  findByUser(userId: number) {
-    return this.repo.find({
-      where: { userId },
-      relations: ['user'],
-      order: { createdAt: 'DESC' },
-    });
-  }
+    async findByUser(userId: number) {
+        const notifications = await this.repo.find({
+            where: { userId },
+            relations: ['user'],
+            order: { createdAt: 'DESC' },
+        });
+        return success(notifications, 'Lấy danh sách thông báo của người dùng thành công');
+    }
 
-  update(notificationId: number, updateDto: UpdateNotificationDto) {
-    return this.repo.update(notificationId, updateDto);
-  }
+    async update(notificationId: number, updateDto: UpdateNotificationDto) {
+        const result = await this.repo.update(notificationId, updateDto);
+        return success(result, 'Cập nhật thông báo thành công');
+    }
 
-  markAsRead(notificationId: number) {
-    return this.repo.update(notificationId, { isRead: true, readAt: new Date() });
-  }
+    async markAsRead(notificationId: number) {
+        const result = await this.repo.update(notificationId, { isRead: true, readAt: new Date() });
+        return success(result, 'Đánh dấu thông báo đã đọc thành công');
+    }
 
-  remove(notificationId: number) {
-    return this.repo.delete(notificationId);
-  }
+    async remove(notificationId: number) {
+        const result = await this.repo.delete(notificationId);
+        return success(result, 'Xóa thông báo thành công');
+    }
 }

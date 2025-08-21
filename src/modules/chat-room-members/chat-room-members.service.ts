@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ChatRoomMember } from './entities/chat-room-member.entity';
 import { CreateChatRoomMemberDto } from './dto/create-chat-room-member.dto';
 import { UpdateChatRoomMemberDto } from './dto/update-chat-room-member.dto';
+import { success } from 'src/common/helper/response.helper';
 
 @Injectable()
 export class ChatRoomMembersService {
@@ -12,28 +13,41 @@ export class ChatRoomMembersService {
     private readonly memberRepo: Repository<ChatRoomMember>,
   ) {}
 
-  create(createDto: CreateChatRoomMemberDto) {
+  async create(createDto: CreateChatRoomMemberDto) {
     const member = this.memberRepo.create(createDto);
-    return this.memberRepo.save(member);
+    const saved = await this.memberRepo.save(member);
+    return success(saved, 'Thêm thành viên vào phòng chat thành công');
   }
 
-  findAll() {
-    return this.memberRepo.find({ relations: ['room', 'user'], order: { joinedAt: 'ASC' } });
+  async findAll() {
+    const members = await this.memberRepo.find({
+      relations: ['room', 'user'],
+      order: { joinedAt: 'ASC' },
+    });
+    return success(members, 'Lấy danh sách thành viên thành công');
   }
 
-  findByRoom(roomId: number) {
-    return this.memberRepo.find({ where: { roomId }, relations: ['user'], order: { joinedAt: 'ASC' } });
+  async findByRoom(roomId: number) {
+    const members = await this.memberRepo.find({
+      where: { roomId },
+      relations: ['user'],
+      order: { joinedAt: 'ASC' },
+    });
+    return success(members, 'Lấy danh sách thành viên trong phòng thành công');
   }
 
-  update(id: number, updateDto: UpdateChatRoomMemberDto) {
-    return this.memberRepo.update({ id }, updateDto);
+  async update(id: number, updateDto: UpdateChatRoomMemberDto) {
+    const result = await this.memberRepo.update({ id }, updateDto);
+    return success(result, 'Cập nhật thông tin thành viên thành công');
   }
 
-  remove(id: number) {
-    return this.memberRepo.delete({ id });
+  async remove(id: number) {
+    const result = await this.memberRepo.delete({ id });
+    return success(result, 'Xóa thành viên khỏi phòng thành công');
   }
 
-  removeByRoom(roomId: number) {
-    return this.memberRepo.delete({ roomId });
+  async removeByRoom(roomId: number) {
+    const result = await this.memberRepo.delete({ roomId });
+    return success(result, 'Xóa tất cả thành viên trong phòng thành công');
   }
 }

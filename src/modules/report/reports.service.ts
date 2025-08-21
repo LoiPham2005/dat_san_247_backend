@@ -6,6 +6,7 @@ import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { User } from '../auth/entities/user.entity';
 import { Venue } from '../venues/entities/venue.entity';
+import { success } from 'src/common/helper/response.helper';
 
 @Injectable()
 export class ReportsService {
@@ -20,7 +21,7 @@ export class ReportsService {
         private readonly venueRepository: Repository<Venue>,
     ) { }
 
-    async create(createReportDto: CreateReportDto): Promise<Report> {
+    async create(createReportDto: CreateReportDto) {
         const report = new Report();
 
         if (createReportDto.reporterId) {
@@ -48,32 +49,33 @@ export class ReportsService {
         report.description = createReportDto.description;
         report.evidenceUrls = createReportDto.evidenceUrls ?? [];
 
-        return this.reportRepository.save(report);
+        const saved = await this.reportRepository.save(report);
+        return success(saved, 'Tạo báo cáo thành công');
     }
 
-
-    async findAll(): Promise<Report[]> {
-        return this.reportRepository.find({
+    async findAll() {
+        const reports = await this.reportRepository.find({
             relations: ['reporter', 'reportedVenue', 'reportedUser', 'resolvedBy'],
             order: { createdAt: 'DESC' },
         });
+        return success(reports, 'Lấy danh sách báo cáo thành công');
     }
 
-    async findOne(id: number): Promise<Report> {
+    async findOne(id: number) {
+        const report = await this.reportRepository.findOne({
+            where: { reportId: id },
+            relations: ['reporter', 'reportedVenue', 'reportedUser', 'resolvedBy'],
+        });
+        return success(report, 'Lấy chi tiết báo cáo thành công');
+    }
+
+    async update(id: number, updateReportDto: UpdateReportDto) {
         const report = await this.reportRepository.findOne({
             where: { reportId: id },
             relations: ['reporter', 'reportedVenue', 'reportedUser', 'resolvedBy'],
         });
 
-        if (!report) {
-            throw new NotFoundException(`Report with ID ${id} not found`);
-        }
-
-        return report;
-    }
-
-    async update(id: number, updateReportDto: UpdateReportDto): Promise<Report> {
-        const report = await this.findOne(id);
+        if (!report) throw new NotFoundException(`Report with ID ${id} not found`);
 
         if (updateReportDto.status) report.status = updateReportDto.status;
         if (updateReportDto.priority) report.priority = updateReportDto.priority;
@@ -87,13 +89,15 @@ export class ReportsService {
             report.resolvedAt = new Date();
         }
 
-        return this.reportRepository.save(report);
+        const saved = await this.reportRepository.save(report);
+        return success(saved, 'Cập nhật báo cáo thành công');
     }
 
-    async delete(id: number): Promise<void> {
+    async delete(id: number) {
         const result = await this.reportRepository.delete(id);
         if (result.affected === 0) {
             throw new NotFoundException(`Report with ID ${id} not found`);
         }
+        return success(null, 'Xóa báo cáo thành công');
     }
 }

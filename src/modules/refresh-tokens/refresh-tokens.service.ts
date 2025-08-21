@@ -4,36 +4,43 @@ import { Repository } from 'typeorm';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { CreateRefreshTokenDto } from './dto/create-refresh-token.dto';
 import { UpdateRefreshTokenDto } from './dto/update-refresh-token.dto';
+import { success } from 'src/common/helper/response.helper';
 
 @Injectable()
 export class RefreshTokensService {
-  constructor(
-    @InjectRepository(RefreshToken)
-    private readonly refreshTokenRepo: Repository<RefreshToken>,
-  ) {}
+    constructor(
+        @InjectRepository(RefreshToken)
+        private readonly refreshTokenRepo: Repository<RefreshToken>,
+    ) { }
 
-  create(createDto: CreateRefreshTokenDto) {
-    const token = this.refreshTokenRepo.create(createDto);
-    return this.refreshTokenRepo.save(token);
-  }
+    async create(createDto: CreateRefreshTokenDto) {
+        const token = this.refreshTokenRepo.create(createDto);
+        const saved = await this.refreshTokenRepo.save(token);
+        return success(saved, 'Tạo refresh token thành công');
+    }
 
-  findAll() {
-    return this.refreshTokenRepo.find();
-  }
+    async findAll() {
+        const tokens = await this.refreshTokenRepo.find();
+        return success(tokens, 'Lấy danh sách refresh token thành công');
+    }
 
-  findOne(id: number) {
-    return this.refreshTokenRepo.findOne({ where: { id } });
-  }
+    async findOne(id: number) {
+        const token = await this.refreshTokenRepo.findOne({ where: { id } });
+        return success(token, 'Lấy chi tiết refresh token thành công');
+    }
 
-  update(id: number, updateDto: UpdateRefreshTokenDto) {
-    return this.refreshTokenRepo.update({ id }, updateDto);
-  }
+    async update(id: number, updateDto: UpdateRefreshTokenDto) {
+        const result = await this.refreshTokenRepo.update({ id }, updateDto);
+        return success(result, 'Cập nhật refresh token thành công');
+    }
 
-  remove(id: number) {
-    return this.refreshTokenRepo.delete({ id });
-  }
+    async remove(id: number) {
+        const result = await this.refreshTokenRepo.delete({ id });
+        return success(result, 'Xóa refresh token thành công');
+    }
 
-  revokeToken(id: number) {
-    return this.refreshTokenRepo.update({ id }, { isRevoked: true });
-  }
+    async revokeToken(id: number) {
+        const result = await this.refreshTokenRepo.update({ id }, { isRevoked: true });
+        return success(result, 'Thu hồi refresh token thành công');
+    }
 }
