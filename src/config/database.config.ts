@@ -29,6 +29,7 @@ import { SearchHistoryModule } from 'src/modules/search-history/search-history.m
 import { SystemSettingsModule } from 'src/modules/system-settings/system-settings.module';
 import { AuditLogsModule } from 'src/modules/audit-log/audit-logs.module';
 import { ReportsModule } from 'src/modules/report/reports.module';
+import { BannerModule } from 'src/modules/banner/banner.module';
 
 export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
     type: 'postgres',
@@ -66,7 +67,8 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
         SearchHistoryModule,
         SystemSettingsModule,
         AuditLogsModule,
-        ReportsModule
+        ReportsModule,
+        BannerModule
     ],
     synchronize: configService.get<string>('NODE_ENV') !== 'production',
     autoLoadEntities: true,

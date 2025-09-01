@@ -33,6 +33,8 @@ import { SearchHistoryModule } from './modules/search-history/search-history.mod
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
 import { AuditLogsModule } from './modules/audit-log/audit-logs.module';
 import { ReportsModule } from './modules/report/reports.module';
+import { BannerModule } from './modules/banner/banner.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -71,6 +73,8 @@ import { ReportsModule } from './modules/report/reports.module';
     SystemSettingsModule,
     AuditLogsModule,
     ReportsModule, 
+    BannerModule,
+    UploadModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

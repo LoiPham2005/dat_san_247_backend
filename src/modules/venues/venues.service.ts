@@ -20,12 +20,20 @@ export class VenuesService {
     }
 
     async findAll() {
-        const venues = await this.venueRepo.find({ relations: ['owner', 'category'] });
+        const venues = await this.venueRepo.find({
+            relations: ['owner', 'category', 'mainImage', 'images'],
+            order: {
+                createdAt: 'DESC'
+            }
+        });
         return success(venues, 'Lấy danh sách venue thành công');
     }
 
     async findOne(venueId: number) {
-        const venue = await this.venueRepo.findOne({ where: { venueId }, relations: ['owner', 'category'] });
+        const venue = await this.venueRepo.findOne({
+            where: { venueId },
+            relations: ['owner', 'category', 'mainImage', 'images']
+        });
         if (!venue) throw new NotFoundException('Venue không tồn tại');
         return success(venue, 'Lấy chi tiết venue thành công');
     }
@@ -43,5 +51,14 @@ export class VenuesService {
         if (!venue) throw new NotFoundException('Venue không tồn tại');
         const removed = await this.venueRepo.remove(venue);
         return success(removed, 'Xóa venue thành công');
+    }
+
+    async setMainImage(venueId: number, imageId: number) {
+        const venue = await this.venueRepo.findOne({ where: { venueId } });
+        if (!venue) throw new NotFoundException('Venue không tồn tại');
+
+        venue.mainImageId = imageId;
+        const updated = await this.venueRepo.save(venue);
+        return success(updated, 'Cập nhật ảnh chính thành công');
     }
 }

@@ -1,5 +1,5 @@
 // src/auth/auth.controller.ts
-import { Controller, Post, Body, UseGuards, Req, UseInterceptors, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, UseInterceptors, Get, Delete, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from '../refresh-tokens/dto/refresh-token.dto';
@@ -11,6 +11,9 @@ import { AuthGuard } from '@nestjs/passport';
 import { fail, success } from 'src/common/helper/response.helper';
 import { LoggingInterceptor } from 'src/common/interceptors/logging.interceptor';
 import { LoginDto } from './dto/login.dto';
+import { RolesGuard } from './guards/roles.guard';
+import { Role } from './enums/role.enum';
+import { Roles } from './decorators/roles.decorator';
 
 // Add interface to extend Express Request
 interface AuthRequest extends Request {
@@ -23,13 +26,8 @@ export class AuthController {
     constructor(private authService: AuthService) { }
 
     @Post('register')
-    async register(@Body() registerDto: RegisterDto) {
-        try {
-            const result = await this.authService.register(registerDto);
-            return success(result.data, result.message);
-        } catch (error) {
-            return fail(error.message);
-        }
+    async register(@Req() req: Request, @Body() registerDto: RegisterDto) {
+        return this.authService.register(registerDto, req);
     }
 
     @UseGuards(LocalAuthGuard)
@@ -57,12 +55,7 @@ export class AuthController {
 
     @Post('forgot-password')
     async forgotPassword(@Body() dto: ForgotPasswordDto) {
-        try {
-            const result = await this.authService.forgotPassword(dto.email);
-            return success(null, result.message);
-        } catch (error) {
-            return fail(error.message);
-        }
+        return this.authService.forgotPassword(dto.email);
     }
 
     @Post('verify-otp')
@@ -75,28 +68,39 @@ export class AuthController {
         return this.authService.resetPassword(dto);
     }
 
+    // Admin only routes
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @Get('sessions')
+    async getAllSessions() {
+        return this.authService.getAllSessions();
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @Delete('sessions/:id')
+    async terminateSession(@Param('id') sessionId: string) {
+        return this.authService.terminateSession(sessionId);
+    }
+
+    // OAuth routes
     @Get('google')
     @UseGuards(AuthGuard('google'))
-    async googleAuth() {
-        // Guard redirects to Google
-    }
+    async googleAuth() { }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     async googleAuthRedirect(@Req() req: AuthRequest) {
-        return this.authService.login(req.user, req);
+        return this.authService.validateOAuthLogin(req.user, 'google');
     }
 
     @Get('facebook')
     @UseGuards(AuthGuard('facebook'))
-    async facebookAuth() {
-        // Guard redirects to Facebook
-    }
+    async facebookAuth() { }
 
     @Get('facebook/callback')
     @UseGuards(AuthGuard('facebook'))
     async facebookAuthRedirect(@Req() req: AuthRequest) {
-        return this.authService.login(req.user, req);
+        return this.authService.validateOAuthLogin(req.user, 'facebook');
     }
-
 }

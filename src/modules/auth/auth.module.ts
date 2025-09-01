@@ -12,6 +12,9 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
 import { User } from './entities/user.entity';
 import { RefreshToken } from '../refresh-tokens/entities/refresh-token.entity';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './guards/roles.guard';
+import { UserSession } from '../user-sessions/entities/user-session.entity';
 
 @Module({
     imports: [
@@ -24,7 +27,7 @@ import { RefreshToken } from '../refresh-tokens/entities/refresh-token.entity';
             }),
             inject: [ConfigService],
         }),
-        TypeOrmModule.forFeature([User, RefreshToken]), 
+        TypeOrmModule.forFeature([User, RefreshToken, UserSession]),
     ],
     controllers: [AuthController],
     providers: [
@@ -32,7 +35,11 @@ import { RefreshToken } from '../refresh-tokens/entities/refresh-token.entity';
         LocalStrategy,
         JwtStrategy,
         GoogleStrategy,
-        FacebookStrategy
+        FacebookStrategy,
+        {
+            provide: APP_GUARD,
+            useClass: RolesGuard,
+        }
     ],
     exports: [AuthService],
 })

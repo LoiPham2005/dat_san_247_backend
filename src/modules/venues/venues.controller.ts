@@ -5,7 +5,7 @@ import { UpdateVenueDto } from './dto/update-venue.dto';
 
 @Controller('venues')
 export class VenuesController {
-  constructor(private readonly venuesService: VenuesService) {}
+  constructor(private readonly venuesService: VenuesService) { }
 
   @Post()
   create(@Body() createDto: CreateVenueDto) {
@@ -30,5 +30,13 @@ export class VenuesController {
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.venuesService.remove(id);
+  }
+
+  @Patch(':id/main-image/:imageId')
+  setMainImage(
+    @Param('id') venueId: number,
+    @Param('imageId') imageId: number
+  ) {
+    return this.venuesService.setMainImage(venueId, imageId);
   }
 }

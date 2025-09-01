@@ -13,6 +13,7 @@ import { ResetPasswordDto } from './dto/forgot-password.dto';
 import { success } from 'src/common/helper/response.helper';
 import { User } from './entities/user.entity';
 import { RefreshToken } from '../refresh-tokens/entities/refresh-token.entity';
+import { DeviceType, UserSession } from '../user-sessions/entities/user-session.entity';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,8 @@ export class AuthService {
         private userRepository: Repository<User>,
         @InjectRepository(RefreshToken)
         private refreshTokenRepository: Repository<RefreshToken>,
+        @InjectRepository(UserSession)
+        private userSessionRepository: Repository<UserSession>,
         private mailerService: MailerService,
     ) { }
 
@@ -33,20 +36,36 @@ export class AuthService {
     }
 
     // ================= REGISTER =================
-    async register(dto: RegisterDto) {
-        const existing = await this.userRepository.findOne({ where: [{ email: dto.email }, { username: dto.username }] });
+    async register(dto: RegisterDto, req: Request) {
+        const existing = await this.userRepository.findOne({
+            where: [{ email: dto.email }, { username: dto.username }]
+        });
         if (existing) throw new BadRequestException('Email hoặc username đã tồn tại');
 
         const hashedPassword = await argon2.hash(dto.password);
 
+        // Create new user
         const newUser = this.userRepository.create({
             ...dto,
             password: hashedPassword
         });
         await this.userRepository.save(newUser);
 
-        const payload = { id: newUser.id };
+        // Create user session
+        const session = this.userSessionRepository.create({
+            userId: newUser.id,
+            deviceType: this.getDeviceType(req),
+            deviceInfo: {
+                userAgent: req.headers['user-agent'],
+                platform: req.headers['sec-ch-ua-platform']
+            },
+            ipAddress: req.ip,
+            isActive: true
+        });
+        await this.userSessionRepository.save(session);
 
+        // Generate tokens
+        const payload = { id: newUser.id };
         const accessToken = this.jwtService.sign(payload, {
             secret: this.configService.get('JWT_SECRET'),
             expiresIn: '15m'
@@ -56,20 +75,35 @@ export class AuthService {
             expiresIn: '7d'
         });
 
-        // Lưu refresh token
+        // Save refresh token
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
         const refreshTokenEntity = this.refreshTokenRepository.create({
             token: refreshToken,
             userId: newUser.id,
-            
+            sessionId: session.sessionId,
             expiresAt
         });
         await this.refreshTokenRepository.save(refreshTokenEntity);
 
         const { password, ...userResult } = newUser;
+        return success({
+            user: userResult,
+            accessToken,
+            refreshToken,
+            sessionId: session.sessionId
+        }, 'Đăng ký thành công');
+    }
 
-        return success({ user: userResult, accessToken, refreshToken }, 'Đăng ký thành công');
+    // Helper method to determine device type
+    private getDeviceType(req: Request): DeviceType {
+        const userAgent = req.headers['user-agent']?.toLowerCase();
+        if (!userAgent) return DeviceType.WEB;
+
+        if (/mobile/i.test(userAgent)) return DeviceType.MOBILE;
+        if (/tablet/i.test(userAgent)) return DeviceType.TABLET;
+        if (/windows|macintosh|linux/i.test(userAgent)) return DeviceType.DESKTOP;
+        return DeviceType.WEB;
     }
 
     // ================= LOGIN =================
@@ -266,4 +300,60 @@ export class AuthService {
         return result;
     }
 
+    // ================= SESSION MANAGEMENT =================
+    async getAllSessions() {
+        const sessions = await this.userSessionRepository.find({
+            relations: ['user', 'refreshTokens'],
+            order: {
+                createdAt: 'DESC'
+            }
+        });
+
+        return success(
+            sessions.map(session => ({
+                ...session,
+                user: {
+                    id: session.user.id,
+                    email: session.user.email,
+                    username: session.user.username,
+                    role: session.user.role
+                }
+            })),
+            'Lấy danh sách phiên đăng nhập thành công'
+        );
+    }
+
+    async terminateSession(sessionId: string) {
+        const session = await this.userSessionRepository.findOne({
+            where: { sessionId },
+            relations: ['refreshTokens']
+        });
+
+        if (!session) {
+            throw new NotFoundException('Phiên đăng nhập không tồn tại');
+        }
+
+        // Revoke all refresh tokens associated with this session
+        if (session.refreshTokens?.length) {
+            await this.refreshTokenRepository.update(
+                {
+                    sessionId,
+                    isRevoked: false
+                },
+                {
+                    isRevoked: true
+                }
+            );
+        }
+
+        // Update session status
+        session.isActive = false;
+        session.logoutAt = new Date();
+        await this.userSessionRepository.save(session);
+
+        return success({
+            sessionId,
+            message: 'Đã kết thúc phiên đăng nhập'
+        });
+    }
 }

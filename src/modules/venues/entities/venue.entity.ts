@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
 import { SportCategory } from '../../sport-categories/entities/sport-category.entity';
 import { User } from 'src/modules/auth/entities/user.entity';
 import { VenueImage } from 'src/modules/venue-images/entities/venue-image.entity';
@@ -82,6 +82,12 @@ export class Venue {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 
+    @Column({ nullable: true, name: 'main_image_id' })
+    mainImageId: number;
+
+    @OneToOne(() => VenueImage)
+    @JoinColumn({ name: 'main_image_id' })
+    mainImage: VenueImage;
 
     @OneToMany(() => VenueImage, (image) => image.venue)
     images: VenueImage[];
