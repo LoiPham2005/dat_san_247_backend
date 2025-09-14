@@ -54,7 +54,6 @@ export class UserSession {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 
-
     @OneToMany(() => RefreshToken, (token) => token.session)
     refreshTokens: RefreshToken[];
 }

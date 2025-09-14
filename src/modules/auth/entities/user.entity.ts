@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { UserSession } from 'src/modules/user-sessions/entities/user-session.entity';
 import { RefreshToken } from 'src/modules/refresh-tokens/entities/refresh-token.entity';
 import { UserWallet } from 'src/modules/user-wallet/entities/user-wallet.entity';
@@ -9,15 +9,20 @@ import { Review } from 'src/modules/reviews/entities/review.entity';
 import { SystemSetting } from 'src/modules/system-settings/entities/system-setting.entity';
 import { AuditLog } from 'src/modules/audit-log/entities/audit-log.entity';
 import { Report } from 'src/modules/report/entities/report.entity';
+import { Role } from '../../roles/entities/role.entity';
 
-
+export enum Gender {
+    MALE = 'male',
+    FEMALE = 'female',
+    OTHER = 'other',
+}
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('increment')
   id: number;
 
   // Thông tin cơ bản
-  @Column({ unique: true })
+  @Column()
   fullname: string;
 
   @Column({ unique: true })
@@ -32,8 +37,8 @@ export class User {
   @Column({ nullable: true })
   phone: string;
 
-  @Column({ type: 'enum', enum: ['male', 'female', 'other'], nullable: true })
-  gender: string;
+  @Column({ type: 'enum', enum: Gender, nullable: true })
+  gender: Gender;
 
   @Column({ nullable: true, name: 'birth_date' })
   birthDate: Date;
@@ -42,8 +47,12 @@ export class User {
   avatar: string;
 
   // Vai trò: admin / user / venue_owner
-  @Column({ type: 'enum', enum: ['admin', 'user', 'venue_owner'], default: 'user' })
-  role: string;
+  @Column({ name: 'role_id' })
+  roleId: number;
+
+  @ManyToOne(() => Role, (role) => role.users)
+  @JoinColumn({ name: 'role_id' })
+  userRole: Role;
 
   // Chỉ áp dụng cho venue_owner: xác thực chủ sân
   @Column({ default: false, name: 'is_verified' })

@@ -8,83 +8,59 @@ import {
   Body,
   UseInterceptors,
   UploadedFile,
-  BadRequestException,
-  Req
+  BadRequestException
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { BannerService } from './banner.service';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
+import { FileValidator } from '../../common/helper/file-validator.helper';
 
 @Controller('banners')
 export class BannerController {
-  constructor(private readonly bannerService: BannerService) {}
+  constructor(
+    private readonly bannerService: BannerService
+  ) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('media', {
-    storage: diskStorage({
-      destination: './uploads/banners',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, uniqueSuffix + extname(file.originalname));
-      },
-    }),
-    limits: {
-      fileSize: 10 * 1024 * 1024,
-    },
-    fileFilter: (req, file, cb) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/) &&
-          !file.mimetype.match(/^video\/(mp4|mpeg|quicktime)$/)) {
-        return cb(new BadRequestException('Chỉ chấp nhận file ảnh hoặc video!'), false);
-      }
-      cb(null, true);
-    },
-  }))
+  @UseInterceptors(FileInterceptor('media'))
   async create(
-    @Req() req,
     @Body() createBannerDto: CreateBannerDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    if (file) {
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      createBannerDto.mediaUrl = `${baseUrl}/uploads/banners/${file.filename}`;
+    const validation = FileValidator.validate(file, {
+      maxSize: 10 * 1024 * 1024, // 10MB
+      allowedImageTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'],
+      allowedVideoTypes: ['video/mp4', 'video/mpeg', 'video/quicktime']
+    });
+
+    if (!validation.isValid) {
+      throw new BadRequestException(validation.error);
     }
-    return this.bannerService.create(createBannerDto);
+
+    return this.bannerService.create(createBannerDto, file);
   }
 
   @Put(':id')
-  @UseInterceptors(FileInterceptor('media', {
-    storage: diskStorage({
-      destination: './uploads/banners',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, uniqueSuffix + extname(file.originalname));
-      },
-    }),
-    limits: {
-      fileSize: 10 * 1024 * 1024,
-    },
-    fileFilter: (req, file, cb) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/) &&
-          !file.mimetype.match(/^video\/(mp4|mpeg|quicktime)$/)) {
-        return cb(new BadRequestException('Chỉ chấp nhận file ảnh hoặc video!'), false);
-      }
-      cb(null, true);
-    },
-  }))
+  @UseInterceptors(FileInterceptor('media'))
   async update(
-    @Req() req,
     @Param('id') id: number,
     @Body() updateBannerDto: UpdateBannerDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (file) {
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      updateBannerDto.mediaUrl = `${baseUrl}/uploads/banners/${file.filename}`;
+      const validation = FileValidator.validate(file, {
+        maxSize: 10 * 1024 * 1024,
+        allowedImageTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'],
+        allowedVideoTypes: ['video/mp4', 'video/mpeg', 'video/quicktime']
+      });
+
+      if (!validation.isValid) {
+        throw new BadRequestException(validation.error);
+      }
     }
-    return this.bannerService.update(id, updateBannerDto);
+
+    return this.bannerService.update(id, updateBannerDto, file);
   }
 
   @Get()

@@ -14,6 +14,7 @@ import { success } from 'src/common/helper/response.helper';
 import { User } from './entities/user.entity';
 import { RefreshToken } from '../refresh-tokens/entities/refresh-token.entity';
 import { DeviceType, UserSession } from '../user-sessions/entities/user-session.entity';
+import { Role, RoleType } from '../roles/entities/role.entity';
 
 @Injectable()
 export class AuthService {
@@ -29,6 +30,8 @@ export class AuthService {
         @InjectRepository(UserSession)
         private userSessionRepository: Repository<UserSession>,
         private mailerService: MailerService,
+        @InjectRepository(Role)
+        private roleRepository: Repository<Role>,
     ) { }
 
     private generateOTP(): string {
@@ -37,18 +40,36 @@ export class AuthService {
 
     // ================= REGISTER =================
     async register(dto: RegisterDto, req: Request) {
+        // Kiểm tra email đã tồn tại chưa
         const existing = await this.userRepository.findOne({
-            where: [{ email: dto.email }, { username: dto.username }]
+            where: { email: dto.email }
         });
-        if (existing) throw new BadRequestException('Email hoặc username đã tồn tại');
+        if (existing) {
+            throw new BadRequestException('Email đã tồn tại');
+        }
 
         const hashedPassword = await argon2.hash(dto.password);
 
+        // Get default customer role
+        const userRole = await this.roleRepository.findOne({ 
+            where: { name: RoleType.CUSTOMER } 
+        });
+        if (!userRole) {
+            throw new BadRequestException('Không tìm thấy role mặc định');
+        }
+
+        // Tạo username từ fullname
+        const username = dto.fullname.replace(/\s+/g, '').toLowerCase() + Date.now();
+
         // Create new user
         const newUser = this.userRepository.create({
-            ...dto,
-            password: hashedPassword
+            fullname: dto.fullname,
+            email: dto.email,
+            username: username,
+            password: hashedPassword,
+            roleId: userRole.roleId
         });
+
         await this.userRepository.save(newUser);
 
         // Create user session
@@ -316,7 +337,7 @@ export class AuthService {
                     id: session.user.id,
                     email: session.user.email,
                     username: session.user.username,
-                    role: session.user.role
+                    role: session.user.userRole.name
                 }
             })),
             'Lấy danh sách phiên đăng nhập thành công'

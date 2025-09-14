@@ -12,8 +12,8 @@ import { fail, success } from 'src/common/helper/response.helper';
 import { LoggingInterceptor } from 'src/common/interceptors/logging.interceptor';
 import { LoginDto } from './dto/login.dto';
 import { RolesGuard } from './guards/roles.guard';
-import { Role } from './enums/role.enum';
 import { Roles } from './decorators/roles.decorator';
+import { Role, RoleType } from '../roles/entities/role.entity';
 
 // Add interface to extend Express Request
 interface AuthRequest extends Request {
@@ -70,14 +70,14 @@ export class AuthController {
 
     // Admin only routes
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.ADMIN)
+    @Roles(RoleType.ADMIN)
     @Get('sessions')
     async getAllSessions() {
         return this.authService.getAllSessions();
     }
 
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.ADMIN)
+    @Roles(RoleType.ADMIN)
     @Delete('sessions/:id')
     async terminateSession(@Param('id') sessionId: string) {
         return this.authService.terminateSession(sessionId);

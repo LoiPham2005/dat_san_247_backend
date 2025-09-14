@@ -15,8 +15,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
         success: true,
         // statusCode: 200,
         message: data?.message || 'Xử lý thành công',
-        data: data?.data ?? data,
         timestamp: new Date().toISOString(),
+        data: data?.data ?? data,
       })),
     );
   }

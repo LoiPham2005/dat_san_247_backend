@@ -47,8 +47,4 @@ export class CreateVenueDto {
   @IsOptional()
   @IsArray()
   amenities?: Record<string, any>[];
-
-  @IsOptional()
-  @IsArray()
-  venueRules?: Record<string, any>[];
 }

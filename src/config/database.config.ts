@@ -6,7 +6,6 @@ import { UserSessionsModule } from 'src/modules/user-sessions/user-sessions.modu
 import { UserWalletModule } from 'src/modules/user-wallet/user-wallet.module';
 import { SportCategoriesModule } from 'src/modules/sport-categories/sport-categories.module';
 import { VenuesModule } from 'src/modules/venues/venues.module';
-import { VenueImagesModule } from 'src/modules/venue-images/venue-images.module';
 import { VenuePricingModule } from 'src/modules/venue-pricing/venue-pricing.module';
 import { VenueOperatingHoursModule } from 'src/modules/venue-operating-hours/venue-operating-hours.module';
 import { BookingsModule } from 'src/modules/bookings/bookings.module';
@@ -30,6 +29,8 @@ import { SystemSettingsModule } from 'src/modules/system-settings/system-setting
 import { AuditLogsModule } from 'src/modules/audit-log/audit-logs.module';
 import { ReportsModule } from 'src/modules/report/reports.module';
 import { BannerModule } from 'src/modules/banner/banner.module';
+import { RolesModule } from 'src/modules/roles/roles.module';
+import { VenueImagesModule } from 'src/modules/venue-images/venue-images.module';
 
 export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
     type: 'postgres',
@@ -40,6 +41,7 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     database: configService.get<string>('DB_DATABASE'),
     entities: [
         User,
+        RolesModule,
         RefreshToken,
         UserSessionsModule,
         UserWalletModule,
@@ -72,4 +74,5 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     ],
     synchronize: configService.get<string>('NODE_ENV') !== 'production',
     autoLoadEntities: true,
+    // dropSchema: true,
 });

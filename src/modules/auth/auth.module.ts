@@ -15,6 +15,7 @@ import { RefreshToken } from '../refresh-tokens/entities/refresh-token.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './guards/roles.guard';
 import { UserSession } from '../user-sessions/entities/user-session.entity';
+import { Role } from '../roles/entities/role.entity';
 
 @Module({
     imports: [
@@ -27,7 +28,8 @@ import { UserSession } from '../user-sessions/entities/user-session.entity';
             }),
             inject: [ConfigService],
         }),
-        TypeOrmModule.forFeature([User, RefreshToken, UserSession]),
+        TypeOrmModule.forFeature([User, RefreshToken, UserSession, Role]),
+
     ],
     controllers: [AuthController],
     providers: [

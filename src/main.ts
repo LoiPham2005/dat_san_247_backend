@@ -32,16 +32,16 @@ async function bootstrap() {
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // Serve thư mục uploads => Cực quan trọng
-  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
+  // app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
-  // Tạo thư mục uploads và uploads/banners nếu chưa tồn tại
-  const fs = require('fs');
-  if (!fs.existsSync('./uploads')) {
-    fs.mkdirSync('./uploads');
-  }
-  if (!fs.existsSync('./uploads/banners')) {
-    fs.mkdirSync('./uploads/banners');
-  }
+  // // Tạo thư mục uploads và uploads/banners nếu chưa tồn tại
+  // const fs = require('fs');
+  // if (!fs.existsSync('./uploads')) {
+  //   fs.mkdirSync('./uploads');
+  // }
+  // if (!fs.existsSync('./uploads/banners')) {
+  //   fs.mkdirSync('./uploads/banners');
+  // }
 
   // Enable CORS
   app.enableCors();

@@ -11,7 +11,6 @@ import { UserSessionsModule } from './modules/user-sessions/user-sessions.module
 import { UserWalletModule } from './modules/user-wallet/user-wallet.module';
 import { SportCategoriesModule } from './modules/sport-categories/sport-categories.module';
 import { VenuesModule } from './modules/venues/venues.module';
-import { VenueImagesModule } from './modules/venue-images/venue-images.module';
 import { VenuePricingModule } from './modules/venue-pricing/venue-pricing.module';
 import { VenueOperatingHoursModule } from './modules/venue-operating-hours/venue-operating-hours.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
@@ -34,7 +33,10 @@ import { SystemSettingsModule } from './modules/system-settings/system-settings.
 import { AuditLogsModule } from './modules/audit-log/audit-logs.module';
 import { ReportsModule } from './modules/report/reports.module';
 import { BannerModule } from './modules/banner/banner.module';
-import { UploadModule } from './upload/upload.module';
+// import { UploadModule } from './upload/upload.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { VenueImagesModule } from './modules/venue-images/venue-images.module';
 
 @Module({
   imports: [
@@ -45,6 +47,7 @@ import { UploadModule } from './upload/upload.module';
       useFactory: getTypeOrmConfig,
     }),
     AuthModule,
+    RolesModule,
     DatabaseModule, // DataInitService đã được cung cấp ở đây
     RefreshTokensModule,
     UserSessionsModule,
@@ -52,7 +55,7 @@ import { UploadModule } from './upload/upload.module';
     SportCategoriesModule,
     VenuesModule,
     VenueImagesModule,
-    VenuePricingModule, 
+    VenuePricingModule,
     VenueOperatingHoursModule,
     BookingsModule,
     PaymentsModule,
@@ -72,14 +75,15 @@ import { UploadModule } from './upload/upload.module';
     SearchHistoryModule,
     SystemSettingsModule,
     AuditLogsModule,
-    ReportsModule, 
+    ReportsModule,
     BannerModule,
-    UploadModule,
+    // UploadModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: getMailerConfig,
-    }), 
+    }),
+    CloudinaryModule,
   ],
   // providers: [DataInitService],  ← Xóa dòng này
 })
