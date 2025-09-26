@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as argon2 from 'argon2';
@@ -9,6 +9,8 @@ import { RoleType } from '../modules/roles/entities/role.entity';
 
 @Injectable()
 export class DataInitService implements OnApplicationBootstrap {
+    private readonly logger = new Logger(DataInitService.name);
+
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
@@ -16,75 +18,129 @@ export class DataInitService implements OnApplicationBootstrap {
         private readonly roleRepository: Repository<Role>
     ) { }
 
-    private async createRoleIfNotExists(name: RoleType, description: string): Promise<Role> {
-        let role = await this.roleRepository.findOne({
-            where: { name }
-        });
-        if (!role) {
-            role = this.roleRepository.create({ name, description });
-            role = await this.roleRepository.save(role);
-        }
-        return role;
+    async onApplicationBootstrap() {
+        await this.seedRoles();
+        await this.seedUsers();
     }
 
-    async onApplicationBootstrap() {
-        // Tạo roles trước
-        const adminRole = await this.createRoleIfNotExists(RoleType.ADMIN, 'Administrator with full access');
-        const customerRole = await this.createRoleIfNotExists(RoleType.CUSTOMER, 'Regular customer');
-        const ownerRole = await this.createRoleIfNotExists(RoleType.VENUE_OWNER, 'Venue owner/manager');
+    private async seedRoles() {
+        try {
+            const count = await this.roleRepository.count();
+            if (count > 0) {
+                this.logger.log('Roles đã tồn tại, bỏ qua seeding...');
+                return;
+            }
 
-        // Kiểm tra và tạo users
-        const count = await this.userRepository.count();
-        if (count === 0) {
-            try {
-                const adminPassword = await argon2.hash('admin123', {
-                    type: argon2.argon2id,
-                });
+            const roles = [
+                {
+                    name: RoleType.ADMIN,
+                    description: 'Quản trị viên hệ thống với toàn quyền truy cập'
+                },
+                {
+                    name: RoleType.SUB_ADMIN,
+                    description: 'Quản trị viên khu vực / phụ' 
+                },
+                {
+                    name: RoleType.MODERATOR,
+                    description: 'Kiểm duyệt nội dung, duyệt sân'
+                },
+                {
+                    name: RoleType.SUPPORT,
+                    description: 'CSKH / hỗ trợ'
+                },
+                {
+                    name: RoleType.VENUE_OWNER,
+                    description: 'Chủ sân'
+                },
+                {
+                    name: RoleType.PARTNER,
+                    description: 'Đối tác dịch vụ (ăn uống, vận chuyển…)'
+                },
+                {
+                    name: RoleType.CUSTOMER,
+                    description: 'Khách hàng cuối'
+                }
+            ];
 
-                // Tạo admin với role_id
-                await this.userRepository.save({
-                    fullname: "Admin",
+            const savedRoles = await Promise.all(
+                roles.map(role => this.roleRepository.save(this.roleRepository.create(role)))
+            );
+
+            this.logger.log('✅ Khởi tạo roles thành công!');
+            return savedRoles;
+        } catch (error) {
+            this.logger.error('❌ Lỗi khởi tạo roles:', error);
+            throw error;
+        }
+    }
+
+    private async seedUsers() {
+        try {
+            const count = await this.userRepository.count();
+            if (count > 0) {
+                this.logger.log('Users đã tồn tại, bỏ qua seeding...');
+                return;
+            }
+
+            // Get roles
+            const adminRole = await this.roleRepository.findOne({ where: { name: RoleType.ADMIN }});
+            const customerRole = await this.roleRepository.findOne({ where: { name: RoleType.CUSTOMER }});
+            const ownerRole = await this.roleRepository.findOne({ where: { name: RoleType.VENUE_OWNER }});
+
+            if (!adminRole || !customerRole || !ownerRole) {
+                throw new Error('Không tìm thấy roles cần thiết');
+            }
+
+            const users = [
+                {
+                    fullname: "Admin User",
                     username: 'admin',
                     email: 'admin@example.com',
-                    password: adminPassword,
+                    password: await argon2.hash('admin123'),
                     roleId: adminRole.roleId,
-                    isActive: true,
-                });
+                    isActive: true
+                },
+                {
+                    fullname: "Test Customer 1",
+                    username: 'customer1',
+                    email: 'customer1@example.com',
+                    password: await argon2.hash('customer123'),
+                    phone: '0123456789',
+                    gender: Gender.MALE,
+                    birthDate: new Date('1990-01-01'),
+                    roleId: customerRole.roleId,
+                    isActive: true
+                },
+                {
+                    fullname: "Test Customer 2",
+                    username: 'customer2', 
+                    email: 'customer2@example.com',
+                    password: await argon2.hash('customer123'),
+                    phone: '0987654321',
+                    gender: Gender.FEMALE,
+                    birthDate: new Date('1995-01-01'),
+                    roleId: customerRole.roleId,
+                    isActive: true
+                },
+                {
+                    fullname: "Test Venue Owner",
+                    username: 'owner1',
+                    email: 'owner@example.com',
+                    password: await argon2.hash('owner123'),
+                    phone: '0369852147',
+                    gender: Gender.MALE,
+                    birthDate: new Date('1985-01-01'),
+                    roleId: ownerRole.roleId,
+                    isActive: true
+                }
+            ];
 
-                const userPassword = await argon2.hash('user123', {
-                    type: argon2.argon2id,
-                });
+            await this.userRepository.save(users);
+            this.logger.log('✅ Khởi tạo users thành công!');
 
-                // Tạo users với role_id
-                await this.userRepository.save([
-                    {
-                        fullname: "User One",
-                        username: 'user1',
-                        email: 'user1@example.com',
-                        password: userPassword,
-                        phone: '0123456789',
-                        gender: Gender.MALE,
-                        birthDate: new Date('1990-01-01'),
-                        roleId: customerRole.roleId,
-                        isActive: true,
-                    },
-                    {
-                        fullname: "User Two",
-                        username: 'user2',
-                        email: 'user2@example.com',
-                        password: userPassword,
-                        phone: '0987654321',
-                        gender: Gender.FEMALE,
-                        birthDate: new Date('1995-01-01'),
-                        roleId: customerRole.roleId,
-                        isActive: true,
-                    },
-                ]);
-
-                console.log('✅ Đã khởi tạo dữ liệu mẫu thành công!');
-            } catch (error) {
-                console.error('❌ Lỗi khởi tạo dữ liệu:', error);
-            }
+        } catch (error) {
+            this.logger.error('❌ Lỗi khởi tạo users:', error);
+            throw error;
         }
     }
 }

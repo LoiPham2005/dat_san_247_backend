@@ -20,6 +20,9 @@ export class SportCategory {
     @Column({ name: 'icon_url', length: 500, nullable: true })
     iconUrl: string;
 
+    @Column({ name: 'cloudinary_id', length: 255, nullable: true })
+    cloudinaryId: string;
+
     @Column({ type: 'enum', enum: CategoryStatus, default: CategoryStatus.ACTIVE })
     status: CategoryStatus;
 

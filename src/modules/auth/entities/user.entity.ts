@@ -1,4 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { 
+  Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, 
+  CreateDateColumn, UpdateDateColumn 
+} from 'typeorm';
 import { UserSession } from 'src/modules/user-sessions/entities/user-session.entity';
 import { RefreshToken } from 'src/modules/refresh-tokens/entities/refresh-token.entity';
 import { UserWallet } from 'src/modules/user-wallet/entities/user-wallet.entity';
@@ -12,41 +15,42 @@ import { Report } from 'src/modules/report/entities/report.entity';
 import { Role } from '../../roles/entities/role.entity';
 
 export enum Gender {
-    MALE = 'male',
-    FEMALE = 'female',
-    OTHER = 'other',
+  MALE = 'male',
+  FEMALE = 'female',
+  OTHER = 'other',
 }
+
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('increment')
+  @PrimaryGeneratedColumn('increment', { name: 'id' })
   id: number;
 
-  // Thông tin cơ bản
-  @Column()
+  // --- Thông tin cơ bản ---
+  @Column({ name: 'full_name' })
   fullname: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, name: 'username' })
   username: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, name: 'email' })
   email: string;
 
-  @Column()
-  password: string; // Lưu password đã hash
+  @Column({ name: 'password' }) // Lưu password đã hash
+  password: string;
 
-  @Column({ nullable: true })
-  phone: string;
+  @Column({ nullable: true, name: 'phone' })
+  phone?: string;
 
-  @Column({ type: 'enum', enum: Gender, nullable: true })
-  gender: Gender;
+  @Column({ type: 'enum', enum: Gender, nullable: true, name: 'gender' })
+  gender?: Gender;
 
-  @Column({ nullable: true, name: 'birth_date' })
-  birthDate: Date;
+  @Column({ nullable: true, type: 'date', name: 'birth_date' })
+  birthDate?: Date;
 
-  @Column({ nullable: true })
-  avatar: string;
+  @Column({ nullable: true, name: 'avatar' })
+  avatar?: string;
 
-  // Vai trò: admin / user / venue_owner
+  // --- Vai trò và quyền ---
   @Column({ name: 'role_id' })
   roleId: number;
 
@@ -54,53 +58,51 @@ export class User {
   @JoinColumn({ name: 'role_id' })
   userRole: Role;
 
-  // Chỉ áp dụng cho venue_owner: xác thực chủ sân
+  // --- Chỉ áp dụng cho venue_owner ---
   @Column({ default: false, name: 'is_verified' })
   isVerified: boolean;
 
-  // Địa chỉ (chủ sân) + định vị (nếu muốn map)
-  @Column({ nullable: true })
-  address: string;
+  // --- Địa chỉ và định vị ---
+  @Column({ nullable: true, name: 'address' })
+  address?: string;
 
-  @Column({ type: 'float', nullable: true })
-  latitude: number;
+  @Column({ type: 'float', nullable: true, name: 'latitude' })
+  latitude?: number;
 
-  @Column({ type: 'float', nullable: true })
-  longitude: number;
+  @Column({ type: 'float', nullable: true, name: 'longitude' })
+  longitude?: number;
 
-  // Trạng thái tài khoản
+  // --- Trạng thái tài khoản ---
   @Column({ default: true, name: 'is_active' })
   isActive: boolean;
 
   @Column({ type: 'enum', enum: ['banned', 'suspended'], nullable: true, name: 'special_status' })
   specialStatus?: string;
 
-  @Column({ default: false })
+  @Column({ default: false, name: 'email_verified' })
   emailVerified: boolean;
 
-  @Column({ default: false })
+  @Column({ default: false, name: 'phone_verified' })
   phoneVerified: boolean;
 
-  // OAuth
-  @Column({ nullable: true })
-  provider: string;
+  // --- OAuth ---
+  @Column({ nullable: true, name: 'provider' })
+  provider?: string;
 
   @Column({ nullable: true, name: 'provider_id' })
-  providerId: string;
+  providerId?: string;
 
-  // Audit log
+  // --- Audit ---
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  // Xóa mềm
   @Column({ type: 'timestamp', nullable: true, name: 'deleted_at' })
-  deletedAt: Date;
+  deletedAt?: Date;
 
-
-  // --- Thêm phần này để tạo quan hệ với UserSession ---
+  // --- Quan hệ với các bảng khác ---
   @OneToMany(() => UserSession, (session) => session.user)
   sessions: UserSession[];
 
@@ -133,5 +135,4 @@ export class User {
 
   @OneToMany(() => Report, (report) => report.reportedUser)
   receivedReports: Report[];
-
 }

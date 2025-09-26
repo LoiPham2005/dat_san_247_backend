@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailerModule } from '@nestjs-modules/mailer';
@@ -37,6 +37,7 @@ import { BannerModule } from './modules/banner/banner.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { VenueImagesModule } from './modules/venue-images/venue-images.module';
+import { FileValidationMiddleware } from './common/middleware/file-validation.middleware';
 
 @Module({
   imports: [
@@ -85,6 +86,18 @@ import { VenueImagesModule } from './modules/venue-images/venue-images.module';
     }),
     CloudinaryModule,
   ],
-  // providers: [DataInitService],  ← Xóa dòng này
 })
-export class AppModule { }
+
+// export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(FileValidationMiddleware)
+      .exclude(
+        { path: 'api/auth/(.*)', method: RequestMethod.ALL },
+        { path: 'api/health', method: RequestMethod.ALL },
+        // Thêm các route khác bạn muốn exclude
+      )
+      .forRoutes('*');
+  }
+}

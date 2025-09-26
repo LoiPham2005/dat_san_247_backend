@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsInt } from 'class-validator';
 import { ImageType } from '../entities/venue-image.entity';
+import { Type } from 'class-transformer';
 
 export class CreateVenueImageDto {
   @IsNotEmpty()
@@ -19,5 +20,10 @@ export class CreateVenueImageDto {
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   displayOrder?: number;
+
+  @IsOptional()
+  @IsString()
+  cloudinaryId?: string;
 }

@@ -8,10 +8,13 @@ export class Banner {
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, name: 'media_url' })
   mediaUrl: string; // ảnh hoặc video
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'cloudinary_id' })
+  cloudinaryId: string;
+
+  @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive: boolean;
 
   @CreateDateColumn()

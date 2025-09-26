@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsInt } from 'class-validator';
 import { CategoryStatus } from '../entities/sport-category.entity';
+import { Type } from 'class-transformer';
 
 export class CreateSportCategoryDto {
   @IsNotEmpty()
@@ -15,10 +16,15 @@ export class CreateSportCategoryDto {
   iconUrl?: string;
 
   @IsOptional()
+  @IsString()
+  cloudinaryId?: string;
+
+  @IsOptional()
   @IsEnum(CategoryStatus)
   status?: CategoryStatus;
 
-  @IsOptional()
+  // @IsOptional()
   @IsInt()
+  @Type(() => Number)
   displayOrder?: number;
 }

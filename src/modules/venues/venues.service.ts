@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { Venue } from './entities/venue.entity';
 import { ImageType, VenueImage } from '../venue-images/entities/venue-image.entity';
 import { CreateVenueDto } from './dto/create-venue.dto';
@@ -25,12 +25,39 @@ export class VenuesService {
         }
     }
 
-    async findAll() {
-        const venues = await this.venueRepo.find({
+    // async findAll() {
+    //     const venues = await this.venueRepo.find({
+    //         relations: ['owner', 'category', 'mainImage', 'images'],
+    //         order: { createdAt: 'DESC' }
+    //     });
+    //     return success(venues, 'Lấy danh sách venue thành công');
+    // }
+
+    async findAll(page: number = 1, limit: number = 10) {
+        // đảm bảo luôn là số
+        page = Number(page) || 1;
+        limit = Number(limit) || 10;
+
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 10;
+
+        const [venues, total] = await this.venueRepo.findAndCount({
             relations: ['owner', 'category', 'mainImage', 'images'],
-            order: { createdAt: 'DESC' }
+            order: { createdAt: 'DESC' },
+            skip: (page - 1) * limit,
+            take: limit,
         });
-        return success(venues, 'Lấy danh sách venue thành công');
+
+        return success(
+            {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                data: venues,
+            },
+            'Lấy danh sách venue thành công',
+        );
     }
 
     async findOne(venueId: number) {
@@ -68,4 +95,45 @@ export class VenuesService {
         const updated = await this.venueRepo.save(venue);
         return success(updated, 'Cập nhật ảnh chính thành công');
     }
+
+    async search(keyword: string, page: number = 1, limit: number = 10) {
+        if (!keyword || keyword.trim() === '') {
+            throw new BadRequestException('Vui lòng nhập từ khóa tìm kiếm');
+        }
+
+        // Đảm bảo page và limit là số
+        page = Number(page) || 1;
+        limit = Number(limit) || 10;
+
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 10;
+
+        const queryBuilder = this.venueRepo
+            .createQueryBuilder('venue')
+            .leftJoinAndSelect('venue.owner', 'owner')
+            .leftJoinAndSelect('venue.category', 'category')
+            .leftJoinAndSelect('venue.mainImage', 'mainImage')
+            .leftJoinAndSelect('venue.images', 'images')
+            .where('venue.venueName ILIKE :keyword', { keyword: `%${keyword}%` })
+            .orWhere('venue.address ILIKE :keyword', { keyword: `%${keyword}%` })
+            .orWhere('venue.description ILIKE :keyword', { keyword: `%${keyword}%` })
+            .orWhere('venue.email ILIKE :keyword', { keyword: `%${keyword}%` })
+            .orWhere('venue.phone ILIKE :keyword', { keyword: `%${keyword}%` })
+            .orWhere('owner.fullname ILIKE :keyword', { keyword: `%${keyword}%` })
+            .orWhere('category.categoryName ILIKE :keyword', { keyword: `%${keyword}%` })
+            .orderBy('venue.createdAt', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [venues, total] = await queryBuilder.getManyAndCount();
+
+        return success({
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            data: venues
+        }, 'Tìm kiếm venue thành công');
+    }
+
 }

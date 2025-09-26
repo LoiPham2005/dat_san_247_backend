@@ -24,7 +24,7 @@ export class RefreshToken {
   @JoinColumn({ name: 'session_id' })
   session: UserSession;
 
-  @Column({ default: false })
+  @Column({ default: false, name: 'is_revoked' })
   isRevoked: boolean;
 
   @Column({ type: 'timestamp', name: 'expires_at' })

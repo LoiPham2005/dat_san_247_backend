@@ -40,7 +40,7 @@ export class Review {
     @Column({ type: 'int' })
     rating: number;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, name: 'review_text' })
     reviewText: string;
 
     @Column({ type: 'text', nullable: true })

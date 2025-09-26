@@ -9,6 +9,10 @@ export class CreateBannerDto {
   mediaUrl?: string;
 
   @IsOptional()
+  @IsString()
+  cloudinaryId?: string;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }

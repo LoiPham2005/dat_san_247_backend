@@ -8,7 +8,8 @@ import {
   Body,
   UseInterceptors,
   UploadedFile,
-  BadRequestException
+  BadRequestException,
+  Patch
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BannerService } from './banner.service';
@@ -19,62 +20,41 @@ import { FileValidator } from '../../common/helper/file-validator.helper';
 @Controller('banners')
 export class BannerController {
   constructor(
-    private readonly bannerService: BannerService
-  ) {}
+    private readonly service: BannerService
+  ) { }
+
 
   @Post()
-  @UseInterceptors(FileInterceptor('media'))
-  async create(
-    @Body() createBannerDto: CreateBannerDto,
-    @UploadedFile() file: Express.Multer.File,
+  @UseInterceptors(FileInterceptor('mediaUrl'))
+  create(
+    @Body() dto: CreateBannerDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    const validation = FileValidator.validate(file, {
-      maxSize: 10 * 1024 * 1024, // 10MB
-      allowedImageTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'],
-      allowedVideoTypes: ['video/mp4', 'video/mpeg', 'video/quicktime']
-    });
-
-    if (!validation.isValid) {
-      throw new BadRequestException(validation.error);
-    }
-
-    return this.bannerService.create(createBannerDto, file);
+    return this.service.create(dto, file);
   }
 
-  @Put(':id')
-  @UseInterceptors(FileInterceptor('media'))
-  async update(
+  @Patch(':id')
+  @UseInterceptors(FileInterceptor('mediaUrl'))
+  update(
     @Param('id') id: number,
-    @Body() updateBannerDto: UpdateBannerDto,
-    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: UpdateBannerDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (file) {
-      const validation = FileValidator.validate(file, {
-        maxSize: 10 * 1024 * 1024,
-        allowedImageTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'],
-        allowedVideoTypes: ['video/mp4', 'video/mpeg', 'video/quicktime']
-      });
-
-      if (!validation.isValid) {
-        throw new BadRequestException(validation.error);
-      }
-    }
-
-    return this.bannerService.update(id, updateBannerDto, file);
+    return this.service.update(id, dto, file);
   }
 
   @Get()
   findAll() {
-    return this.bannerService.findAll();
+    return this.service.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: number) {
-    return this.bannerService.findOne(id);
+    return this.service.findOne(id);
   }
 
   @Delete(':id')
   remove(@Param('id') id: number) {
-    return this.bannerService.remove(id);
+    return this.service.remove(id);
   }
 }

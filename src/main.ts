@@ -6,6 +6,7 @@ import { Logger } from '@nestjs/common';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { FileUploadInterceptor } from './common/interceptors/file-upload.interceptor';
 import { join } from 'path'; // <-- Quan trọng
 
 async function bootstrap() {
@@ -26,6 +27,9 @@ async function bootstrap() {
 
   // Dùng global interceptor để log mọi request
   app.useGlobalInterceptors(new LoggingInterceptor());
+
+  // Add global file upload interceptor
+  app.useGlobalInterceptors(new FileUploadInterceptor());
 
   // Cấu hình upload limit
   app.use(express.json({ limit: '10mb' }));

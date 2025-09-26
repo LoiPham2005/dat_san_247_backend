@@ -16,7 +16,10 @@ export class CloudinaryController {
     }
 
     try {
-      const result = await this.cloudinaryService.uploadFile(file, 'uploads');
+      const result = 
+      await this.cloudinaryService.uploadFile(file, 'uploads');
+    //  await this.cloudinaryService.uploadFile(file, { folder: 'uploads' });
+
       return {
         message: 'Upload thành công!',
         url: result.secure_url,

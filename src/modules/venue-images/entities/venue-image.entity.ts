@@ -33,4 +33,7 @@ export class VenueImage {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @Column({ name: 'cloudinary_id', nullable: true })
+  cloudinaryId: string;
 }

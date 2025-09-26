@@ -3,11 +3,13 @@ import { User } from 'src/modules/auth/entities/user.entity';
 import { Permission } from '../../permissions/entities/permission.entity';
 
 export enum RoleType {
-  CUSTOMER = 'customer',
-  VENUE_OWNER = 'venue_owner',
-  ADMIN = 'admin',
-  SUPPORT = 'support',
-  MODERATOR = 'moderator'
+  ADMIN = 'admin',              // Quản trị viên hệ thống
+  SUB_ADMIN = 'sub_admin',      // Quản trị viên khu vực / phụ
+  MODERATOR = 'moderator',      // Kiểm duyệt nội dung, duyệt sân
+  SUPPORT = 'support',          // CSKH / hỗ trợ
+  VENUE_OWNER = 'venue_owner',  // Chủ sân
+  PARTNER = 'partner',          // Đối tác dịch vụ (ăn uống, vận chuyển…)
+  CUSTOMER = 'customer'         // Khách hàng cuối
 }
 
 @Entity('roles')
@@ -25,7 +27,7 @@ export class Role {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ default: true })
+  @Column({ default: true, name: 'is_active' })
   isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
