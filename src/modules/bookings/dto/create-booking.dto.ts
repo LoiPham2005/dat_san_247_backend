@@ -1,61 +1,45 @@
-import { IsNotEmpty, IsEnum, IsNumber, IsString, IsOptional } from 'class-validator';
-import { BookingStatus, PaymentStatus, PaymentMethod } from '../entities/booking.entity';
+// modules/bookings/dto/create-booking.dto.ts
+import { IsUUID, IsDateString, IsString, IsNumber, IsOptional, IsEnum, Min, Max } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CreateBookingDto {
-  @IsNotEmpty()
-  customerId: number;
+  @ApiProperty()
+  @IsUUID()
+  courtId: string;
 
-  @IsNotEmpty()
-  venueId: number;
+  @ApiProperty({ example: '2024-12-25' })
+  @IsDateString()
+  bookingDate: string;
 
-  @IsNotEmpty()
-  bookingDate: string; // YYYY-MM-DD
-
-  @IsNotEmpty()
-  startTime: string; // HH:mm:ss
-
-  @IsNotEmpty()
-  endTime: string; // HH:mm:ss
-
-  @IsNotEmpty()
-  totalAmount: number;
-
-  @IsNotEmpty()
-  commissionFee: number;
-
-  @IsOptional()
-  discountAmount?: number;
-
-  @IsNotEmpty()
-  finalAmount: number;
-
-  @IsOptional()
-  @IsEnum(BookingStatus)
-  status?: BookingStatus;
-
-  @IsOptional()
-  @IsEnum(PaymentStatus)
-  paymentStatus?: PaymentStatus;
-
-  @IsNotEmpty()
-  @IsEnum(PaymentMethod)
-  paymentMethod: PaymentMethod;
-
-  @IsNotEmpty()
+  @ApiProperty({ example: '09:00' })
   @IsString()
-  bookingCode: string;
+  startTime: string;
 
+  @ApiProperty({ example: '11:00' })
+  @IsString()
+  endTime: string;
+
+  @ApiProperty()
+  @IsString()
+  customerName: string;
+
+  @ApiProperty()
+  @IsString()
+  customerPhone: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  customerEmail?: string;
+
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   notes?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  cancellationReason?: string;
-
-  @IsOptional()
-  cancelledAt?: string;
-
-  @IsOptional()
-  cancellationPolicy?: any;
+  voucherCode?: string;
 }

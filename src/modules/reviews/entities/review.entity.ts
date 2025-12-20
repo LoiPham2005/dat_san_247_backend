@@ -1,70 +1,80 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { Booking } from '../../bookings/entities/booking.entity';
+// =====================================================
+// 8. REVIEW ENTITY
+// =====================================================
+// modules/reviews/entities/review.entity.ts
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { BaseEntity } from '../../../database/entities/base.entity';
 import { Venue } from '../../venues/entities/venue.entity';
-import { User } from 'src/modules/auth/entities/user.entity';
-import { ReviewReply } from 'src/modules/review-replies/entities/review-reply.entity';
+import { User } from '../../users/entities/user.entity';
+import { Booking } from '../../bookings/entities/booking.entity';
 
 export enum ReviewStatus {
-    ACTIVE = 'active',
-    HIDDEN = 'hidden',
-    REPORTED = 'reported',
-    DELETED = 'deleted',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  HIDDEN = 'hidden',
 }
 
 @Entity('reviews')
-export class Review {
-    @PrimaryGeneratedColumn({ name: 'review_id' })
-    reviewId: number;
+@Index(['venueId', 'status', 'rating'])
+export class Review extends BaseEntity {
+  @Column({ name: 'venue_id', type: 'uuid' })
+  venueId: string;
 
-    @Column({ name: 'booking_id' })
-    bookingId: number;
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId: string;
 
-    @ManyToOne(() => Booking)
-    @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+  @Column({ name: 'booking_id', type: 'uuid', nullable: true })
+  bookingId?: string;
 
-    @Column({ name: 'customer_id' })
-    customerId: number;
+  @Column()
+  rating: number;
 
-    @ManyToOne(() => User)
-    @JoinColumn({ name: 'customer_id' })
-    customer: User;
+  @Column({ name: 'rating_facility', nullable: true })
+  ratingFacility?: number;
 
-    @Column({ name: 'venue_id' })
-    venueId: number;
+  @Column({ name: 'rating_service', nullable: true })
+  ratingService?: number;
 
-    @ManyToOne(() => Venue)
-    @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+  @Column({ name: 'rating_price', nullable: true })
+  ratingPrice?: number;
 
-    @Column({ type: 'int' })
-    rating: number;
+  @Column({ name: 'rating_location', nullable: true })
+  ratingLocation?: number;
 
-    @Column({ type: 'text', nullable: true, name: 'review_text' })
-    reviewText: string;
+  @Column({ name: 'review_title', length: 200, nullable: true })
+  reviewTitle?: string;
 
-    @Column({ type: 'text', nullable: true })
-    pros: string;
+  @Column({ name: 'review_content', type: 'text', nullable: true })
+  reviewContent?: string;
 
-    @Column({ type: 'text', nullable: true })
-    cons: string;
+  @Column({ type: 'json', nullable: true })
+  images?: string[];
 
-    @Column({ type: 'json', nullable: true })
-    images: string[];
+  @Column({ name: 'is_verified_booking', default: false })
+  isVerifiedBooking: boolean;
 
-    @Column({ type: 'enum', enum: ReviewStatus, default: ReviewStatus.ACTIVE })
-    status: ReviewStatus;
+  @Column({ name: 'likes_count', default: 0 })
+  likesCount: number;
 
-    @Column({ type: 'int', default: 0, name: 'helpful_count' })
-    helpfulCount: number;
+  @Column({ type: 'enum', enum: ReviewStatus, default: ReviewStatus.PENDING })
+  status: ReviewStatus;
 
-    @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date;
+  @Column({ name: 'owner_response', type: 'text', nullable: true })
+  ownerResponse?: string;
 
-    @UpdateDateColumn({ name: 'updated_at' })
-    updatedAt: Date;
+  @Column({ name: 'owner_responded_at', type: 'timestamp', nullable: true })
+  ownerRespondedAt?: Date;
 
-    @OneToMany(() => ReviewReply, (reply) => reply.review)
-    replies: ReviewReply[];
+  @ManyToOne(() => Venue, (venue) => venue.reviews)
+  @JoinColumn({ name: 'venue_id' })
+  venue: Venue;
 
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @ManyToOne(() => Booking, { nullable: true })
+  @JoinColumn({ name: 'booking_id' })
+  booking?: Booking;
 }

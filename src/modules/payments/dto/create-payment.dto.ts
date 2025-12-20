@@ -1,42 +1,30 @@
-import { IsNotEmpty, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
-import { PaymentMethod, PaymentStatus } from '../entities/payment.entity';
+import { IsUUID, IsNumber, IsEnum, IsOptional, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaymentMethod, PaymentType } from '../entities/payment.entity';
 
 export class CreatePaymentDto {
-  @IsNotEmpty()
-  bookingId: number;
+  @ApiProperty()
+  @IsUUID()
+  bookingId: string;
 
-  @IsNotEmpty()
+  @ApiProperty()
+  @IsUUID()
+  userId: string;
+
+  @ApiProperty()
+  @IsNumber()
+  amount: number;
+
+  @ApiProperty({ enum: PaymentMethod })
   @IsEnum(PaymentMethod)
   paymentMethod: PaymentMethod;
 
-  @IsOptional()
-  paymentGateway?: string;
+  @ApiProperty({ enum: PaymentType })
+  @IsEnum(PaymentType)
+  paymentType: PaymentType;
 
+  @ApiPropertyOptional()
   @IsOptional()
-  transactionId?: string;
-
-  @IsNotEmpty()
-  amount: number;
-
-  @IsOptional()
-  currency?: string;
-
-  @IsOptional()
-  @IsEnum(PaymentStatus)
-  status?: PaymentStatus;
-
-  @IsOptional()
-  paymentDate?: string;
-
-  @IsOptional()
-  refundAmount?: number;
-
-  @IsOptional()
-  refundDate?: string;
-
-  @IsOptional()
-  gatewayResponse?: any;
-
-  @IsOptional()
-  failureReason?: string;
+  @IsString()
+  notes?: string;
 }

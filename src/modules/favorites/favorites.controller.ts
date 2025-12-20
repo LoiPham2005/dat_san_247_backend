@@ -1,28 +1,56 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+// modules/favorites/favorites.controller.ts
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FavoritesService } from './favorites.service';
-import { CreateFavoriteDto } from './dto/create-favorite.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
+@ApiTags('Favorites')
 @Controller('favorites')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class FavoritesController {
-  constructor(private readonly favoritesService: FavoritesService) {}
-
-  @Post()
-  create(@Body() createDto: CreateFavoriteDto) {
-    return this.favoritesService.create(createDto);
-  }
+  constructor(private favoritesService: FavoritesService) {}
 
   @Get()
-  findAll() {
-    return this.favoritesService.findAll();
+  @ApiOperation({ summary: 'Get my favorite venues' })
+  async getMyFavorites(@CurrentUser('id') userId: string) {
+    return this.favoritesService.getUserFavorites(userId);
   }
 
-  @Get('user/:userId')
-  findByUser(@Param('userId') userId: number) {
-    return this.favoritesService.findByUser(userId);
+  @Post(':venueId')
+  @ApiOperation({ summary: 'Add venue to favorites' })
+  async addFavorite(
+    @CurrentUser('id') userId: string,
+    @Param('venueId') venueId: string,
+  ) {
+    return this.favoritesService.addFavorite(userId, venueId);
   }
 
-  @Delete(':userId/:venueId')
-  remove(@Param('userId') userId: number, @Param('venueId') venueId: number) {
-    return this.favoritesService.remove(userId, venueId);
+  @Delete(':venueId')
+  @ApiOperation({ summary: 'Remove venue from favorites' })
+  async removeFavorite(
+    @CurrentUser('id') userId: string,
+    @Param('venueId') venueId: string,
+  ) {
+    await this.favoritesService.removeFavorite(userId, venueId);
+    return { message: 'Removed from favorites' };
+  }
+
+  @Get('check/:venueId')
+  @ApiOperation({ summary: 'Check if venue is favorited' })
+  async checkFavorite(
+    @CurrentUser('id') userId: string,
+    @Param('venueId') venueId: string,
+  ) {
+    const isFavorite = await this.favoritesService.isFavorite(userId, venueId);
+    return { isFavorite };
   }
 }

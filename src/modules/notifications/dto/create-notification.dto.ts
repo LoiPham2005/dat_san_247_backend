@@ -1,36 +1,50 @@
-import { IsNotEmpty, IsInt, IsOptional, IsEnum, IsString, IsBoolean } from 'class-validator';
-import { NotificationType } from '../entities/notification.entity';
+import { IsString, IsEnum, IsOptional, IsUUID, IsArray } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { NotificationType, SentVia } from '../entities/notification.entity';
 
 export class CreateNotificationDto {
-  @IsNotEmpty()
-  @IsInt()
-  userId: number;
+  @ApiProperty()
+  @IsUUID()
+  userId: string;
 
-  @IsNotEmpty()
+  @ApiProperty()
   @IsString()
   title: string;
 
-  @IsNotEmpty()
+  @ApiProperty()
   @IsString()
-  message: string;
+  content: string;
 
-  @IsNotEmpty()
+  @ApiProperty({ enum: NotificationType })
   @IsEnum(NotificationType)
   notificationType: NotificationType;
 
+  @ApiPropertyOptional()
   @IsOptional()
-  @IsInt()
-  relatedId?: number;
+  @IsString()
+  relatedId?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  relatedType?: string;
+
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   imageUrl?: string;
 
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  deepLink?: string;
+  actionUrl?: string;
 
+  @ApiProperty({ enum: SentVia })
+  @IsEnum(SentVia)
+  sentVia: SentVia;
+
+  @ApiPropertyOptional()
   @IsOptional()
-  @IsBoolean()
-  isRead?: boolean;
+  @IsArray()
+  recipientIds?: string[];
 }

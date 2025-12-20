@@ -1,110 +1,128 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
-import { SportCategory } from '../../sport-categories/entities/sport-category.entity';
-import { User } from 'src/modules/auth/entities/user.entity';
-import { VenueImage } from 'src/modules/venue-images/entities/venue-image.entity';
-import { VenuePricing } from 'src/modules/venue-pricing/entities/venue-pricing.entity';
-import { VenueOperatingHour } from 'src/modules/venue-operating-hours/entities/venue-operating-hour.entity';
-import { Booking } from 'src/modules/bookings/entities/booking.entity';
-import { Review } from 'src/modules/reviews/entities/review.entity';
-import { Report } from 'src/modules/report/entities/report.entity';
+// =====================================================
+// 23. UPDATE VENUE ENTITY WITH COMPLETE RELATIONS
+// =====================================================
+// modules/venues/entities/venue.entity.ts (UPDATED)
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { BaseEntity } from '../../../database/entities/base.entity';
+import { VenueOwner } from '../../venue-owners/entities/venue-owner.entity';
+import { Court } from '../../courts/entities/court.entity';
+import { Review } from '../../reviews/entities/review.entity';
+import { VenueImage } from './venue-image.entity';
+import { Favorite } from '../../favorites/entities/favorite.entity';
 
 export enum VenueStatus {
-    PENDING = 'pending',
-    APPROVED = 'approved',
-    REJECTED = 'rejected',
-    INACTIVE = 'inactive',
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SUSPENDED = 'suspended',
+  PENDING = 'pending',
 }
 
 @Entity('venues')
-export class Venue {
-    @PrimaryGeneratedColumn({ name: 'venue_id' })
-    venueId: number;
+@Index(['ownerId'])
+@Index(['slug'])
+@Index(['city', 'district'])
+@Index(['status', 'featured'])
+export class Venue extends BaseEntity {
+  @Column({ name: 'owner_id', type: 'uuid' })
+  ownerId: string;
 
-    @Column({ name: 'owner_id' })
-    ownerId: number;
+  @Column({ name: 'venue_name', length: 200 })
+  venueName: string;
 
-    @ManyToOne(() => User, (user) => user.venues)
-    @JoinColumn({ name: 'owner_id' })
-    owner: User;
+  @Column({ unique: true, length: 250 })
+  slug: string;
 
-    @Column({ name: 'venue_name', length: 255 })
-    venueName: string;
+  @Column({ type: 'text', nullable: true })
+  description?: string;
 
-    @Column({ type: 'text', nullable: true })
-    description: string;
+  @Column({ length: 500 })
+  address: string;
 
-    @Column({ type: 'text' })
-    address: string;
+  @Column({ length: 100 })
+  ward: string;
 
-    @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
-    latitude: number;
+  @Column({ length: 100 })
+  district: string;
 
-    @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
-    longitude: number;
+  @Column({ length: 100 })
+  city: string;
 
-    @Column({ length: 20, nullable: true })
-    phone: string;
+  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
+  latitude?: number;
 
-    @Column({ length: 255, nullable: true })
-    email: string;
+  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
+  longitude?: number;
 
-    @Column({ name: 'category_id' })
-    categoryId: number;
+  @Column({ length: 20 })
+  phone: string;
 
-    @ManyToOne(() => SportCategory, (category) => category.venues)
-    @JoinColumn({ name: 'category_id' })
-    category: SportCategory;
+  @Column({ length: 255, nullable: true })
+  email?: string;
 
-    @Column({ type: 'int', nullable: true })
-    capacity: number;
+  @Column({ length: 500, nullable: true })
+  website?: string;
 
-    @Column({ type: 'enum', enum: VenueStatus, default: VenueStatus.PENDING })
-    status: VenueStatus;
+  @Column({ name: 'opening_time', type: 'time' })
+  openingTime: string;
 
-    @Column({ type: 'decimal', precision: 3, scale: 2, default: 0, name: 'average_rating' })
-    averageRating: number;
+  @Column({ name: 'closing_time', type: 'time' })
+  closingTime: string;
 
-    @Column({ type: 'int', default: 0, name: 'total_reviews' })
-    totalReviews: number;
+  @Column({ name: 'is_24h', default: false })
+  is24h: boolean;
 
-    @Column({ type: 'int', default: 0, name: 'total_bookings' })
-    totalBookings: number;
+  @Column({ name: 'parking_available', default: false })
+  parkingAvailable: boolean;
 
-    @Column({ type: 'json', nullable: true })
-    amenities: Record<string, any>[];
+  @Column({ name: 'wifi_available', default: false })
+  wifiAvailable: boolean;
 
-    @Column({ type: 'json', nullable: true, name: 'venue_rules' })
-    venueRules: Record<string, any>[];
+  @Column({ name: 'shower_available', default: false })
+  showerAvailable: boolean;
 
-    @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date;
+  @Column({ name: 'locker_available', default: false })
+  lockerAvailable: boolean;
 
-    @UpdateDateColumn({ name: 'updated_at' })
-    updatedAt: Date;
+  @Column({ name: 'cafe_available', default: false })
+  cafeAvailable: boolean;
 
-    @Column({ nullable: true, name: 'main_image_id' })
-    mainImageId: number;
+  @Column({ name: 'equipment_rental', default: false })
+  equipmentRental: boolean;
 
-    @OneToOne(() => VenueImage)
-    @JoinColumn({ name: 'main_image_id' })
-    mainImage: VenueImage;
+  @Column({ type: 'enum', enum: VenueStatus, default: VenueStatus.PENDING })
+  status: VenueStatus;
 
-    @OneToMany(() => VenueImage, (image) => image.venue)
-    images: VenueImage[];
+  @Column({ name: 'rating_average', type: 'decimal', precision: 3, scale: 2, default: 0 })
+  ratingAverage: number;
 
-    @OneToMany(() => VenuePricing, (pricing) => pricing.venue)
-    pricings: VenuePricing[];
+  @Column({ name: 'total_reviews', default: 0 })
+  totalReviews: number;
 
-    @OneToMany(() => VenueOperatingHour, (hour) => hour.venue)
-    operatingHours: VenueOperatingHour[];
+  @Column({ name: 'total_bookings', default: 0 })
+  totalBookings: number;
 
-    @OneToMany(() => Booking, (booking) => booking.venue)
-    bookings: Booking[];
+  @Column({ name: 'view_count', default: 0 })
+  viewCount: number;
 
-    @OneToMany(() => Review, (review) => review.venue)
-    reviews: Review[];
+  @Column({ default: false })
+  featured: boolean;
 
-    @OneToMany(() => Report, (report) => report.reportedVenue)
-    reports: Report[];
+  @Column({ default: false })
+  verified: boolean;
 
+  @ManyToOne(() => VenueOwner, (owner) => owner.venues)
+  @JoinColumn({ name: 'owner_id' })
+  owner: VenueOwner;
+
+  @OneToMany(() => Court, (court) => court.venue)
+  courts: Court[];
+
+  @OneToMany(() => Review, (review) => review.venue)
+  reviews: Review[];
+
+  @OneToMany(() => VenueImage, (image) => image.venue)
+  images: VenueImage[];
+
+  @OneToMany(() => Favorite, (favorite) => favorite.venue)
+  favorites: Favorite[];
 }

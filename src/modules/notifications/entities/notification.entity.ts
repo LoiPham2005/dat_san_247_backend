@@ -1,59 +1,64 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import { User } from '../../auth/entities/user.entity';
+// =====================================================
+// 12. NOTIFICATION ENTITY
+// =====================================================
+// modules/notifications/entities/notification.entity.ts
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { BaseEntity } from '../../../database/entities/base.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum NotificationType {
   BOOKING = 'booking',
   PAYMENT = 'payment',
   PROMOTION = 'promotion',
   SYSTEM = 'system',
-  REMINDER = 'reminder',
-  PARTNER = 'partner',
+  REVIEW = 'review',
+}
+
+export enum SentVia {
+  PUSH = 'push',
+  EMAIL = 'email',
+  SMS = 'sms',
+  IN_APP = 'in_app',
 }
 
 @Entity('notifications')
-export class Notification {
-  @PrimaryGeneratedColumn({ name: 'notification_id' })
-  notificationId: number;
+@Index(['userId', 'isRead'])
+@Index(['notificationType'])
+export class Notification extends BaseEntity {
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId: string;
 
-  @Column({ name: 'user_id' })
-  userId: number;
-
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
-  user: User;
-
-  @Column({ length: 255 })
+  @Column({ length: 200 })
   title: string;
 
   @Column({ type: 'text' })
-  message: string;
+  content: string;
 
-  @Column({ type: 'enum', enum: NotificationType, name: 'notification_type' })
+  @Column({ name: 'notification_type', type: 'enum', enum: NotificationType })
   notificationType: NotificationType;
 
-  @Column({ type: 'int', nullable: true, name: 'related_id' })
-  relatedId?: number;
+  @Column({ name: 'related_id', length: 100, nullable: true })
+  relatedId?: string;
 
-  @Column({ length: 500, nullable: true, name: 'image_url' })
+  @Column({ name: 'related_type', length: 50, nullable: true })
+  relatedType?: string;
+
+  @Column({ name: 'image_url', length: 500, nullable: true })
   imageUrl?: string;
 
-  @Column({ length: 500, nullable: true, name: 'deep_link' })
-  deepLink?: string;
+  @Column({ name: 'action_url', length: 500, nullable: true })
+  actionUrl?: string;
 
-  @Column({ type: 'boolean', default: false, name: 'is_read' })
+  @Column({ name: 'is_read', default: false })
   isRead: boolean;
 
-  @Column({ type: 'timestamp', nullable: true, name: 'read_at' })
+  @Column({ name: 'read_at', type: 'timestamp', nullable: true })
   readAt?: Date;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  @Column({ name: 'sent_via', type: 'enum', enum: SentVia })
+  sentVia: SentVia;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }

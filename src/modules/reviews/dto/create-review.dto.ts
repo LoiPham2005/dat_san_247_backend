@@ -1,37 +1,71 @@
-import { IsNotEmpty, IsInt, IsOptional, IsEnum, IsArray, Max, Min, IsString } from 'class-validator';
-import { ReviewStatus } from '../entities/review.entity';
+// modules/reviews/dto/create-review.dto.ts
+import { IsUUID, IsNumber, IsString, IsOptional, IsArray, Min, Max } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class CreateReviewDto {
-  @IsNotEmpty()
-  bookingId: number;
+  @ApiProperty()
+  @IsUUID()
+  venueId: string;
 
-  @IsNotEmpty()
-  customerId: number;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  bookingId?: string;
 
-  @IsNotEmpty()
-  venueId: number;
-
-  @IsNotEmpty()
-  @IsInt()
+  @ApiProperty({ minimum: 1, maximum: 5 })
+  @IsNumber()
   @Min(1)
   @Max(5)
   rating: number;
 
+  @ApiPropertyOptional({ minimum: 1, maximum: 5 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  ratingFacility?: number;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 5 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  ratingService?: number;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 5 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  ratingPrice?: number;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 5 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  ratingLocation?: number;
+
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  reviewText?: string;
+  reviewTitle?: string;
 
+  @ApiPropertyOptional()
   @IsOptional()
-  pros?: string;
+  @IsString()
+  reviewContent?: string;
 
-  @IsOptional()
-  cons?: string;
-
+  @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
   images?: string[];
+}
 
-  @IsOptional()
-  @IsEnum(ReviewStatus)
-  status?: ReviewStatus;
+export class UpdateReviewDto extends PartialType(CreateReviewDto) {}
+
+export class OwnerResponseDto {
+  @ApiProperty()
+  @IsString()
+  response: string;
 }

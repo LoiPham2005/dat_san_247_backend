@@ -1,40 +1,69 @@
-import { Injectable } from '@nestjs/common';
+// modules/favorites/favorites.service.ts
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Favorite } from './entities/favorite.entity';
-import { CreateFavoriteDto } from './dto/create-favorite.dto';
-import { success } from 'src/common/helper/response.helper';
+import { Venue } from '../venues/entities/venue.entity';
 
 @Injectable()
 export class FavoritesService {
-    constructor(
-        @InjectRepository(Favorite)
-        private readonly favoriteRepo: Repository<Favorite>,
-    ) { }
+  constructor(
+    @InjectRepository(Favorite)
+    private favoriteRepository: Repository<Favorite>,
+    @InjectRepository(Venue)
+    private venueRepository: Repository<Venue>,
+  ) {}
 
-    async create(createDto: CreateFavoriteDto) {
-        const favorite = this.favoriteRepo.create(createDto);
-        const saved = await this.favoriteRepo.save(favorite);
-        return success(saved, 'Thêm yêu thích thành công');
+  async addFavorite(userId: string, venueId: string): Promise<Favorite> {
+    // Check if venue exists
+    const venue = await this.venueRepository.findOne({
+      where: { id: venueId },
+    });
+
+    if (!venue) {
+      throw new NotFoundException('Venue not found');
     }
 
-    async findAll() {
-        const favorites = await this.favoriteRepo.find({
-            relations: ['user', 'venue'],
-        });
-        return success(favorites, 'Lấy danh sách yêu thích thành công');
+    // Check if already favorited
+    const existing = await this.favoriteRepository.findOne({
+      where: { userId, venueId },
+    });
+
+    if (existing) {
+      throw new ConflictException('Venue already in favorites');
     }
 
-    async findByUser(userId: number) {
-        const favorites = await this.favoriteRepo.find({
-            where: { userId },
-            relations: ['venue'],
-        });
-        return success(favorites, 'Lấy danh sách yêu thích theo người dùng thành công');
+    const favorite = this.favoriteRepository.create({ userId, venueId });
+    return this.favoriteRepository.save(favorite);
+  }
+
+  async removeFavorite(userId: string, venueId: string): Promise<void> {
+    const favorite = await this.favoriteRepository.findOne({
+      where: { userId, venueId },
+    });
+
+    if (!favorite) {
+      throw new NotFoundException('Favorite not found');
     }
 
-    async remove(userId: number, venueId: number) {
-        const result = await this.favoriteRepo.delete({ userId, venueId });
-        return success(result, 'Xóa yêu thích thành công');
-    }
+    await this.favoriteRepository.delete(favorite.id);
+  }
+
+  async getUserFavorites(userId: string): Promise<Venue[]> {
+    const favorites = await this.favoriteRepository.find({
+      where: { userId },
+      relations: ['venue'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return favorites.map((f) => f.venue);
+  }
+
+  async isFavorite(userId: string, venueId: string): Promise<boolean> {
+    const favorite = await this.favoriteRepository.findOne({
+      where: { userId, venueId },
+    });
+
+    return !!favorite;
+  }
 }

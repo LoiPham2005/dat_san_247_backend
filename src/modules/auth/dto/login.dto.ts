@@ -1,11 +1,18 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
 
+// modules/auth/dto/login.dto.ts
 export class LoginDto {
-  @IsNotEmpty()
+  @ApiProperty({ example: 'user@example.com' })
   @IsString()
-  email: string; // Có thể là username hoặc email
+  emailOrPhone: string;
 
-  @IsNotEmpty()
+  @ApiProperty({ example: 'Password123!' })
   @IsString()
   password: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  fcmToken?: string;
 }

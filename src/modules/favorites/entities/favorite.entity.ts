@@ -1,35 +1,26 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  Unique,
-} from 'typeorm';
+// =====================================================
+// 9. FAVORITE ENTITY
+// =====================================================
+// modules/favorites/entities/favorite.entity.ts
+import { Entity, Column, ManyToOne, JoinColumn, Unique } from 'typeorm';
+import { BaseEntity } from '../../../database/entities/base.entity';
+import { User } from '../../users/entities/user.entity';
 import { Venue } from '../../venues/entities/venue.entity';
-import { User } from 'src/modules/auth/entities/user.entity';
 
 @Entity('favorites')
-@Unique('unique_favorite', ['userId', 'venueId'])
-export class Favorite {
-  @PrimaryGeneratedColumn({ name: 'favorite_id' })
-  favoriteId: number;
+@Unique(['userId', 'venueId'])
+export class Favorite extends BaseEntity {
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId: string;
 
-  @Column({ name: 'user_id' })
-  userId: number;
+  @Column({ name: 'venue_id', type: 'uuid' })
+  venueId: string;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ name: 'venue_id' })
-  venueId: number;
-
-  @ManyToOne(() => Venue, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Venue)
   @JoinColumn({ name: 'venue_id' })
   venue: Venue;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
 }

@@ -1,72 +1,84 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+// =====================================================
+// 7. PAYMENT ENTITY
+// =====================================================
+// modules/payments/entities/payment.entity.ts
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { BaseEntity } from '../../../database/entities/base.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum PaymentMethod {
-  WALLET = 'wallet',
-  CREDIT_CARD = 'credit_card',
-  DEBIT_CARD = 'debit_card',
+  CASH = 'cash',
   BANK_TRANSFER = 'bank_transfer',
   MOMO = 'momo',
   ZALOPAY = 'zalopay',
   VNPAY = 'vnpay',
+  CREDIT_CARD = 'credit_card',
+}
+
+export enum PaymentType {
+  DEPOSIT = 'deposit',
+  FULL_PAYMENT = 'full_payment',
+  REFUND = 'refund',
 }
 
 export enum PaymentStatus {
   PENDING = 'pending',
-  COMPLETED = 'completed',
+  PROCESSING = 'processing',
+  SUCCESS = 'success',
   FAILED = 'failed',
-  REFUNDED = 'refunded',
   CANCELLED = 'cancelled',
+  PARTIAL = 'partial',
+  REFUNDED = 'refunded',
+  PAID = 'paid',
 }
 
 @Entity('payments')
-export class Payment {
-  @PrimaryGeneratedColumn({ name: 'payment_id' })
-  paymentId: number;
+@Index(['bookingId'])
+@Index(['userId'])
+@Index(['transactionCode'])
+export class Payment extends BaseEntity {
+  @Column({ name: 'transaction_code', unique: true, length: 100 })
+  transactionCode: string;
 
-  @Column({ name: 'booking_id' })
-  bookingId: number;
+  @Column({ name: 'booking_id', type: 'uuid' })
+  bookingId: string;
 
-  @ManyToOne(() => Booking, (booking) => booking.payments)
-  @JoinColumn({ name: 'booking_id' })
-  booking: Booking;
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId: string;
 
-  @Column({ type: 'enum', enum: PaymentMethod, name: 'payment_method' })
-  paymentMethod: PaymentMethod;
-
-  @Column({ length: 50, nullable: true, name: 'payment_gateway' })
-  paymentGateway: string;
-
-  @Column({ length: 255, nullable: true, name: 'transaction_id' })
-  transactionId: string;
-
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 15, scale: 2 })
   amount: number;
 
-  @Column({ length: 3, default: 'VND' })
-  currency: string;
+  @Column({ name: 'payment_method', type: 'enum', enum: PaymentMethod })
+  paymentMethod: PaymentMethod;
+
+  @Column({ name: 'payment_type', type: 'enum', enum: PaymentType })
+  paymentType: PaymentType;
 
   @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
   status: PaymentStatus;
 
-  @Column({ type: 'timestamp', nullable: true, name: 'payment_date' })
-  paymentDate: Date;
+  @Column({ name: 'gateway_transaction_id', length: 255, nullable: true })
+  gatewayTransactionId?: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'refund_amount' })
-  refundAmount: number;
+  @Column({ name: 'gateway_response', type: 'json', nullable: true })
+  gatewayResponse?: Record<string, any>;
 
-  @Column({ type: 'timestamp', nullable: true, name: 'refund_date' })
-  refundDate: Date;
+  @Column({ name: 'paid_at', type: 'timestamp', nullable: true })
+  paidAt?: Date;
 
-  @Column({ type: 'json', nullable: true, name: 'gateway_response' })
-  gatewayResponse: any;
+  @Column({ name: 'refunded_at', type: 'timestamp', nullable: true })
+  refundedAt?: Date;
 
-  @Column({ type: 'text', nullable: true, name: 'failure_reason' })
-  failureReason: string;
+  @Column({ type: 'text', nullable: true })
+  notes?: string;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  @ManyToOne(() => Booking)
+  @JoinColumn({ name: 'booking_id' })
+  booking: Booking;
 
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }

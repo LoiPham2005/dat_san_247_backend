@@ -1,57 +1,114 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import * as express from 'express';
-import { ValidationPipe } from './common/pipes/validation.pipe';
-import { Logger } from '@nestjs/common';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { FileUploadInterceptor } from './common/interceptors/file-upload.interceptor';
-import { join } from 'path'; // <-- Quan trọng
+import helmet from 'helmet';
+import * as compression from 'compression';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // Global Prefix
-  app.setGlobalPrefix('api');
-
-  // Global Pipes
-  app.useGlobalPipes(new ValidationPipe());
-
-  // Đăng ký interceptor cho toàn bộ project
-  app.useGlobalInterceptors(new ResponseInterceptor());
-
-  // Đăng ký filter cho toàn bộ app
-  app.useGlobalFilters(new AllExceptionsFilter());
-
-  // Dùng global interceptor để log mọi request
-  app.useGlobalInterceptors(new LoggingInterceptor());
-
-  // Add global file upload interceptor
-  app.useGlobalInterceptors(new FileUploadInterceptor());
-
-  // Cấu hình upload limit
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-  // Serve thư mục uploads => Cực quan trọng
-  // app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
-
-  // // Tạo thư mục uploads và uploads/banners nếu chưa tồn tại
-  // const fs = require('fs');
-  // if (!fs.existsSync('./uploads')) {
-  //   fs.mkdirSync('./uploads');
-  // }
-  // if (!fs.existsSync('./uploads/banners')) {
-  //   fs.mkdirSync('./uploads/banners');
-  // }
+  // =====================================================
+  // SECURITY MIDDLEWARE
+  // =====================================================
+  app.use(helmet());
+  app.use(compression());
 
   // Enable CORS
-  app.enableCors();
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN?.split(',') || '*',
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type,Authorization',
+  });
 
+  // =====================================================
+  // GLOBAL VALIDATION PIPE
+  // =====================================================
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+
+  // =====================================================
+  // API VERSIONING
+  // =====================================================
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
+
+  // =====================================================
+  // SWAGGER DOCUMENTATION
+  // =====================================================
+  const config = new DocumentBuilder()
+    .setTitle('Đặt Sân 247 API')
+    .setDescription('API Documentation for Dat San 247 Backend')
+    .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'access-token',
+    )
+    .addServer(process.env.API_URL || 'http://localhost:3000', 'Development')
+    .addTag('Auth', 'Authentication endpoints')
+    .addTag('Users', 'User management endpoints')
+    .addTag('Venues', 'Venue management endpoints')
+    .addTag('Courts', 'Court management endpoints')
+    .addTag('Bookings', 'Booking management endpoints')
+    .addTag('Payments', 'Payment endpoints')
+    .addTag('Reviews', 'Review endpoints')
+    .addTag('Notifications', 'Notification endpoints')
+    .addTag('Staff Management', 'Staff management endpoints')
+    .addTag('Admin', 'Admin endpoints')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayOperationId: true,
+      deepLinking: true,
+    },
+    customCssUrl: 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css',
+  });
+
+  // =====================================================
+  // GLOBAL PREFIX & PORT
+  // =====================================================
   const port = process.env.PORT || 3000;
-  await app.listen(port);
-  logger.log(`Application is running on: http://localhost:${port}/api`);
+  const globalPrefix = 'api';
+
+  app.setGlobalPrefix(globalPrefix);
+
+  // =====================================================
+  // START SERVER
+  // =====================================================
+  await app.listen(port, '0.0.0.0', () => {
+    console.log('\n');
+    console.log('╔════════════════════════════════════════════╗');
+    console.log('║  🚀 SERVER STARTED SUCCESSFULLY            ║');
+    console.log('╠════════════════════════════════════════════╣');
+    console.log(`║  🌐 API URL: http://localhost:${port}         ║`);
+    console.log(`║  📚 Docs: http://localhost:${port}/api/docs   ║`);
+    console.log('╚════════════════════════════════════════════╝');
+    console.log('\n');
+  });
 }
-bootstrap();
+
+bootstrap().catch((err) => {
+  console.error('❌ Failed to start application:', err);
+  process.exit(1);
+});

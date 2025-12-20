@@ -1,3 +1,8 @@
+// =====================================================
+// 6. LOGGING INTERCEPTOR
+// =====================================================
+
+// common/interceptors/logging.interceptor.ts
 import {
   Injectable,
   NestInterceptor,
@@ -6,32 +11,25 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  private readonly logger = new Logger('HTTP');
+  private readonly logger = new Logger(LoggingInterceptor.name);
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const req = context.switchToHttp().getRequest();
-    const method = req.method;
-    const url = req.url;
+    const request = context.switchToHttp().getRequest();
+    const { method, url, body } = request;
     const now = Date.now();
 
+    this.logger.log(`[Request] ${method} ${url} - ${JSON.stringify(body)}`);
+
     return next.handle().pipe(
-      tap({
-        next: (data) => {
-          // Log request thành công
-          this.logger.log(`${method} ${url} - ${Date.now() - now}ms`);
-        },
-        error: (err) => {
-          // Log lỗi xảy ra
-          const status = err?.status || 500;
-          const message = err?.message || 'Internal Server Error';
-          this.logger.error(
-            `${method} ${url} - ${Date.now() - now}ms - status: ${status} - message: ${message}`,
-          );
-        },
+      tap(() => {
+        const responseTime = Date.now() - now;
+        this.logger.log(
+          `[Response] ${method} ${url} - ${responseTime}ms`,
+        );
       }),
     );
   }

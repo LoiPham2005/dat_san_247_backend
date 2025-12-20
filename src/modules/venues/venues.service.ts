@@ -1,139 +1,187 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+// modules/venues/venues.service.ts
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
-import { Venue } from './entities/venue.entity';
-import { ImageType, VenueImage } from '../venue-images/entities/venue-image.entity';
+import { Repository, ILike, Between } from 'typeorm';
+import { Venue, VenueStatus } from './entities/venue.entity';
 import { CreateVenueDto } from './dto/create-venue.dto';
-import { UpdateVenueDto } from './dto/update-venue.dto';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
-import { success } from 'src/common/helper/response.helper';
+import { PaginatedResult } from '../../common/dto/pagination.dto';
+import { SearchVenueDto } from './dto/search-venue.dto';
 
 @Injectable()
 export class VenuesService {
-    constructor(
-        @InjectRepository(Venue)
-        private readonly venueRepo: Repository<Venue>,
-    ) { }
+  constructor(
+    @InjectRepository(Venue)
+    private venueRepository: Repository<Venue>,
+  ) {}
 
-    async create(createDto: CreateVenueDto) {
-        try {
-            const venue = this.venueRepo.create(createDto);
-            const savedVenue = await this.venueRepo.save(venue);
-            return success(savedVenue, 'Tạo sân thành công');
-        } catch (error) {
-            throw new BadRequestException('Tạo sân thất bại: ' + error.message);
-        }
+  async create(ownerId: string, createVenueDto: CreateVenueDto): Promise<Venue> {
+    // Generate slug from venue name
+    const slug = this.generateSlug(createVenueDto.venueName);
+
+    const venue = this.venueRepository.create({
+      ...createVenueDto,
+      ownerId,
+      slug,
+      status: VenueStatus.PENDING,
+    });
+
+    return this.venueRepository.save(venue);
+  }
+
+  async search(searchDto: SearchVenueDto): Promise<PaginatedResult<Venue>> {
+    const query = this.venueRepository
+      .createQueryBuilder('venue')
+      .where('venue.status = :status', { status: VenueStatus.ACTIVE });
+
+    // Text search
+    if (searchDto.search) {
+      query.andWhere(
+        '(venue.venue_name ILIKE :search OR venue.description ILIKE :search OR venue.address ILIKE :search)',
+        { search: `%${searchDto.search}%` },
+      );
     }
 
-    // async findAll() {
-    //     const venues = await this.venueRepo.find({
-    //         relations: ['owner', 'category', 'mainImage', 'images'],
-    //         order: { createdAt: 'DESC' }
-    //     });
-    //     return success(venues, 'Lấy danh sách venue thành công');
-    // }
-
-    async findAll(page: number = 1, limit: number = 10) {
-        // đảm bảo luôn là số
-        page = Number(page) || 1;
-        limit = Number(limit) || 10;
-
-        if (page < 1) page = 1;
-        if (limit < 1) limit = 10;
-
-        const [venues, total] = await this.venueRepo.findAndCount({
-            relations: ['owner', 'category', 'mainImage', 'images'],
-            order: { createdAt: 'DESC' },
-            skip: (page - 1) * limit,
-            take: limit,
-        });
-
-        return success(
-            {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-                data: venues,
-            },
-            'Lấy danh sách venue thành công',
-        );
+    // Location filters
+    if (searchDto.city) {
+      query.andWhere('venue.city = :city', { city: searchDto.city });
     }
 
-    async findOne(venueId: number) {
-        const venue = await this.venueRepo.findOne({
-            where: { venueId },
-            relations: ['owner', 'category', 'mainImage', 'images']
-        });
-        if (!venue) throw new NotFoundException('Venue không tồn tại');
-        return success(venue, 'Lấy chi tiết venue thành công');
+    if (searchDto.district) {
+      query.andWhere('venue.district = :district', {
+        district: searchDto.district,
+      });
     }
 
-    async update(venueId: number, updateDto: UpdateVenueDto) {
-        const venue = await this.venueRepo.findOne({ where: { venueId } });
-        if (!venue) throw new NotFoundException('Venue không tồn tại');
-
-        // Cập nhật thông tin venue
-        Object.assign(venue, updateDto);
-        const updated = await this.venueRepo.save(venue);
-        return success(updated, 'Cập nhật venue thành công');
+    // Rating filter
+    if (searchDto.minRating) {
+      query.andWhere('venue.rating_average >= :minRating', {
+        minRating: searchDto.minRating,
+      });
     }
 
-    async remove(venueId: number) {
-        const venue = await this.venueRepo.findOne({ where: { venueId } });
-        if (!venue) throw new NotFoundException('Venue không tồn tại');
-
-        const removed = await this.venueRepo.remove(venue);
-        return success(removed, 'Xóa venue thành công');
+    // Amenities filters
+    if (searchDto.parkingAvailable) {
+      query.andWhere('venue.parking_available = :parkingAvailable', {
+        parkingAvailable: searchDto.parkingAvailable,
+      });
     }
 
-    async setMainImage(venueId: number, imageId: number) {
-        const venue = await this.venueRepo.findOne({ where: { venueId } });
-        if (!venue) throw new NotFoundException('Venue không tồn tại');
-
-        venue.mainImageId = imageId;
-        const updated = await this.venueRepo.save(venue);
-        return success(updated, 'Cập nhật ảnh chính thành công');
+    if (searchDto.wifiAvailable) {
+      query.andWhere('venue.wifi_available = :wifiAvailable', {
+        wifiAvailable: searchDto.wifiAvailable,
+      });
     }
 
-    async search(keyword: string, page: number = 1, limit: number = 10) {
-        if (!keyword || keyword.trim() === '') {
-            throw new BadRequestException('Vui lòng nhập từ khóa tìm kiếm');
-        }
-
-        // Đảm bảo page và limit là số
-        page = Number(page) || 1;
-        limit = Number(limit) || 10;
-
-        if (page < 1) page = 1;
-        if (limit < 1) limit = 10;
-
-        const queryBuilder = this.venueRepo
-            .createQueryBuilder('venue')
-            .leftJoinAndSelect('venue.owner', 'owner')
-            .leftJoinAndSelect('venue.category', 'category')
-            .leftJoinAndSelect('venue.mainImage', 'mainImage')
-            .leftJoinAndSelect('venue.images', 'images')
-            .where('venue.venueName ILIKE :keyword', { keyword: `%${keyword}%` })
-            .orWhere('venue.address ILIKE :keyword', { keyword: `%${keyword}%` })
-            .orWhere('venue.description ILIKE :keyword', { keyword: `%${keyword}%` })
-            .orWhere('venue.email ILIKE :keyword', { keyword: `%${keyword}%` })
-            .orWhere('venue.phone ILIKE :keyword', { keyword: `%${keyword}%` })
-            .orWhere('owner.fullname ILIKE :keyword', { keyword: `%${keyword}%` })
-            .orWhere('category.categoryName ILIKE :keyword', { keyword: `%${keyword}%` })
-            .orderBy('venue.createdAt', 'DESC')
-            .skip((page - 1) * limit)
-            .take(limit);
-
-        const [venues, total] = await queryBuilder.getManyAndCount();
-
-        return success({
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-            data: venues
-        }, 'Tìm kiếm venue thành công');
+    // Featured filter
+    if (searchDto.featured) {
+      query.andWhere('venue.featured = :featured', {
+        featured: searchDto.featured,
+      });
     }
 
+    // Location-based search (nearby venues)
+    if (searchDto.latitude && searchDto.longitude && searchDto.radius) {
+      const radius = searchDto.radius; // in kilometers
+      query.andWhere(
+        `(6371 * acos(cos(radians(:lat)) * cos(radians(venue.latitude)) * cos(radians(venue.longitude) - radians(:lng)) + sin(radians(:lat)) * sin(radians(venue.latitude)))) <= :radius`,
+        {
+          lat: searchDto.latitude,
+          lng: searchDto.longitude,
+          radius,
+        },
+      );
+    }
+
+    // Sorting
+    const sortBy = searchDto.sortBy || 'created_at';
+    const sortOrder = searchDto.sortOrder || 'DESC';
+
+    if (sortBy === 'rating') {
+      query.orderBy('venue.rating_average', sortOrder);
+    } else if (sortBy === 'popular') {
+      query.orderBy('venue.total_bookings', 'DESC');
+    } else {
+      query.orderBy(`venue.${sortBy}`, sortOrder);
+    }
+
+    // Pagination
+    const page = searchDto.page || 1;
+    const limit = searchDto.limit || 10;
+    const skip = (page - 1) * limit;
+
+    query.skip(skip).take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findOne(id: string): Promise<Venue> {
+    const venue = await this.venueRepository.findOne({
+      where: { id },
+      relations: ['courts', 'reviews'],
+    });
+
+    if (!venue) {
+      throw new NotFoundException('Venue not found');
+    }
+
+    // Increment view count
+    venue.viewCount += 1;
+    await this.venueRepository.save(venue);
+
+    return venue;
+  }
+
+  async findBySlug(slug: string): Promise<Venue> {
+    const venue = await this.venueRepository.findOne({
+      where: { slug },
+      relations: ['courts', 'reviews'],
+    });
+
+    if (!venue) {
+      throw new NotFoundException('Venue not found');
+    }
+
+    venue.viewCount += 1;
+    await this.venueRepository.save(venue);
+
+    return venue;
+  }
+
+  async getOwnerVenues(ownerId: string): Promise<Venue[]> {
+    return this.venueRepository.find({
+      where: { ownerId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async updateRating(venueId: string, newRating: number) {
+    const venue = await this.findOne(venueId);
+
+    const totalRating =
+      venue.ratingAverage * venue.totalReviews + newRating;
+    venue.totalReviews += 1;
+    venue.ratingAverage = totalRating / venue.totalReviews;
+
+    await this.venueRepository.save(venue);
+  }
+
+  private generateSlug(venueName: string): string {
+    return venueName
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
 }

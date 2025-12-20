@@ -1,0 +1,79 @@
+# =====================================================
+# DOCKER-COMPOSE.YML
+# =====================================================
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: sports_booking_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sports_booking
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sports_booking_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: sports_booking_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sports_booking_network
+
+  # NestJS Application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sports_booking_api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./src:/app/src
+      - /app/node_modules
+    networks:
+      - sports_booking_network
+    command: npm run start:prod
+
+  # Adminer (Database Management)
+  adminer:
+    image: adminer:latest
+    container_name: sports_booking_adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - sports_booking_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  sports_booking_network:
+    driver: bridge

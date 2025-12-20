@@ -1,106 +1,149 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { Venue } from '../../venues/entities/venue.entity';
-import { User } from 'src/modules/auth/entities/user.entity';
+// =====================================================
+// 2. BOOKINGS MODULE - Complete Implementation
+// =====================================================
+
+// modules/bookings/entities/booking.entity.ts
+import { Entity, Column, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm';
+import { BaseEntity } from '../../../database/entities/base.entity';
+import { VoucherUsage } from 'src/modules/vouchers/entities/voucher-usage.entity';
 import { Payment } from 'src/modules/payments/entities/payment.entity';
-import { Review } from 'src/modules/reviews/entities/review.entity';
+import { CommissionRecord } from 'src/modules/commissions/entities/commission-record.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Court } from 'src/modules/courts/entities/court.entity';
 
 export enum BookingStatus {
     PENDING = 'pending',
     CONFIRMED = 'confirmed',
-    CANCELLED = 'cancelled',
+    PLAYING = 'playing',
     COMPLETED = 'completed',
+    CANCELLED = 'cancelled',
     NO_SHOW = 'no_show',
 }
 
 export enum PaymentStatus {
-    PENDING = 'pending',
+    UNPAID = 'unpaid',
+    PARTIAL = 'partial',
     PAID = 'paid',
     REFUNDED = 'refunded',
+    SUCCESS = 'success',
     FAILED = 'failed',
 }
 
 export enum PaymentMethod {
-    WALLET = 'wallet',
-    CREDIT_CARD = 'credit_card',
-    BANK_TRANSFER = 'bank_transfer',
-    E_WALLET = 'e_wallet',
     CASH = 'cash',
+    BANK_TRANSFER = 'bank_transfer',
+    MOMO = 'momo',
+    ZALOPAY = 'zalopay',
+    VNPAY = 'vnpay',
+    CREDIT_CARD = 'credit_card',
 }
 
 @Entity('bookings')
-export class Booking {
-    @PrimaryGeneratedColumn({ name: 'booking_id' })
-    bookingId: number;
+@Index(['userId'])
+@Index(['courtId'])
+@Index(['bookingDate', 'startTime'])
+@Index(['status'])
+@Index(['bookingCode'])
+export class Booking extends BaseEntity {
+    @Column({ name: 'booking_code', unique: true, length: 50 })
+    bookingCode: string;
 
-    @Column({ name: 'customer_id' })
-    customerId: number;
+    @Column({ name: 'user_id', type: 'uuid' })
+    userId: string;
 
-    @ManyToOne(() => User, (user) => user.bookings)
-    @JoinColumn({ name: 'customer_id' })
-    customer: User;
+    @Column({ name: 'court_id', type: 'uuid' })
+    courtId: string;
 
-    @Column({ name: 'venue_id' })
-    venueId: number;
+    @Column({ name: 'booking_date', type: 'date' })
+    bookingDate: Date;
 
-    @ManyToOne(() => Venue, (venue) => venue.bookings)
-    @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
-
-    @Column({ type: 'date', name: 'booking_date' })
-    bookingDate: string;
-
-    @Column({ type: 'time', name: 'start_time' })
+    @Column({ name: 'start_time', type: 'time' })
     startTime: string;
 
-    @Column({ type: 'time', name: 'end_time' })
+    @Column({ name: 'end_time', type: 'time' })
     endTime: string;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_amount' })
-    totalAmount: number;
+    @Column({ name: 'duration_minutes' })
+    durationMinutes: number;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, name: 'commission_fee' })
-    commissionFee: number;
+    @Column({ name: 'price_per_hour', type: 'decimal', precision: 15, scale: 2 })
+    pricePerHour: number;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, name: 'discount_amount', default: 0 })
+    @Column({ name: 'total_price', type: 'decimal', precision: 15, scale: 2 })
+    totalPrice: number;
+
+    @Column({ name: 'deposit_amount', type: 'decimal', precision: 15, scale: 2, default: 0 })
+    depositAmount: number;
+
+    @Column({ name: 'discount_amount', type: 'decimal', precision: 15, scale: 2, default: 0 })
     discountAmount: number;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, name: 'final_amount' })
-    finalAmount: number;
+    @Column({ name: 'final_price', type: 'decimal', precision: 15, scale: 2 })
+    finalPrice: number;
 
     @Column({ type: 'enum', enum: BookingStatus, default: BookingStatus.PENDING })
     status: BookingStatus;
 
-    @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING, name: 'payment_status' })
+    @Column({ name: 'payment_status', type: 'enum', enum: PaymentStatus, default: PaymentStatus.UNPAID })
     paymentStatus: PaymentStatus;
 
-    @Column({ type: 'enum', enum: PaymentMethod, name: 'payment_method' })
-    paymentMethod: PaymentMethod;
+    @Column({ name: 'payment_method', type: 'enum', enum: PaymentMethod, nullable: true })
+    paymentMethod?: PaymentMethod;
 
-    @Column({ name: 'booking_code', length: 20, unique: true })
-    bookingCode: string;
+    @Column({ name: 'customer_name', length: 100 })
+    customerName: string;
+
+    @Column({ name: 'customer_phone', length: 20 })
+    customerPhone: string;
+
+    @Column({ name: 'customer_email', length: 255, nullable: true })
+    customerEmail?: string;
 
     @Column({ type: 'text', nullable: true })
-    notes: string;
+    notes?: string;
 
-    @Column({ type: 'text', nullable: true, name: 'cancellation_reason' })
-    cancellationReason: string;
+    @Column({ name: 'cancellation_reason', type: 'text', nullable: true })
+    cancellationReason?: string;
 
-    @Column({ type: 'timestamp', nullable: true, name: 'cancelled_at' })
-    cancelledAt: Date;
+    @Column({ name: 'cancelled_at', type: 'timestamp', nullable: true })
+    cancelledAt?: Date;
 
-    @Column({ type: 'json', nullable: true, name: 'cancellation_policy' })
-    cancellationPolicy: any;
+    @Column({ name: 'cancelled_by', type: 'uuid', nullable: true })
+    cancelledBy?: string;
 
-    @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date;
+    @Column({ name: 'checked_in_at', type: 'timestamp', nullable: true })
+    checkedInAt?: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
-    updatedAt: Date;
+    @Column({ name: 'checked_out_at', type: 'timestamp', nullable: true })
+    checkedOutAt?: Date;
+
+    @Column({ nullable: true })
+    rating?: number;
+
+    @Column({ type: 'text', nullable: true })
+    review?: string;
+
+    @Column({ name: 'reviewed_at', type: 'timestamp', nullable: true })
+    reviewedAt?: Date;
 
     @OneToMany(() => Payment, (payment) => payment.booking)
     payments: Payment[];
 
-    @OneToMany(() => Review, (review) => review.booking)
-    reviews: Review[];
+    @OneToMany(() => VoucherUsage, (usage) => usage.booking)
+    voucherUsages: VoucherUsage[];
 
+    @OneToMany(() => CommissionRecord, (commission) => commission.booking)
+    commissions: CommissionRecord[];
+
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'user_id' })
+    user: User;
+
+    @ManyToOne(() => Court, (court) => court.bookings)
+    @JoinColumn({ name: 'court_id' })
+    court: Court;
+
+    @ManyToOne(() => User, { nullable: true })
+    @JoinColumn({ name: 'cancelled_by' })
+    canceller?: User;
 }
