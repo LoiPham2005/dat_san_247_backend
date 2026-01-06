@@ -1,23 +1,25 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BullModule } from '@nestjs/bull';
-import { Booking } from './entities/booking.entity';
-import { Court } from '../courts/entities/court.entity';
-import { PricingRule } from '../courts/entities/pricing-rule.entity';
-import { Venue } from '../venues/entities/venue.entity';
 import { BookingsService } from './bookings.service';
 import { BookingsController } from './bookings.controller';
-import { BookingProcessor } from './processors/booking.processor';
+import { AdminBookingsController } from './admin-bookings.controller';
+import { OwnerBookingsController } from './owner-bookings.controller';
+import { VenueStaffBookingsController } from './venue-staff-bookings.controller';
+import { Booking } from './entities/booking.entity';
+import { VenuesModule } from '../venues/venues.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Booking, Court, PricingRule, Venue]),
-    BullModule.registerQueue({
-      name: 'bookings',
-    }),
+    TypeOrmModule.forFeature([Booking]),
+    forwardRef(() => VenuesModule),
   ],
-  controllers: [BookingsController],
-  providers: [BookingsService, BookingProcessor],
+  controllers: [
+    BookingsController,
+    AdminBookingsController,
+    OwnerBookingsController,
+    VenueStaffBookingsController,
+  ],
+  providers: [BookingsService],
   exports: [BookingsService],
 })
-export class BookingsModule {}
+export class BookingsModule { }

@@ -1,75 +1,70 @@
-// =====================================================
-// 5. COURT ENTITY
-// =====================================================
-// modules/courts/entities/court.entity.ts
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import {
+    Entity,
+    Column,
+    ManyToOne,
+    OneToMany,
+    JoinColumn,
+    Index,
+} from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Venue } from '../../venues/entities/venue.entity';
-import { SportType } from '../../sport-types/entities/sport-type.entity';
+import { SportType } from '../../../common/constants/sport-type.constant';
+import { CourtImage } from './court-image.entity';
+import { TimeSlot } from '../../time-slots/entities/time-slot.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
-import { PricingRule } from './pricing-rule.entity';
-
-export enum CourtStatus {
-  ACTIVE = 'active',
-  MAINTENANCE = 'maintenance',
-  INACTIVE = 'inactive',
-}
+import { PricingRule } from '../../time-slots/entities/pricing-rule.entity';
 
 @Entity('courts')
-@Index(['venueId'])
-@Index(['sportTypeId'])
-@Index(['status'])
 export class Court extends BaseEntity {
-  @Column({ name: 'venue_id', type: 'uuid' })
-  venueId: string;
+    @Column({ name: 'venue_id' })
+    @Index()
+    venueId: string;
 
-  @Column({ name: 'sport_type_id', type: 'uuid' })
-  sportTypeId: string;
+    @Column()
+    name: string;
 
-  @Column({ name: 'court_name', length: 100 })
-  courtName: string;
+    @Column({
+        type: 'enum',
+        enum: SportType,
+    })
+    @Index()
+    sportType: SportType;
 
-  @Column({ name: 'court_size', length: 50, nullable: true })
-  courtSize?: string;
+    @Column({ type: 'text', nullable: true })
+    description: string;
 
-  @Column({ name: 'surface_type', length: 100, nullable: true })
-  surfaceType?: string;
+    @Column({ name: 'price_per_hour', type: 'decimal', precision: 10, scale: 2 })
+    pricePerHour: number;
 
-  @Column({ nullable: true })
-  capacity?: number;
+    @Column({ nullable: true })
+    size: string;
 
-  @Column({ name: 'is_indoor', default: false })
-  isIndoor: boolean;
+    @Column({ name: 'surface_type', nullable: true })
+    surfaceType: string;
 
-  @Column({ name: 'has_lighting', default: true })
-  hasLighting: boolean;
+    @Column({ name: 'is_indoor', default: false })
+    isIndoor: boolean;
 
-  @Column({ name: 'has_air_conditioning', default: false })
-  hasAirConditioning: boolean;
+    @Column({ name: 'is_active', default: true })
+    @Index()
+    isActive: boolean;
 
-  @Column({ type: 'enum', enum: CourtStatus, default: CourtStatus.ACTIVE })
-  status: CourtStatus;
+    @Column({ name: 'thumbnail_url', type: 'text', nullable: true })
+    thumbnailUrl: string;
 
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+    @ManyToOne(() => Venue, (venue) => venue.courts, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'venue_id' })
+    venue: Venue;
 
-  @Column({ name: 'image_url', length: 500, nullable: true })
-  imageUrl?: string;
+    @OneToMany(() => CourtImage, (image) => image.court)
+    images: CourtImage[];
 
-  @Column({ name: 'display_order', default: 0 })
-  displayOrder: number;
+    @OneToMany(() => TimeSlot, (slot) => slot.court)
+    timeSlots: TimeSlot[];
 
-  @ManyToOne(() => Venue, (venue) => venue.courts, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'venue_id' })
-  venue: Venue;
+    @OneToMany(() => Booking, (booking) => booking.court)
+    bookings: Booking[];
 
-  @ManyToOne(() => SportType, (sportType) => sportType.courts)
-  @JoinColumn({ name: 'sport_type_id' })
-  sportType: SportType;
-
-  @OneToMany(() => Booking, (booking) => booking.court)
-  bookings: Booking[];
-
-  @OneToMany(() => PricingRule, (pricing) => pricing.court)
-  pricingRules: PricingRule[];
+    @OneToMany(() => PricingRule, (rule) => rule.court)
+    pricingRules: PricingRule[];
 }

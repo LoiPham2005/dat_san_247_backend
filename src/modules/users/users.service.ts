@@ -1,65 +1,85 @@
-// modules/users/users.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { User } from './entities/user.entity';
-import * as bcrypt from 'bcrypt';
-import { UpdatePasswordDto, UpdateUserDto } from './dto/update-user.dto';
+import { UserFilterDto } from './dto/user-filter.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+    constructor(
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
+    ) { }
 
-  async findById(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException('User not found');
+    async findAll(filter: UserFilterDto) {
+        const { page = 1, limit = 10, role, search, isActive } = filter;
+        const skip = (page - 1) * limit;
+
+        const query = this.userRepository.createQueryBuilder('user');
+
+        if (role) {
+            query.andWhere('user.role = :role', { role });
+        }
+
+        if (search) {
+            query.andWhere(
+                '(user.fullName ILIKE :search OR user.email ILIKE :search OR user.phone ILIKE :search)',
+                { search: `%${search}%` },
+            );
+        }
+
+        if (isActive !== undefined) {
+            query.andWhere('user.isActive = :isActive', { isActive: isActive === 'true' });
+        }
+
+        const [items, total] = await query
+            .orderBy('user.createdAt', 'DESC')
+            .skip(skip)
+            .take(limit)
+            .getManyAndCount();
+
+        const totalPages = Math.ceil(total / limit);
+
+        return {
+            items,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPreviousPage: page > 1,
+            },
+        };
     }
-    return user;
-  }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { email } });
-  }
-
-  async findByPhone(phone: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { phone } });
-  }
-
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findById(id);
-    Object.assign(user, updateUserDto);
-    return this.userRepository.save(user);
-  }
-
-  async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto): Promise<void> {
-    const user = await this.findById(id);
-
-    const isValidPassword = await bcrypt.compare(
-      updatePasswordDto.currentPassword,
-      user.passwordHash,
-    );
-
-    if (!isValidPassword) {
-      throw new BadRequestException('Current password is incorrect');
+    async findOne(id: string) {
+        const user = await this.userRepository.findOne({
+            where: { id },
+            relations: ['bookings', 'favoriteVenues']
+        });
+        if (!user) throw new NotFoundException('User not found');
+        return user;
     }
 
-    user.passwordHash = await bcrypt.hash(updatePasswordDto.newPassword, 10);
-    await this.userRepository.save(user);
-  }
+    async create(data: any) {
+        const user = this.userRepository.create(data);
+        return this.userRepository.save(user);
+    }
 
-  async updateFcmToken(userId: string, fcmToken: string): Promise<void> {
-    await this.userRepository.update(userId, { fcmToken });
-  }
+    async update(id: string, data: any) {
+        await this.userRepository.update(id, data);
+        return this.findOne(id);
+    }
 
-  async verifyEmail(userId: string): Promise<void> {
-    await this.userRepository.update(userId, { emailVerified: true });
-  }
+    async toggleStatus(id: string) {
+        const user = await this.findOne(id);
+        user.isActive = !user.isActive;
+        return this.userRepository.save(user);
+    }
 
-  async verifyPhone(userId: string): Promise<void> {
-    await this.userRepository.update(userId, { phoneVerified: true });
-  }
+    async softDelete(id: string) {
+        const user = await this.findOne(id);
+        return this.userRepository.softRemove(user);
+    }
 }

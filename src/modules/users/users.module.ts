@@ -1,19 +1,14 @@
-// =====================================================
-// 1. USERS MODULE - Complete
-// =====================================================
-
-// modules/users/users.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Gender, User } from './entities/user.entity';
-import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { UsersController } from './users.controller';
+import { AdminUsersController } from './admin-users.controller';
+import { User } from './entities/user.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User])],
-  controllers: [UsersController],
+  controllers: [UsersController, AdminUsersController],
   providers: [UsersService],
   exports: [UsersService],
 })
-export class UsersModule {}
-
+export class UsersModule { }

@@ -1,20 +1,22 @@
-import { IsOptional, IsEnum, IsDateString } from 'class-validator';
-import { PaymentStatus, PaymentMethod } from '../entities/payment.entity';
+import { IsOptional, IsEnum, IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginationDto } from '../../../common/dto/pagination.dto';
+import { PaymentStatus } from '../../../common/constants/payment-status.constant';
+import { PaymentMethod } from '../../../common/constants/payment-method.constant';
 
-export class PaymentFilterDto {
-  @IsOptional()
-  @IsEnum(PaymentStatus)
-  status?: PaymentStatus;
+export class PaymentFilterDto extends PaginationDto {
+    @ApiPropertyOptional({ enum: PaymentStatus })
+    @IsOptional()
+    @IsEnum(PaymentStatus)
+    status?: PaymentStatus;
 
-  @IsOptional()
-  @IsEnum(PaymentMethod)
-  paymentMethod?: PaymentMethod;
+    @ApiPropertyOptional({ enum: PaymentMethod })
+    @IsOptional()
+    @IsEnum(PaymentMethod)
+    method?: PaymentMethod;
 
-  @IsOptional()
-  @IsDateString()
-  fromDate?: string;
-
-  @IsOptional()
-  @IsDateString()
-  toDate?: string;
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    search?: string;
 }

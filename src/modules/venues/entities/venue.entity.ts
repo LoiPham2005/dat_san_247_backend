@@ -1,128 +1,108 @@
-// =====================================================
-// 23. UPDATE VENUE ENTITY WITH COMPLETE RELATIONS
-// =====================================================
-// modules/venues/entities/venue.entity.ts (UPDATED)
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import {
+    Entity,
+    Column,
+    ManyToOne,
+    OneToMany,
+    JoinColumn,
+    Index,
+} from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
-import { VenueOwner } from '../../venue-owners/entities/venue-owner.entity';
-import { Court } from '../../courts/entities/court.entity';
-import { Review } from '../../reviews/entities/review.entity';
+import { User } from '../../users/entities/user.entity';
+import { VenueStatus } from '../../../common/constants/venue-status.constant';
 import { VenueImage } from './venue-image.entity';
-import { Favorite } from '../../favorites/entities/favorite.entity';
-
-export enum VenueStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  SUSPENDED = 'suspended',
-  PENDING = 'pending',
-}
+import { VenueAmenity } from './venue-amenity.entity';
+import { Court } from '../../courts/entities/court.entity';
+import { Booking } from '../../bookings/entities/booking.entity';
+import { Review } from '../../reviews/entities/review.entity';
+import { FavoriteVenue } from './favorite-venue.entity';
 
 @Entity('venues')
-@Index(['ownerId'])
-@Index(['slug'])
-@Index(['city', 'district'])
-@Index(['status', 'featured'])
 export class Venue extends BaseEntity {
-  @Column({ name: 'owner_id', type: 'uuid' })
-  ownerId: string;
+    @ManyToOne(() => User, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'owner_id' })
+    owner: User;
 
-  @Column({ name: 'venue_name', length: 200 })
-  venueName: string;
+    @Column({ name: 'owner_id' })
+    @Index()
+    ownerId: string;
 
-  @Column({ unique: true, length: 250 })
-  slug: string;
+    @Column()
+    name: string;
 
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+    @Column({ unique: true })
+    @Index()
+    slug: string;
 
-  @Column({ length: 500 })
-  address: string;
+    @Column({ type: 'text', nullable: true })
+    description: string;
 
-  @Column({ length: 100 })
-  ward: string;
+    @Column({ type: 'text' })
+    address: string;
 
-  @Column({ length: 100 })
-  district: string;
+    @Column()
+    @Index()
+    city: string;
 
-  @Column({ length: 100 })
-  city: string;
+    @Column()
+    @Index()
+    district: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
-  latitude?: number;
+    @Column({ nullable: true })
+    ward: string;
 
-  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
-  longitude?: number;
+    @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
+    latitude: number;
 
-  @Column({ length: 20 })
-  phone: string;
+    @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
+    longitude: number;
 
-  @Column({ length: 255, nullable: true })
-  email?: string;
+    @Column({ nullable: true })
+    phone: string;
 
-  @Column({ length: 500, nullable: true })
-  website?: string;
+    @Column({ nullable: true })
+    email: string;
 
-  @Column({ name: 'opening_time', type: 'time' })
-  openingTime: string;
+    @Column({ type: 'enum', enum: VenueStatus, default: VenueStatus.PENDING })
+    @Index()
+    status: VenueStatus;
 
-  @Column({ name: 'closing_time', type: 'time' })
-  closingTime: string;
+    @Column({ name: 'thumbnail_url', type: 'text', nullable: true })
+    thumbnailUrl: string;
 
-  @Column({ name: 'is_24h', default: false })
-  is24h: boolean;
+    @Column({ name: 'opening_time', type: 'time', default: '06:00:00' })
+    openingTime: string;
 
-  @Column({ name: 'parking_available', default: false })
-  parkingAvailable: boolean;
+    @Column({ name: 'closing_time', type: 'time', default: '23:00:00' })
+    closingTime: string;
 
-  @Column({ name: 'wifi_available', default: false })
-  wifiAvailable: boolean;
+    @Column({ type: 'decimal', precision: 3, scale: 2, default: 0.0 })
+    rating: number;
 
-  @Column({ name: 'shower_available', default: false })
-  showerAvailable: boolean;
+    @Column({ name: 'total_reviews', default: 0 })
+    totalReviews: number;
 
-  @Column({ name: 'locker_available', default: false })
-  lockerAvailable: boolean;
+    @Column({ name: 'is_featured', default: false })
+    @Index()
+    isFeatured: boolean;
 
-  @Column({ name: 'cafe_available', default: false })
-  cafeAvailable: boolean;
+    @Column({ name: 'is_active', default: true })
+    isActive: boolean;
 
-  @Column({ name: 'equipment_rental', default: false })
-  equipmentRental: boolean;
+    @OneToMany(() => VenueImage, (image) => image.venue)
+    images: VenueImage[];
 
-  @Column({ type: 'enum', enum: VenueStatus, default: VenueStatus.PENDING })
-  status: VenueStatus;
+    @OneToMany(() => VenueAmenity, (amenity) => amenity.venue)
+    amenities: VenueAmenity[];
 
-  @Column({ name: 'rating_average', type: 'decimal', precision: 3, scale: 2, default: 0 })
-  ratingAverage: number;
+    @OneToMany(() => Court, (court) => court.venue)
+    courts: Court[];
 
-  @Column({ name: 'total_reviews', default: 0 })
-  totalReviews: number;
+    @OneToMany(() => Booking, (booking) => booking.venue)
+    bookings: Booking[];
 
-  @Column({ name: 'total_bookings', default: 0 })
-  totalBookings: number;
+    @OneToMany(() => Review, (review) => review.venue)
+    reviews: Review[];
 
-  @Column({ name: 'view_count', default: 0 })
-  viewCount: number;
-
-  @Column({ default: false })
-  featured: boolean;
-
-  @Column({ default: false })
-  verified: boolean;
-
-  @ManyToOne(() => VenueOwner, (owner) => owner.venues)
-  @JoinColumn({ name: 'owner_id' })
-  owner: VenueOwner;
-
-  @OneToMany(() => Court, (court) => court.venue)
-  courts: Court[];
-
-  @OneToMany(() => Review, (review) => review.venue)
-  reviews: Review[];
-
-  @OneToMany(() => VenueImage, (image) => image.venue)
-  images: VenueImage[];
-
-  @OneToMany(() => Favorite, (favorite) => favorite.venue)
-  favorites: Favorite[];
+    @OneToMany(() => FavoriteVenue, (fv) => fv.venue)
+    favoritedBy: FavoriteVenue[];
 }

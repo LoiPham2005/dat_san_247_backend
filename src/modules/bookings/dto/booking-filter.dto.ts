@@ -1,24 +1,26 @@
 import { IsOptional, IsEnum, IsString, IsDateString } from 'class-validator';
-import { BookingStatus } from '../entities/booking.entity';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginationDto } from '../../../common/dto/pagination.dto';
+import { BookingStatus } from '../../../common/constants/booking-status.constant';
 
-export class BookingFilterDto {
-  @IsOptional()
-  @IsEnum(BookingStatus)
-  status?: BookingStatus;
+export class BookingFilterDto extends PaginationDto {
+    @ApiPropertyOptional({ enum: BookingStatus })
+    @IsOptional()
+    @IsEnum(BookingStatus)
+    status?: BookingStatus;
 
-  @IsOptional()
-  @IsDateString()
-  fromDate?: string;
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsDateString()
+    date?: string;
 
-  @IsOptional()
-  @IsDateString()
-  toDate?: string;
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    venueId?: string;
 
-  @IsOptional()
-  @IsString()
-  courtId?: string;
-
-  @IsOptional()
-  @IsString()
-  venueId?: string;
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    search?: string;
 }

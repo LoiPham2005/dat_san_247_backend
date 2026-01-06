@@ -1,21 +1,41 @@
-// =====================================================
-// 1. VENUES MODULE - Complete Implementation
-// =====================================================
-
-// modules/venues/venues.module.ts
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Venue } from './entities/venue.entity';
 import { VenuesService } from './venues.service';
 import { VenuesController } from './venues.controller';
+import { AdminVenuesController } from './admin-venues.controller';
+import { OwnerVenuesController } from './owner-venues.controller';
+import { OwnerStaffController } from './owner-staff.controller';
+import { StaffModerationController } from './staff-moderation.controller';
+import { VenueStaffVenuesController } from './venue-staff-venues.controller';
+import { Venue } from './entities/venue.entity';
 import { VenueImage } from './entities/venue-image.entity';
-import { Court } from '../courts/entities/court.entity';
-import { Review } from '../reviews/entities/review.entity';
+import { VenueAmenity } from './entities/venue-amenity.entity';
+import { FavoriteVenue } from './entities/favorite-venue.entity';
+import { VenueStaff } from './entities/venue-staff.entity';
+import { UsersModule } from '../users/users.module';
+import { ReviewsModule } from '../reviews/reviews.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Venue, VenueImage, Court, Review])],
-  controllers: [VenuesController],
+  imports: [
+    TypeOrmModule.forFeature([
+      Venue,
+      VenueImage,
+      VenueAmenity,
+      FavoriteVenue,
+      VenueStaff
+    ]),
+    forwardRef(() => UsersModule),
+    forwardRef(() => ReviewsModule),
+  ],
+  controllers: [
+    VenuesController,
+    AdminVenuesController,
+    OwnerVenuesController,
+    OwnerStaffController,
+    StaffModerationController,
+    VenueStaffVenuesController,
+  ],
   providers: [VenuesService],
   exports: [VenuesService],
 })
-export class VenuesModule {}
+export class VenuesModule { }

@@ -1,17 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CacheModule } from '@nestjs/cache-manager';
-import { Setting } from './entities/setting.entity';
 import { SettingsService } from './settings.service';
 import { SettingsController } from './settings.controller';
+import { StaffTechnicalController } from './staff-technical.controller';
+import { Setting } from './entities/setting.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Setting]),
-    CacheModule.register(),
-  ],
-  controllers: [SettingsController],
-  providers: [SettingsService],
-  exports: [SettingsService],
+    imports: [TypeOrmModule.forFeature([Setting])],
+    controllers: [SettingsController, StaffTechnicalController],
+    providers: [SettingsService],
+    exports: [SettingsService],
 })
-export class SettingsModule {}
+export class SettingsModule { }

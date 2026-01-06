@@ -1,62 +1,81 @@
-// =====================================================
-// 4. GLOBAL EXCEPTION FILTER
-// =====================================================
-
-// common/filters/http-exception.filter.ts
 import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-  Logger,
+    ExceptionFilter,
+    Catch,
+    ArgumentsHost,
+    HttpException,
+    Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { ApiErrorResponse, ValidationError } from '../interfaces/api-response.interface';
 
-@Catch()
-export class AllExceptionsFilter implements ExceptionFilter {
-  private readonly logger = new Logger(AllExceptionsFilter.name);
+@Catch(HttpException)
+export class HttpExceptionFilter implements ExceptionFilter {
+    private readonly logger = new Logger(HttpExceptionFilter.name);
 
-  catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    catch(exception: HttpException, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse<Response>();
+        const request = ctx.getRequest<Request>();
+        const status = exception.getStatus();
+        const exceptionResponse = exception.getResponse();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
-    let errors = null;
+        // Log error
+        this.logger.error(
+            `${request.method} ${request.url} - Status: ${status} - ${exception.message}`,
+            exception.stack,
+        );
 
-    if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      const exceptionResponse = exception.getResponse();
+        // Parse validation errors nếu có
+        const validationErrors = this.parseValidationErrors(exceptionResponse);
 
-      if (typeof exceptionResponse === 'object') {
-        message = (exceptionResponse as any).message || message;
-        errors = (exceptionResponse as any).errors || null;
-      } else {
-        message = exceptionResponse as string;
-      }
-    } else if (exception instanceof Error) {
-      message = exception.message;
+        const errorResponse: ApiErrorResponse = {
+            success: false,
+            statusCode: status,
+            message: this.getErrorMessage(exceptionResponse),
+            error: exception.name || 'HttpException',
+            errors: validationErrors,
+            timestamp: new Date().toISOString(),
+            path: request.url,
+            ...(process.env.NODE_ENV === 'development' && { stack: exception.stack }),
+        };
+
+        response.status(status).json(errorResponse);
     }
 
-    // Log error
-    this.logger.error(
-      `${request.method} ${request.url}`,
-      exception instanceof Error ? exception.stack : exception,
-    );
+    private getErrorMessage(exceptionResponse: any): string {
+        if (typeof exceptionResponse === 'string') {
+            return exceptionResponse;
+        }
 
-    // Response format
-    const errorResponse = {
-      success: false,
-      statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      method: request.method,
-      message,
-      ...(errors ? { errors } : {}),
-    };
+        if (exceptionResponse.message) {
+            if (Array.isArray(exceptionResponse.message)) {
+                return exceptionResponse.message[0];
+            }
+            return exceptionResponse.message;
+        }
 
-    response.status(status).json(errorResponse);
-  }
+        return 'An error occurred';
+    }
+
+    private parseValidationErrors(exceptionResponse: any): ValidationError[] | undefined {
+        if (
+            typeof exceptionResponse === 'object' &&
+            Array.isArray(exceptionResponse.message)
+        ) {
+            return exceptionResponse.message.map((msg: any) => {
+                if (typeof msg === 'object' && msg.property) {
+                    return {
+                        field: msg.property,
+                        message: Object.values(msg.constraints || {})[0] as string,
+                        value: msg.value,
+                    };
+                }
+                return {
+                    field: 'unknown',
+                    message: msg,
+                };
+            });
+        }
+        return undefined;
+    }
 }

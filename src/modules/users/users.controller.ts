@@ -1,54 +1,27 @@
-// modules/users/users.controller.ts
-import {
-  Controller,
-  Get,
-  Put,
-  Body,
-  Param,
-  UseGuards,
-  Patch,
-} from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { UpdatePasswordDto, UpdateUserDto } from './dto/update-user.dto';
+import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
+import { User } from './entities/user.entity';
 
-@ApiTags('Users')
-@Controller('users')
-@UseGuards(JwtAuthGuard)
+@ApiTags('Client - Profile')
 @ApiBearerAuth()
+@Controller('profile')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
-  @Get('me')
-  @ApiOperation({ summary: 'Get current user profile' })
+  @Get()
+  @ApiOperation({ summary: 'Lấy thông tin cá nhân của tôi' })
+  @ApiSuccessResponse(User)
   async getProfile(@CurrentUser('id') userId: string) {
-    return this.usersService.findById(userId);
+    return this.usersService.findOne(userId);
   }
 
-  @Put('me')
-  @ApiOperation({ summary: 'Update current user profile' })
-  async updateProfile(
-    @CurrentUser('id') userId: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ) {
-    return this.usersService.update(userId, updateUserDto);
-  }
-
-  @Patch('me/password')
-  @ApiOperation({ summary: 'Change password' })
-  async updatePassword(
-    @CurrentUser('id') userId: string,
-    @Body() updatePasswordDto: UpdatePasswordDto,
-  ) {
-    await this.usersService.updatePassword(userId, updatePasswordDto);
-    return { message: 'Password updated successfully' };
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get user by ID' })
-  async findOne(@Param('id') id: string) {
-    return this.usersService.findById(id);
+  @Put()
+  @ApiOperation({ summary: 'Cập nhật thông tin cá nhân' })
+  @ApiSuccessResponse(User)
+  async updateProfile(@CurrentUser('id') userId: string, @Body() data: any) {
+    return this.usersService.update(userId, data);
   }
 }
