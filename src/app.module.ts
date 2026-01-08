@@ -10,6 +10,10 @@ import databaseConfig from './config/database.config';
 import authConfig from './config/auth.config';
 import firebaseConfig from './config/firebase.config';
 import sentryConfig from './config/sentry.config';
+import redisConfig from './config/redis.config';
+import mailConfig from './config/mail.config';
+import smsConfig from './config/sms.config';
+import storageConfig from './config/storage.config';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -36,6 +40,7 @@ import { MailModule } from './shared/mail/mail.module';
 import { SmsModule } from './shared/sms/sms.module';
 import { CacheModule } from './shared/cache/cache.module';
 import { QueueModule } from './shared/queue/queue.module';
+import { FcmModule } from './shared/fcm/fcm.module';
 import { DatabaseSeeder } from './database/seeders/database.seeder';
 import { Permission } from './modules/permissions/entities/permission.entity';
 import { Role } from './modules/roles/entities/role.entity';
@@ -46,7 +51,17 @@ import { User } from './modules/users/entities/user.entity';
         // Configuration
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [appConfig, databaseConfig, authConfig, firebaseConfig, sentryConfig],
+            load: [
+                appConfig,
+                databaseConfig,
+                authConfig,
+                firebaseConfig,
+                sentryConfig,
+                redisConfig,
+                mailConfig,
+                smsConfig,
+                storageConfig
+            ],
             cache: true,
         }),
 
@@ -103,6 +118,7 @@ import { User } from './modules/users/entities/user.entity';
         SmsModule,
         CacheModule,
         QueueModule,
+        FcmModule,
         TypeOrmModule.forFeature([Permission, Role, User]),
     ],
     controllers: [],
