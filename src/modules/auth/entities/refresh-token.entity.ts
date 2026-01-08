@@ -18,6 +18,9 @@ export class RefreshToken extends BaseEntity {
     @Column({ name: 'expires_at', type: 'timestamp' })
     expiresAt: Date;
 
+    @Column({ name: 'is_revoked', default: false })
+    isRevoked: boolean;
+
     @ManyToOne(() => User, (user) => user.refreshTokens, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
     user: User;

@@ -7,6 +7,9 @@ import { APP_GUARD } from '@nestjs/core';
 // Config
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
+import authConfig from './config/auth.config';
+import firebaseConfig from './config/firebase.config';
+import sentryConfig from './config/sentry.config';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -43,7 +46,7 @@ import { User } from './modules/users/entities/user.entity';
         // Configuration
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [appConfig, databaseConfig],
+            load: [appConfig, databaseConfig, authConfig, firebaseConfig, sentryConfig],
             cache: true,
         }),
 
@@ -71,6 +74,7 @@ import { User } from './modules/users/entities/user.entity';
                 autoLoadEntities: true,
                 synchronize: configService.get<string>('app.env') === 'development',
                 logging: configService.get<boolean>('database.logging') ? ['query', 'error'] : ['error'],
+                // dropSchema: true,
             }),
         }),
 

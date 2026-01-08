@@ -5,6 +5,7 @@ import {
     HttpStatus,
     Logger,
 } from '@nestjs/common';
+import * as Sentry from '@sentry/nestjs';
 import { Request, Response } from 'express';
 import { ApiErrorResponse } from '../interfaces/api-response.interface';
 
@@ -27,6 +28,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
             `${request.method} ${request.url} - Status: ${status} - ${message}`,
             exception?.stack,
         );
+
+        // Send to Sentry if it's a server error (5xx)
+        if (status >= 500) {
+            Sentry.captureException(exception);
+        }
 
         const errorResponse: ApiErrorResponse = {
             success: false,

@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -23,5 +23,11 @@ export class UsersController {
   @ApiSuccessResponse(User)
   async updateProfile(@CurrentUser('id') userId: string, @Body() data: any) {
     return this.usersService.update(userId, data);
+  }
+
+  @Patch('fcm-token')
+  @ApiOperation({ summary: 'Cập nhật token thông báo (FCM Token)' })
+  async updateFcmToken(@CurrentUser('id') userId: string, @Body('fcmToken') fcmToken: string) {
+    return this.usersService.update(userId, { fcmToken });
   }
 }

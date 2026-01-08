@@ -50,6 +50,9 @@ export class User extends BaseEntity {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
+    @Column({ name: 'fcm_token', nullable: true })
+    fcmToken: string;
+
     @Column({ name: 'is_verified', default: false })
     isVerified: boolean;
 

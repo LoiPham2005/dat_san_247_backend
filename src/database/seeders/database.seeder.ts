@@ -43,6 +43,7 @@ export class DatabaseSeeder implements OnModuleInit {
             { resource: 'venues', action: 'update', slug: 'venues:update', description: 'Update venues' },
             { resource: 'venues', action: 'delete', slug: 'venues:delete', description: 'Delete venues' },
             { resource: 'venues', action: 'manage', slug: 'venues:manage', description: 'Full venue management' },
+            { resource: 'venues', action: 'verify', slug: 'venues:verify', description: 'Verify new venues (Admin only)' },
 
             // Courts
             { resource: 'courts', action: 'create', slug: 'courts:create', description: 'Create courts' },
@@ -66,6 +67,7 @@ export class DatabaseSeeder implements OnModuleInit {
             { resource: 'reviews', action: 'create', slug: 'reviews:create', description: 'Create reviews' },
             { resource: 'reviews', action: 'read', slug: 'reviews:read', description: 'View reviews' },
             { resource: 'reviews', action: 'delete', slug: 'reviews:delete', description: 'Delete reviews' },
+            { resource: 'reviews', action: 'reply', slug: 'reviews:reply', description: 'Reply to customer reviews' },
 
             // Analytics
             { resource: 'analytics', action: 'view', slug: 'analytics:view', description: 'View analytics' },
@@ -75,6 +77,8 @@ export class DatabaseSeeder implements OnModuleInit {
             { resource: 'roles', action: 'read', slug: 'roles:read', description: 'View roles' },
             { resource: 'roles', action: 'update', slug: 'roles:update', description: 'Update roles' },
             { resource: 'roles', action: 'delete', slug: 'roles:delete', description: 'Delete roles' },
+            { resource: 'settings', action: 'manage', slug: 'settings:manage', description: 'Manage system settings' },
+            { resource: 'promotions', action: 'manage', slug: 'promotions:manage', description: 'Manage marketing promotions' },
 
             // Wildcard (Super Admin)
             { resource: '*', action: '*', slug: '*', description: 'All permissions (Super Admin)' },
@@ -102,6 +106,22 @@ export class DatabaseSeeder implements OnModuleInit {
                 description: 'Full system access',
                 isSystem: true,
                 permissions: [permissionMap.get('*')].filter((p): p is Permission => p !== undefined),
+            },
+            {
+                name: 'Admin (Vận hành)',
+                slug: 'staff_admin',
+                description: 'Quản trị viên vận hành hệ thống',
+                isSystem: true,
+                permissions: [
+                    'users:read', 'users:update', 'users:create',
+                    'venues:read', 'venues:update', 'venues:verify', 'venues:manage',
+                    'courts:read', 'courts:update',
+                    'bookings:read', 'bookings:update',
+                    'payments:read',
+                    'reviews:read', 'reviews:reply', 'reviews:delete',
+                    'analytics:view',
+                    'promotions:manage',
+                ].map((slug) => permissionMap.get(slug)).filter((p): p is Permission => p !== undefined),
             },
             {
                 name: 'Venue Owner',
@@ -161,6 +181,15 @@ export class DatabaseSeeder implements OnModuleInit {
                 fullName: 'Root Admin',
                 phone: '0900000000',
                 role: roleMap.get('admin'),
+                isActive: true,
+                isVerified: true,
+            },
+            {
+                email: 'admin_vhanh@test.com',
+                password: hashedPassword,
+                fullName: 'Manager Admin',
+                phone: '0988888888',
+                role: roleMap.get('staff_admin'),
                 isActive: true,
                 isVerified: true,
             },

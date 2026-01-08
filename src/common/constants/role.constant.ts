@@ -1,4 +1,5 @@
 export enum UserRole {
+  SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
   ADMIN_STAFF = 'ADMIN_STAFF',
   OWNER = 'OWNER',
@@ -7,6 +8,7 @@ export enum UserRole {
 }
 
 export const ROLE_PERMISSIONS = {
+    [UserRole.SUPER_ADMIN]: ['all'],  
     [UserRole.ADMIN]: ['all'],
     [UserRole.OWNER]: ['manage_venue', 'manage_staff', 'view_analytics'],
     [UserRole.VENUE_STAFF]: ['check_in', 'view_bookings'],

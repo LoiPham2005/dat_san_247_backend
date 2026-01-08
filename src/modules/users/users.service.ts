@@ -62,7 +62,15 @@ export class UsersService {
         return user;
     }
 
-    async create(data: any) {
+    async findByEmail(email: string) {
+        return this.userRepository.findOne({
+            where: { email },
+            select: ['id', 'email', 'password', 'fullName', 'isActive', 'isVerified', 'role'],
+            relations: ['role'],
+        });
+    }
+
+    async create(data: Partial<User>): Promise<User> {
         const user = this.userRepository.create(data);
         return this.userRepository.save(user);
     }
