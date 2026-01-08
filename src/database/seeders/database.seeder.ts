@@ -1,8 +1,10 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Permission } from '../modules/permissions/entities/permission.entity';
-import { Role } from '../modules/roles/entities/role.entity';
+import { Permission } from '../../modules/permissions/entities/permission.entity';
+import { Role } from '../../modules/roles/entities/role.entity';
+import { User } from '../../modules/users/entities/user.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class DatabaseSeeder implements OnModuleInit {
@@ -11,11 +13,14 @@ export class DatabaseSeeder implements OnModuleInit {
         private permissionsRepository: Repository<Permission>,
         @InjectRepository(Role)
         private rolesRepository: Repository<Role>,
+        @InjectRepository(User)
+        private usersRepository: Repository<User>,
     ) { }
 
     async onModuleInit() {
         await this.seedPermissions();
         await this.seedRoles();
+        await this.seedUsers();
     }
 
     private async seedPermissions() {
@@ -142,5 +147,66 @@ export class DatabaseSeeder implements OnModuleInit {
 
         await this.rolesRepository.save(roles);
         console.log(`✅ Seeded ${roles.length} roles`);
+    }
+
+    private async seedUsers() {
+        const hashedPassword = await bcrypt.hash('Password123@', 10);
+        const roles = await this.rolesRepository.find();
+        const roleMap = new Map(roles.map((r) => [r.slug, r]));
+
+        const userConfigs = [
+            {
+                email: 'admin@datsan247.com',
+                password: hashedPassword,
+                fullName: 'Root Admin',
+                phone: '0900000000',
+                role: roleMap.get('admin'),
+                isActive: true,
+                isVerified: true,
+            },
+            {
+                email: 'owner@test.com',
+                password: hashedPassword,
+                fullName: 'Test Owner',
+                phone: '0911111111',
+                role: roleMap.get('owner'),
+                isActive: true,
+                isVerified: true,
+            },
+            {
+                email: 'staff@test.com',
+                password: hashedPassword,
+                fullName: 'Test Staff',
+                phone: '0922222222',
+                role: roleMap.get('venue_staff'),
+                isActive: true,
+                isVerified: true,
+            },
+            {
+                email: 'customer@test.com',
+                password: hashedPassword,
+                fullName: 'Test Customer',
+                phone: '0933333333',
+                role: roleMap.get('customer'),
+                isActive: true,
+                isVerified: true,
+            },
+        ];
+
+        let seededCount = 0;
+        for (const config of userConfigs) {
+            const existing = await this.usersRepository.findOne({ where: { email: config.email } });
+            if (!existing) {
+                const user = this.usersRepository.create(config);
+                await this.usersRepository.save(user);
+                seededCount++;
+            }
+        }
+
+        if (seededCount > 0) {
+            console.log(`✅ Seeded ${seededCount} new users (Password: Password123@)`);
+        } else {
+            console.log('✅ Users already seeded');
+        }
     }
 }
