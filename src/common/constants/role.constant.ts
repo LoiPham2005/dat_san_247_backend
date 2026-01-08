@@ -7,27 +7,9 @@ export enum UserRole {
 }
 
 export const ROLE_PERMISSIONS = {
-  [UserRole.ADMIN]: ['*'], // Full access
-  [UserRole.ADMIN_STAFF]: [
-    'bookings:read',
-    'bookings:update',
-    'venues:read',
-    'users:read'
-  ],
-  [UserRole.OWNER]: [
-    'venues:manage',
-    'courts:manage',
-    'bookings:read',
-    'analytics:view'
-  ],
-  [UserRole.VENUE_STAFF]: [
-    'bookings:read',
-    'bookings:update',
-    'courts:read'
-  ],
-  [UserRole.CUSTOMER]: [
-    'bookings:create',
-    'bookings:read-own',
-    'reviews:create'
-  ]
+    [UserRole.ADMIN]: ['all'],
+    [UserRole.OWNER]: ['manage_venue', 'manage_staff', 'view_analytics'],
+    [UserRole.VENUE_STAFF]: ['check_in', 'view_bookings'],
+    [UserRole.CUSTOMER]: ['book_venue', 'view_profile'],
+
 };

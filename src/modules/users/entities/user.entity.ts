@@ -2,6 +2,8 @@ import {
     Entity,
     Column,
     OneToMany,
+    ManyToOne,
+    JoinColumn,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { UserRole } from '../../../common/constants/role.constant';
@@ -13,6 +15,7 @@ import { FavoriteVenue } from '../../venues/entities/favorite-venue.entity';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 import { ActivityLog } from '../../analytics/entities/activity-log.entity';
 import { File } from '../../uploads/entities/file.entity';
+import { Role } from '../../roles/entities/role.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -28,8 +31,9 @@ export class User extends BaseEntity {
     @Column({ unique: true, nullable: true })
     phone: string;
 
-    @Column({ type: 'enum', enum: UserRole, default: UserRole.CUSTOMER })
-    role: UserRole;
+    @ManyToOne(() => Role, (role) => role.users, { eager: true, nullable: true })
+    @JoinColumn({ name: 'role_id' })
+    role: Role;
 
     @Column({ name: 'avatar_url', nullable: true })
     avatarUrl: string;

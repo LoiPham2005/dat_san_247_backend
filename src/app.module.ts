@@ -23,6 +23,9 @@ import { SmsModule } from './shared/sms/sms.module';
 import { CacheModule } from './shared/cache/cache.module';
 import { QueueModule } from './shared/queue/queue.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
+import { DatabaseSeeder } from './database/database.seeder';
 
 @Module({
     imports: [
@@ -63,8 +66,10 @@ import { SettingsModule } from './modules/settings/settings.module';
         SmsModule,
         CacheModule,
         QueueModule,
+        RolesModule,
+        PermissionsModule,
     ],
     controllers: [],
-    providers: [],
+    providers: [DatabaseSeeder],
 })
 export class AppModule { }

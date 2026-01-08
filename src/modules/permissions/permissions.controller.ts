@@ -1,0 +1,17 @@
+import { Controller, Get } from '@nestjs/common';
+import { PermissionsService } from './permissions.service';
+
+@Controller('permissions')
+export class PermissionsController {
+    constructor(private readonly permissionsService: PermissionsService) { }
+
+    @Get()
+    async findAll() {
+        return this.permissionsService.findAll();
+    }
+
+    @Get('grouped')
+    async getGrouped() {
+        return this.permissionsService.groupedByResource();
+    }
+}
