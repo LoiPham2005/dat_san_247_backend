@@ -11,22 +11,34 @@ export class FcmService implements OnModuleInit {
     onModuleInit() {
         const projectId = this.configService.get<string>('firebase.projectId');
         const clientEmail = this.configService.get<string>('firebase.clientEmail');
-        const privateKey = this.configService.get<string>('firebase.privateKey');
+        let privateKey = this.configService.get<string>('firebase.privateKey');
 
         if (!projectId || !clientEmail || !privateKey) {
             this.logger.warn('Firebase configuration is incomplete. Push notifications will not work.');
             return;
         }
 
-        if (admin.apps.length === 0) {
-            admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId,
-                    clientEmail,
-                    privateKey,
-                }),
-            });
-            this.logger.log('Firebase Admin initialized successfully');
+        try {
+            // Fix private key format (handle literal \n and potential extra quotes)
+            privateKey = privateKey.trim();
+            if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+                privateKey = privateKey.substring(1, privateKey.length - 1);
+            }
+            privateKey = privateKey.replace(/\\n/g, '\n');
+
+            if (admin.apps.length === 0) {
+                admin.initializeApp({
+                    credential: admin.credential.cert({
+                        projectId,
+                        clientEmail,
+                        privateKey,
+                    }),
+                });
+                this.logger.log('✅ Firebase Admin initialized successfully');
+            }
+        } catch (error) {
+            this.logger.error('❌ Failed to initialize Firebase Admin:', error.message);
+            this.logger.warn('Push notifications will be disabled due to invalid Firebase credentials.');
         }
     }
 
