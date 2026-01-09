@@ -1,13 +1,10 @@
-# =====================================================
-# .DOCKERIGNORE
-# =====================================================
-# .dockerignore
 node_modules
 dist
+npm-debug.log
 .git
 .env
-.env.local
-.vscode
-*.log
-npm-debug.log
-.DS_Store
+Dockerfile
+docker-compose.yml
+.dockerignore
+.github
+*.md

@@ -1,79 +1,59 @@
-# =====================================================
-# DOCKER-COMPOSE.YML
-# =====================================================
-# docker-compose.yml
-version: '3.8'
-
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: sports_booking_db
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: sports_booking
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - sports_booking_network
-
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: sports_booking_redis
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - sports_booking_network
-
-  # NestJS Application
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: sports_booking_api
-    restart: always
+    container_name: datsan247_api
     ports:
-      - "3000:3000"
-    environment:
-      NODE_ENV: production
-      DB_HOST: postgres
-      DB_PORT: 5432
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      - "${APP_PORT:-3000}:3000"
+    env_file:
+      - .env
     depends_on:
-      - postgres
-      - redis
-    volumes:
-      - ./src:/app/src
-      - /app/node_modules
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
-      - sports_booking_network
-    command: npm run start:prod
+      - datsan_network
 
-  # Adminer (Database Management)
-  adminer:
-    image: adminer:latest
-    container_name: sports_booking_adminer
-    restart: always
+  db:
+    image: postgres:15-alpine
+    container_name: datsan247_db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_DATABASE:-datsan247}
     ports:
-      - "8080:8080"
-    depends_on:
-      - postgres
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-datsan247}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
-      - sports_booking_network
+      - datsan_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: datsan247_redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - datsan_network
+
+networks:
+  datsan_network:
+    driver: bridge
 
 volumes:
   postgres_data:
   redis_data:
-
-networks:
-  sports_booking_network:
-    driver: bridge

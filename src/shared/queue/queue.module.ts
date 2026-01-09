@@ -1,5 +1,5 @@
 import { Module, Global } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
+import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { QueueService } from './queue.service';
 import { MailProcessor } from './processors/mail.processor';
@@ -13,7 +13,7 @@ import { NotificationProcessor } from './processors/notification.processor';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        redis: {
+        connection: {
           host: configService.get<string>('redis.host'),
           port: configService.get<number>('redis.port'),
           password: configService.get<string>('redis.password'),

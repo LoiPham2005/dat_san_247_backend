@@ -1,16 +1,26 @@
-import { Process, Processor } from '@nestjs/bull';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
+import { Job } from 'bullmq';
 import { MailService } from '../../mail/mail.service';
 
 @Processor('mail')
-export class MailProcessor {
+export class MailProcessor extends WorkerHost {
     private readonly logger = new Logger(MailProcessor.name);
 
-    constructor(private readonly mailService: MailService) { }
+    constructor(private readonly mailService: MailService) {
+        super();
+    }
 
-    @Process('send-mail')
-    async handleSendMail(job: Job) {
+    async process(job: Job): Promise<any> {
+        switch (job.name) {
+            case 'send-mail':
+                return this.handleSendMail(job);
+            default:
+                this.logger.warn(`Unknown job name: ${job.name}`);
+        }
+    }
+
+    private async handleSendMail(job: Job) {
         this.logger.log(`Processing mail job: ${job.id}`);
         const { to, subject, html, text } = job.data;
 

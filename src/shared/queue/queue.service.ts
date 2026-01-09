@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class QueueService {
@@ -13,7 +13,10 @@ export class QueueService {
     async addMailJob(data: any) {
         return await this.mailQueue.add('send-mail', data, {
             attempts: 3,
-            backoff: 5000,
+            backoff: {
+                type: 'fixed',
+                delay: 5000,
+            },
             removeOnComplete: true,
         });
     }
@@ -21,7 +24,10 @@ export class QueueService {
     async addSmsJob(data: any) {
         return await this.smsQueue.add('send-sms', data, {
             attempts: 3,
-            backoff: 5000,
+            backoff: {
+                type: 'fixed',
+                delay: 5000,
+            },
             removeOnComplete: true,
         });
     }
@@ -29,7 +35,10 @@ export class QueueService {
     async addNotificationJob(data: any) {
         return await this.notificationQueue.add('send-notification', data, {
             attempts: 5,
-            backoff: 10000,
+            backoff: {
+                type: 'fixed',
+                delay: 10000,
+            },
             removeOnComplete: true,
         });
     }

@@ -1,16 +1,26 @@
-import { Process, Processor } from '@nestjs/bull';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
+import { Job } from 'bullmq';
 import { FcmService } from '../../fcm/fcm.service';
 
 @Processor('notifications')
-export class NotificationProcessor {
+export class NotificationProcessor extends WorkerHost {
     private readonly logger = new Logger(NotificationProcessor.name);
 
-    constructor(private readonly fcmService: FcmService) { }
+    constructor(private readonly fcmService: FcmService) {
+        super();
+    }
 
-    @Process('send-notification')
-    async handleSendNotification(job: Job) {
+    async process(job: Job): Promise<any> {
+        switch (job.name) {
+            case 'send-notification':
+                return this.handleSendNotification(job);
+            default:
+                this.logger.warn(`Unknown job name: ${job.name}`);
+        }
+    }
+
+    private async handleSendNotification(job: Job) {
         this.logger.log(`Processing notification job: ${job.id}`);
         const { tokens, title, message, data } = job.data;
 

@@ -1,39 +1,33 @@
-# =====================================================
-# DOCKERFILE
-# =====================================================
-# Dockerfile
-FROM node:18-alpine AS builder
+# Stage 1: Build
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Install dependencies first for better caching
 COPY package*.json ./
-
-# Install dependencies
 RUN npm ci
 
-# Copy source code
+# Copy source and build
 COPY . .
-
-# Build application
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine
+# Stage 2: Production
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Install only production dependencies
 COPY package*.json ./
-
-# Install production dependencies only
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy built application from builder
+# Copy built files from builder
 COPY --from=builder /app/dist ./dist
+# Copy env example if needed or other assets
+COPY .env.example .env
 
-# Expose port
+# Security: Run as non-privileged user
+USER node
+
 EXPOSE 3000
 
-# Start application
 CMD ["node", "dist/main"]
