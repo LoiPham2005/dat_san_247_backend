@@ -6,15 +6,14 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
-
 import { PromotionStatus } from '../../common/constants/promotion-status.constant';
 
-@ApiTags('Staff - Marketing')
+@ApiTags('Super Admin - Marketing')
 @ApiBearerAuth()
-@Roles(UserRole.STAFF)
+@Roles(UserRole.SUPER_ADMIN)
 @UseGuards(RolesGuard)
-@Controller('staff/marketing')
-export class StaffMarketingController {
+@Controller('super-admin/marketing')
+export class SuperAdminMarketingController {
     constructor(
         private readonly promotionsService: PromotionsService,
         private readonly notificationsService: NotificationsService,
@@ -26,7 +25,6 @@ export class StaffMarketingController {
     async getDashboard() {
         return {
             activePromotions: await this.promotionsService.findAll({ status: PromotionStatus.ACTIVE } as any),
-            // Thêm các chỉ số khác
         };
     }
 

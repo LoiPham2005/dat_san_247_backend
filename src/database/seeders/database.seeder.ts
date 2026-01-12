@@ -102,26 +102,10 @@ export class DatabaseSeeder implements OnModuleInit {
         const roles = [
             {
                 name: 'Super Admin',
-                slug: 'admin',
+                slug: 'super-admin',
                 description: 'Full system access',
                 isSystem: true,
                 permissions: [permissionMap.get('*')].filter((p): p is Permission => p !== undefined),
-            },
-            {
-                name: 'Admin (Vận hành)',
-                slug: 'staff_admin',
-                description: 'Quản trị viên vận hành hệ thống',
-                isSystem: true,
-                permissions: [
-                    'users:read', 'users:update', 'users:create',
-                    'venues:read', 'venues:update', 'venues:verify', 'venues:manage',
-                    'courts:read', 'courts:update',
-                    'bookings:read', 'bookings:update',
-                    'payments:read',
-                    'reviews:read', 'reviews:reply', 'reviews:delete',
-                    'analytics:view',
-                    'promotions:manage',
-                ].map((slug) => permissionMap.get(slug)).filter((p): p is Permission => p !== undefined),
             },
             {
                 name: 'Venue Owner',
@@ -142,7 +126,7 @@ export class DatabaseSeeder implements OnModuleInit {
             },
             {
                 name: 'Venue Staff',
-                slug: 'venue_staff',
+                slug: 'venue-staff',
                 description: 'Check-in customers and view bookings',
                 isSystem: true,
                 permissions: [
@@ -176,20 +160,11 @@ export class DatabaseSeeder implements OnModuleInit {
 
         const userConfigs = [
             {
-                email: 'admin@datsan247.com',
+                email: 'superadmin@datsan247.com',
                 password: hashedPassword,
-                fullName: 'Root Admin',
+                fullName: 'Super Admin',
                 phone: '0900000000',
-                role: roleMap.get('admin'),
-                isActive: true,
-                isVerified: true,
-            },
-            {
-                email: 'admin_vhanh@test.com',
-                password: hashedPassword,
-                fullName: 'Manager Admin',
-                phone: '0988888888',
-                role: roleMap.get('staff_admin'),
+                role: roleMap.get('super-admin'),
                 isActive: true,
                 isVerified: true,
             },
@@ -207,7 +182,7 @@ export class DatabaseSeeder implements OnModuleInit {
                 password: hashedPassword,
                 fullName: 'Test Staff',
                 phone: '0922222222',
-                role: roleMap.get('venue_staff'),
+                role: roleMap.get('venue-staff'),
                 isActive: true,
                 isVerified: true,
             },

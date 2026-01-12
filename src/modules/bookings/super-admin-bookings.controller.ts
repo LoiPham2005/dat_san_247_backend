@@ -9,12 +9,12 @@ import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorator
 import { Booking } from './entities/booking.entity';
 import { BookingStatus } from '../../common/constants/booking-status.constant';
 
-@ApiTags('Staff - Bookings')
+@ApiTags('Super Admin - Bookings')
 @ApiBearerAuth()
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.SUPER_ADMIN)
 @UseGuards(RolesGuard)
-@Controller('staff/bookings')
-export class AdminBookingsController {
+@Controller('super-admin/bookings')
+export class SuperAdminBookingsController {
     constructor(private readonly bookingsService: BookingsService) { }
 
     @Get()

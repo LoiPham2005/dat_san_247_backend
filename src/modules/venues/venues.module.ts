@@ -2,10 +2,10 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { VenuesService } from './venues.service';
 import { VenuesController } from './venues.controller';
-import { AdminVenuesController } from './admin-venues.controller';
+import { SuperAdminVenuesController } from './super-admin-venues.controller';
 import { OwnerVenuesController } from './owner-venues.controller';
 import { OwnerStaffController } from './owner-staff.controller';
-import { StaffModerationController } from './staff-moderation.controller';
+import { SuperAdminModerationController } from './super-admin-moderation.controller';
 import { VenueStaffVenuesController } from './venue-staff-venues.controller';
 import { Venue } from './entities/venue.entity';
 import { VenueImage } from './entities/venue-image.entity';
@@ -29,10 +29,10 @@ import { ReviewsModule } from '../reviews/reviews.module';
   ],
   controllers: [
     VenuesController,
-    AdminVenuesController,
+    SuperAdminVenuesController,
     OwnerVenuesController,
     OwnerStaffController,
-    StaffModerationController,
+    SuperAdminModerationController,
     VenueStaffVenuesController,
   ],
   providers: [VenuesService],

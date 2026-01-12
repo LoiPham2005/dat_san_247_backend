@@ -8,9 +8,9 @@ import { ApiSuccessResponse } from '../../common/decorators/api-response.decorat
 
 @ApiTags('Staff - Technical')
 @ApiBearerAuth()
-@Roles(UserRole.ADMIN, UserRole.ADMIN_STAFF)
+@Roles(UserRole.STAFF)
 @UseGuards(RolesGuard)
-@Controller('admin-staff/technical')
+@Controller('staff/technical')
 export class StaffTechnicalController {
     constructor(private readonly settingsService: SettingsService) { }
 

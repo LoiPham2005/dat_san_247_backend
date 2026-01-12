@@ -133,9 +133,9 @@ export class ExampleBookingsController {
 /**
  * EXAMPLE 3: Admin-only endpoints
  */
-@Controller('example-admin')
+@Controller('example-super-admin')
 @UseGuards(PermissionsGuard)
-export class ExampleAdminController {
+export class ExampleSuperAdminController {
 
     /**
      * Quản lý users

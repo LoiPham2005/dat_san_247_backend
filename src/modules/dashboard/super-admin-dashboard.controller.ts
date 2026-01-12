@@ -5,14 +5,13 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
-// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // Giả sử đã có JwtAuthGuard
 
-@ApiTags('Admin - Dashboard')
+@ApiTags('Super Admin - Dashboard')
 @ApiBearerAuth()
-@Roles(UserRole.ADMIN)
-@UseGuards(RolesGuard) // Thêm JwtAuthGuard vào đây khi đã implement hoàn chỉnh
-@Controller('admin/dashboard')
-export class AdminDashboardController {
+@Roles(UserRole.SUPER_ADMIN)
+@UseGuards(RolesGuard)
+@Controller('super-admin/dashboard')
+export class SuperAdminDashboardController {
     constructor(private readonly dashboardService: DashboardService) { }
 
     @Get('overview')

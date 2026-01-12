@@ -6,12 +6,12 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
 
-@ApiTags('Admin - Settings')
+@ApiTags('Super Admin - Settings')
 @ApiBearerAuth()
 @Roles(UserRole.SUPER_ADMIN)
 @UseGuards(RolesGuard)
-@Controller('admin/settings')
-export class SettingsController {
+@Controller('super-admin/settings')
+export class SuperAdminSettingsController {
     constructor(private readonly settingsService: SettingsService) { }
 
     @Get()

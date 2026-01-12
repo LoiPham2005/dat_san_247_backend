@@ -9,12 +9,12 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
 import { VenueStatus } from '../../common/constants/venue-status.constant';
 
-@ApiTags('Staff - Moderation')
+@ApiTags('Super Admin - Moderation')
 @ApiBearerAuth()
-@Roles(UserRole.STAFF)
+@Roles(UserRole.SUPER_ADMIN)
 @UseGuards(RolesGuard)
-@Controller('staff/moderation')
-export class StaffModerationController {
+@Controller('super-admin/moderation')
+export class SuperAdminModerationController {
     constructor(
         private readonly venuesService: VenuesService,
         private readonly usersService: UsersService,

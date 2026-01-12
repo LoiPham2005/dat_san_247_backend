@@ -1,21 +1,16 @@
+// ==========================================
+// 📁 src/app.module.ts - TỐI ƯU
+// ==========================================
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
-// Config
-import appConfig from './config/app.config';
-import databaseConfig from './config/database.config';
-import authConfig from './config/auth.config';
-import firebaseConfig from './config/firebase.config';
-import sentryConfig from './config/sentry.config';
-import redisConfig from './config/redis.config';
-import mailConfig from './config/mail.config';
-import smsConfig from './config/sms.config';
-import storageConfig from './config/storage.config';
+// Load all configs at once
+import * as configs from './config';
 
-// Modules
+// Feature modules (grouped by domain)
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { VenuesModule } from './modules/venues/venues.module';
@@ -26,72 +21,76 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
-import { SupportModule } from './modules/support/support.module';
-import { SettingsModule } from './modules/settings/settings.module';
-import { RolesModule } from './modules/roles/roles.module';
-import { PermissionsModule } from './modules/permissions/permissions.module';
 
-// Shared & Database
+// Shared services
 import { StorageModule } from './shared/storage/storage.module';
 import { MailModule } from './shared/mail/mail.module';
+
+import { AppController } from './app.controller';
+import { RolesModule } from './modules/roles/roles.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { SupportModule } from './modules/support/support.module';
 import { SmsModule } from './shared/sms/sms.module';
-import { CacheModule } from './shared/cache/cache.module';
-import { QueueModule } from './shared/queue/queue.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { FcmModule } from './shared/fcm/fcm.module';
-import { DatabaseSeeder } from './database/seeders/database.seeder';
 import { Permission } from './modules/permissions/entities/permission.entity';
 import { Role } from './modules/roles/entities/role.entity';
 import { User } from './modules/users/entities/user.entity';
 
 @Module({
     imports: [
-        // Configuration
+        // Config (global)
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [
-                appConfig,
-                databaseConfig,
-                authConfig,
-                firebaseConfig,
-                sentryConfig,
-                redisConfig,
-                mailConfig,
-                smsConfig,
-                storageConfig
-            ],
+            load: Object.values(configs),
             cache: true,
         }),
 
         // Rate Limiting
-        ThrottlerModule.forRootAsync({
-            inject: [ConfigService],
-            useFactory: (config: ConfigService) => [
-                {
-                    ttl: 60000,
-                    limit: 100,
-                },
-            ],
-        }),
+        ThrottlerModule.forRoot([
+            {
+                ttl: 60000,
+                limit: 100,
+            },
+        ]),
 
         // Database
         TypeOrmModule.forRootAsync({
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
+            useFactory: (config: ConfigService) => ({
                 type: 'postgres',
-                host: configService.get<string>('database.host'),
-                port: configService.get<number>('database.port'),
-                username: configService.get<string>('database.username'),
-                password: configService.get<string>('database.password'),
-                database: configService.get<string>('database.database'),
+                host: config.get('database.host'),
+                port: config.get('database.port'),
+                username: config.get('database.username'),
+                password: config.get('database.password'),
+                database: config.get('database.database'),
                 autoLoadEntities: true,
-                synchronize: configService.get<string>('app.env') === 'development',
-                logging: configService.get<boolean>('database.logging') ? ['query', 'error'] : ['error'],
+                synchronize: config.get('app.env') === 'development',
+                logging: config.get('database.logging'),
+                ssl: config.get('app.env') === 'production' ? { rejectUnauthorized: false } : false,
                 // dropSchema: true,
             }),
         }),
+
+        // Feature modules
+        // AuthModule,
+        // UsersModule,
+        // VenuesModule,
+        // CourtsModule,
+        // BookingsModule,
+        // TimeSlotsModule,
+        // PaymentsModule,
+        // ReviewsModule,
+        // PromotionsModule,
+        // NotificationsModule,
+        // UploadsModule,
+
+        // // Shared modules
+        // StorageModule,
+        // MailModule,
 
         // Business Modules
         AuthModule,
@@ -116,14 +115,13 @@ import { User } from './modules/users/entities/user.entity';
         StorageModule,
         MailModule,
         SmsModule,
-        CacheModule,
-        QueueModule,
+        // CacheModule,
+        // QueueModule,
         FcmModule,
         TypeOrmModule.forFeature([Permission, Role, User]),
     ],
-    controllers: [],
+    controllers: [AppController],
     providers: [
-        DatabaseSeeder,
         {
             provide: APP_GUARD,
             useClass: ThrottlerGuard,

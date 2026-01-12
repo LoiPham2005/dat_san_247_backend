@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SettingsService } from './settings.service';
-import { SettingsController } from './settings.controller';
-import { StaffTechnicalController } from './staff-technical.controller';
+import { SuperAdminSettingsController } from './super-admin-settings.controller';
+import { SuperAdminTechnicalController } from './super-admin-technical.controller';
 import { Setting } from './entities/setting.entity';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Setting])],
-    controllers: [SettingsController, StaffTechnicalController],
+    controllers: [SuperAdminSettingsController, SuperAdminTechnicalController],
     providers: [SettingsService],
     exports: [SettingsService],
 })

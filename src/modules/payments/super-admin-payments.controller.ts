@@ -8,12 +8,12 @@ import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Payment } from './entities/payment.entity';
 
-@ApiTags('Admin - Finance')
+@ApiTags('Super Admin - Finance')
 @ApiBearerAuth()
 @Roles(UserRole.SUPER_ADMIN)
 @UseGuards(RolesGuard)
-@Controller('admin/finance')
-export class AdminPaymentsController {
+@Controller('super-admin/finance')
+export class SuperAdminPaymentsController {
     constructor(private readonly paymentsService: PaymentsService) { }
 
     @Get('transactions')

@@ -9,9 +9,9 @@ import { Payment } from './entities/payment.entity';
 
 @ApiTags('Staff - Finance')
 @ApiBearerAuth()
-@Roles(UserRole.ADMIN, UserRole.ADMIN_STAFF)
+@Roles(UserRole.STAFF)
 @UseGuards(RolesGuard)
-@Controller('admin-staff/finance')
+@Controller('staff/finance')
 export class StaffFinanceController {
     constructor(private readonly paymentsService: PaymentsService) { }
 

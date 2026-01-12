@@ -7,12 +7,12 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
 import { Ticket } from './entities/ticket.entity';
 
-@ApiTags('Staff - Support')
+@ApiTags('Super Admin - Support')
 @ApiBearerAuth()
-@Roles(UserRole.STAFF)
+@Roles(UserRole.SUPER_ADMIN)
 @UseGuards(RolesGuard)
-@Controller('staff/support')
-export class StaffSupportController {
+@Controller('super-admin/support')
+export class SuperAdminSupportController {
     constructor(private readonly supportService: SupportService) { }
 
     @Get('dashboard')

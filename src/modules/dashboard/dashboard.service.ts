@@ -11,7 +11,7 @@ import { BookingStatus } from '../../common/constants/booking-status.constant';
 export class DashboardService {
     constructor(private dataSource: DataSource) { }
 
-    async getAdminOverview() {
+    async getSuperAdminOverview() {
         const userCount = await this.dataSource.getRepository(User).count();
         const venueCount = await this.dataSource.getRepository(Venue).count();
 
