@@ -24,12 +24,6 @@ export class DatabaseSeeder implements OnModuleInit {
     }
 
     private async seedPermissions() {
-        const count = await this.permissionsRepository.count();
-        if (count > 0) {
-            console.log('✅ Permissions already seeded');
-            return;
-        }
-
         const permissions = [
             // Users
             { resource: 'users', action: 'create', slug: 'users:create', description: 'Create new users' },
@@ -84,17 +78,23 @@ export class DatabaseSeeder implements OnModuleInit {
             { resource: '*', action: '*', slug: '*', description: 'All permissions (Super Admin)' },
         ];
 
-        await this.permissionsRepository.save(permissions);
-        console.log(`✅ Seeded ${permissions.length} permissions`);
+        let seededCount = 0;
+        for (const p of permissions) {
+            const existing = await this.permissionsRepository.findOne({ where: { slug: p.slug } });
+            if (!existing) {
+                await this.permissionsRepository.save(p);
+                seededCount++;
+            }
+        }
+
+        if (seededCount > 0) {
+            console.log(`✅ Seeded ${seededCount} new permissions`);
+        } else {
+            console.log('✅ Permissions already up to date');
+        }
     }
 
     private async seedRoles() {
-        const count = await this.rolesRepository.count();
-        if (count > 0) {
-            console.log('✅ Roles already seeded');
-            return;
-        }
-
         // Get permissions
         const allPermissions = await this.permissionsRepository.find();
         const permissionMap = new Map(allPermissions.map((p) => [p.slug, p]));
@@ -106,6 +106,32 @@ export class DatabaseSeeder implements OnModuleInit {
                 description: 'Full system access',
                 isSystem: true,
                 permissions: [permissionMap.get('*')].filter((p): p is Permission => p !== undefined),
+            },
+            {
+                name: 'Admin',
+                slug: 'admin',
+                description: 'Partial system administrative access',
+                isSystem: true,
+                permissions: [
+                    'users:read',
+                    'users:update',
+                    'venues:read',
+                    'venues:verify',
+                    'bookings:read',
+                    'analytics:view',
+                    'settings:manage',
+                ].map((slug) => permissionMap.get(slug)).filter((p): p is Permission => p !== undefined),
+            },
+            {
+                name: 'Staff',
+                slug: 'staff',
+                description: 'System staff with limited administrative access',
+                isSystem: true,
+                permissions: [
+                    'users:read',
+                    'venues:read',
+                    'bookings:read',
+                ].map((slug) => permissionMap.get(slug)).filter((p): p is Permission => p !== undefined),
             },
             {
                 name: 'Venue Owner',
@@ -127,7 +153,7 @@ export class DatabaseSeeder implements OnModuleInit {
             {
                 name: 'Venue Staff',
                 slug: 'venue-staff',
-                description: 'Check-in customers and view bookings',
+                description: 'Check-in customers and view bookings for a specific venue',
                 isSystem: true,
                 permissions: [
                     'bookings:read',
@@ -149,8 +175,20 @@ export class DatabaseSeeder implements OnModuleInit {
             },
         ];
 
-        await this.rolesRepository.save(roles);
-        console.log(`✅ Seeded ${roles.length} roles`);
+        let seededCount = 0;
+        for (const roleData of roles) {
+            const existing = await this.rolesRepository.findOne({ where: { slug: roleData.slug } });
+            if (!existing) {
+                await this.rolesRepository.save(roleData);
+                seededCount++;
+            }
+        }
+
+        if (seededCount > 0) {
+            console.log(`✅ Seeded ${seededCount} new roles`);
+        } else {
+            console.log('✅ Roles already up to date');
+        }
     }
 
     private async seedUsers() {
@@ -169,6 +207,15 @@ export class DatabaseSeeder implements OnModuleInit {
                 isVerified: true,
             },
             {
+                email: 'admin@test.com',
+                password: hashedPassword,
+                fullName: 'Test Admin',
+                phone: '0910000000',
+                role: roleMap.get('admin'),
+                isActive: true,
+                isVerified: true,
+            },
+            {
                 email: 'owner@test.com',
                 password: hashedPassword,
                 fullName: 'Test Owner',
@@ -180,7 +227,16 @@ export class DatabaseSeeder implements OnModuleInit {
             {
                 email: 'staff@test.com',
                 password: hashedPassword,
-                fullName: 'Test Staff',
+                fullName: 'System Staff',
+                phone: '0920000000',
+                role: roleMap.get('staff'),
+                isActive: true,
+                isVerified: true,
+            },
+            {
+                email: 'venuestaff@test.com',
+                password: hashedPassword,
+                fullName: 'Venue Staff',
                 phone: '0922222222',
                 role: roleMap.get('venue-staff'),
                 isActive: true,

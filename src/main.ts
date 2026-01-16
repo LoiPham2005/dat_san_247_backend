@@ -59,12 +59,12 @@ async function bootstrap() {
 
     await app.listen(port, '0.0.0.0', () => {
         logger.log('\n');
-        logger.log('╔════════════════════════════════════════════╗');
-        logger.log('║  🚀 SERVER STARTED SUCCESSFULLY            ║');
-        logger.log('╠════════════════════════════════════════════╣');
-        logger.log(`║  🌐 API URL: http://localhost:${port}/api/v1  ║`);
+        logger.log('╔══════════════════════════════════════════════════╗');
+        logger.log('║  🚀 SERVER STARTED SUCCESSFULLY                  ║');
+        logger.log('╠══════════════════════════════════════════════════╣');
+        logger.log(`║  🌐 API URL: http://localhost:${port}/api/v1        ║`);
         logger.log(`║  📚 Swagger Docs: http://localhost:${port}/api/docs ║`);
-        logger.log('╚════════════════════════════════════════════╝');
+        logger.log('╚══════════════════════════════════════════════════╝');
         logger.log('\n');
     })
 
