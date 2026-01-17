@@ -10,6 +10,10 @@ import * as Sentry from '@sentry/nestjs';
 
 import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { TrimPipe } from './common/pipes/trim.pipe';
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
@@ -36,9 +40,18 @@ async function bootstrap() {
         credentials: true,
     });
 
+    // Versioning
+    app.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: '1',
+    });
+
     // Global config
-    app.setGlobalPrefix('api/v1');
+    app.setGlobalPrefix('api'); // Removed v1 because versioning handles it
+
+    // Global Pipes
     app.useGlobalPipes(
+        new TrimPipe(), // Custom pipe to trim strings
         new ValidationPipe({
             whitelist: true,
             transform: true,
@@ -48,6 +61,15 @@ async function bootstrap() {
             },
         }),
     );
+
+    // Global Filters
+    app.useGlobalFilters(
+        new AllExceptionsFilter(),
+        new HttpExceptionFilter(),
+    );
+
+    // Global Interceptors
+    app.useGlobalInterceptors(new TransformInterceptor());
 
     // Swagger (dev only)
     if (config.get('app.env') !== 'production') {
@@ -66,8 +88,7 @@ async function bootstrap() {
         logger.log(`║  📚 Swagger Docs: http://localhost:${port}/api/docs ║`);
         logger.log('╚══════════════════════════════════════════════════╝');
         logger.log('\n');
-    })
-
+    });
 }
 
 bootstrap().catch((err) => {

@@ -5,6 +5,9 @@ import { DatabaseSeeder } from './database.seeder';
 import { User } from '../../modules/users/entities/user.entity';
 import { Role } from '../../modules/roles/entities/role.entity';
 import { Permission } from '../../modules/permissions/entities/permission.entity';
+import { PermissionsSeeder } from './permissions.seeder';
+import { RolesSeeder } from './roles.seeder';
+import { UsersSeeder } from './users.seeder';
 import * as configs from '../../config';
 
 @Module({
@@ -29,6 +32,11 @@ import * as configs from '../../config';
         }),
         TypeOrmModule.forFeature([User, Role, Permission]),
     ],
-    providers: [DatabaseSeeder],
+    providers: [
+        PermissionsSeeder,
+        RolesSeeder,
+        UsersSeeder,
+        DatabaseSeeder,
+    ],
 })
 export class SeederModule { }
