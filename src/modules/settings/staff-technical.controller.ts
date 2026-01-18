@@ -5,11 +5,12 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Staff - Technical')
 @ApiBearerAuth()
 @Roles(UserRole.STAFF)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('staff/technical')
 export class StaffTechnicalController {
     constructor(private readonly settingsService: SettingsService) { }

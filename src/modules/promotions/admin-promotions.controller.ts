@@ -7,11 +7,12 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { PromotionFilterDto } from './dto/promotion-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Promotion } from './entities/promotion.entity';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Admin - Promotions')
 @ApiBearerAuth()
 @Roles(UserRole.ADMIN)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('admin/promotions')
 export class AdminPromotionsController {
     constructor(private readonly promotionsService: PromotionsService) { }

@@ -8,11 +8,12 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
 
 import { PromotionStatus } from '../../common/constants/promotion-status.constant';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Staff - Marketing')
 @ApiBearerAuth()
 @Roles(UserRole.STAFF)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('staff/marketing')
 export class StaffMarketingController {
     constructor(

@@ -6,11 +6,12 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Payment } from './entities/payment.entity';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Staff - Finance')
 @ApiBearerAuth()
 @Roles(UserRole.STAFF)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('staff/finance')
 export class StaffFinanceController {
     constructor(private readonly paymentsService: PaymentsService) { }

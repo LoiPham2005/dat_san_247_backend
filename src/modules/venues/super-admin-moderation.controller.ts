@@ -8,11 +8,12 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
 import { VenueStatus } from '../../common/constants/venue-status.constant';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Super Admin - Moderation')
 @ApiBearerAuth()
 @Roles(UserRole.SUPER_ADMIN)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('super-admin/moderation')
 export class SuperAdminModerationController {
     constructor(

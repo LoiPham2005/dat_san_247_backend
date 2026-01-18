@@ -8,11 +8,12 @@ import { BookingFilterDto } from './dto/booking-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Booking } from './entities/booking.entity';
 import { BookingStatus } from '../../common/constants/booking-status.constant';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Super Admin - Bookings')
 @ApiBearerAuth()
 @Roles(UserRole.SUPER_ADMIN)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('super-admin/bookings')
 export class SuperAdminBookingsController {
     constructor(private readonly bookingsService: BookingsService) { }

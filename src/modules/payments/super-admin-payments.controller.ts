@@ -7,11 +7,12 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Payment } from './entities/payment.entity';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Super Admin - Finance')
 @ApiBearerAuth()
 @Roles(UserRole.SUPER_ADMIN)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('super-admin/finance')
 export class SuperAdminPaymentsController {
     constructor(private readonly paymentsService: PaymentsService) { }

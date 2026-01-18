@@ -7,11 +7,12 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Staff - Venue Dashboard')
-@ApiBearerAuth()
+@ApiBearerAuth()    
 @Roles(UserRole.VENUE_STAFF)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('venue-staff/dashboard')
 export class VenueStaffDashboardController {
     constructor(

@@ -8,11 +8,12 @@ import { BookingFilterDto } from './dto/booking-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Booking } from './entities/booking.entity';
 import { BookingStatus } from '../../common/constants/booking-status.constant';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Staff - Bookings')
 @ApiBearerAuth()
 @Roles(UserRole.ADMIN)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('staff/bookings')
 export class AdminBookingsController {
     constructor(private readonly bookingsService: BookingsService) { }

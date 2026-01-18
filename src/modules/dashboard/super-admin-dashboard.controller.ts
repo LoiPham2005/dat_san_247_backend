@@ -5,11 +5,12 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Super Admin - Dashboard')
 @ApiBearerAuth()
-@Roles(UserRole.SUPER_ADMIN)
-@UseGuards(RolesGuard)
+@Roles(UserRole.SUPER_ADMIN)    
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('super-admin/dashboard')
 export class SuperAdminDashboardController {
     constructor(private readonly dashboardService: DashboardService) { }

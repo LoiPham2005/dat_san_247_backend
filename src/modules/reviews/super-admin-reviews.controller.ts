@@ -7,11 +7,12 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { ReviewFilterDto } from './dto/review-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Review } from './entities/review.entity';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Super Admin - Reviews')
 @ApiBearerAuth()
 @Roles(UserRole.SUPER_ADMIN)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('super-admin/reviews')
 export class SuperAdminReviewsController {
     constructor(private readonly reviewsService: ReviewsService) { }

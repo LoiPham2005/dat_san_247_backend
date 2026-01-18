@@ -5,11 +5,12 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Super Admin - Technical')
 @ApiBearerAuth()
 @Roles(UserRole.SUPER_ADMIN)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('super-admin/technical')
 export class SuperAdminTechnicalController {
     constructor(private readonly settingsService: SettingsService) { }

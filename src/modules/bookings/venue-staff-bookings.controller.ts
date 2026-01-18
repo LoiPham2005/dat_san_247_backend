@@ -9,11 +9,12 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Booking } from './entities/booking.entity';
 import { BookingStatus } from '../../common/constants/booking-status.constant';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Staff - Venue Bookings')
 @ApiBearerAuth()
 @Roles(UserRole.VENUE_STAFF)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('venue-staff/bookings')
 export class VenueStaffBookingsController {
     constructor(

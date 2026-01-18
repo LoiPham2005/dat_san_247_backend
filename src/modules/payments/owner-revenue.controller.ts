@@ -8,11 +8,12 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Payment } from './entities/payment.entity';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Owner - Revenue')
 @ApiBearerAuth()
-@Roles(UserRole.OWNER)
-@UseGuards(RolesGuard)
+@Roles(UserRole.OWNER)  
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('owner/revenue')
 export class OwnerRevenueController {
     constructor(private readonly paymentsService: PaymentsService) { }

@@ -7,11 +7,12 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
 import { Venue } from './entities/venue.entity';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Staff - Venue Management')
 @ApiBearerAuth()
 @Roles(UserRole.VENUE_STAFF)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('venue-staff/venues')
 export class VenueStaffVenuesController {
     constructor(private readonly venuesService: VenuesService) { }

@@ -11,7 +11,7 @@
 // @ApiTags('Super Admin - Users')
 // @ApiBearerAuth()
 // @Roles(UserRole.SUPER_ADMIN)
-// @UseGuards(RolesGuard)
+// @UseGuards(JwtAuthGuard, RolesGuard)
 // @Controller('super-admin/users')
 // export class SuperAdminUsersController {
 //     constructor(private readonly usersService: UsersService) { }

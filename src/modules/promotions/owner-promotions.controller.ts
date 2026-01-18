@@ -8,11 +8,12 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PromotionFilterDto } from './dto/promotion-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Promotion } from './entities/promotion.entity';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Owner - Promotions')
 @ApiBearerAuth()
 @Roles(UserRole.OWNER)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('owner/promotions')
 export class OwnerPromotionsController {
     constructor(private readonly promotionsService: PromotionsService) { }

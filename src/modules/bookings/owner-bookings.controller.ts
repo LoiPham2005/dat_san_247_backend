@@ -9,11 +9,12 @@ import { BookingFilterDto } from './dto/booking-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Booking } from './entities/booking.entity';
 import { BookingStatus } from '../../common/constants/booking-status.constant';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Owner - Bookings')
 @ApiBearerAuth()
 @Roles(UserRole.OWNER)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('owner/bookings')
 export class OwnerBookingsController {
     constructor(private readonly bookingsService: BookingsService) { }

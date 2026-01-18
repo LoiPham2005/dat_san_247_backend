@@ -8,11 +8,12 @@ import { VenueFilterDto } from './dto/venue-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Venue } from './entities/venue.entity';
 import { VenueStatus } from '../../common/constants/venue-status.constant';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Super Admin - Venues')
 @ApiBearerAuth()
 @Roles(UserRole.SUPER_ADMIN)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('super-admin/venues')
 export class SuperAdminVenuesController {
     constructor(private readonly venuesService: VenuesService) { }
