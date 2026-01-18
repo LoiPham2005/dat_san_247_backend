@@ -4,6 +4,7 @@ import { VenuesService } from './venues.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { VenueFilterDto } from './dto/venue-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Venue } from './entities/venue.entity';
@@ -12,7 +13,7 @@ import { VenueStatus } from '../../common/constants/venue-status.constant';
 @ApiTags('Admin - Venues')
 @ApiBearerAuth()
 @Roles(UserRole.ADMIN)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('admin/venues')
 export class AdminVenuesController {
     constructor(private readonly venuesService: VenuesService) { }

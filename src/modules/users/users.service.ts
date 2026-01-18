@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { UserFilterDto } from './dto/user-filter.dto';
 
@@ -18,7 +19,8 @@ export class UsersService {
         const query = this.userRepository.createQueryBuilder('user');
 
         if (role) {
-            query.andWhere('user.role = :role', { role });
+            query.innerJoin('user.role', 'role')
+                .andWhere('role.slug = :role', { role });
         }
 
         if (search) {
@@ -56,7 +58,7 @@ export class UsersService {
     async findOne(id: string) {
         const user = await this.userRepository.findOne({
             where: { id },
-            relations: ['bookings', 'favoriteVenues']
+            relations: ['role', 'bookings', 'favoriteVenues']
         });
         if (!user) throw new NotFoundException('User not found');
         return user;
@@ -71,6 +73,9 @@ export class UsersService {
     }
 
     async create(data: Partial<User>): Promise<User> {
+        if (data.password) {
+            data.password = await bcrypt.hash(data.password, 10);
+        }
         const user = this.userRepository.create(data);
         return this.userRepository.save(user);
     }

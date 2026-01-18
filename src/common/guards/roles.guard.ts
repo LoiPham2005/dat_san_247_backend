@@ -17,11 +17,20 @@ export class RolesGuard implements CanActivate {
         }
         const { user } = context.switchToHttp().getRequest();
         if (!user) {
+            console.warn('[RolesGuard] No user found in request headers:', context.switchToHttp().getRequest().headers);
             throw new ForbiddenException('User not found in request');
         }
 
-        const hasRole = requiredRoles.some((role) => user.role === role);
+        const userRole = typeof user.role === 'object' ? user.role?.slug : user.role;
+        console.log('[RolesGuard] DEBUG:', {
+            requiredRoles,
+            userRole,
+            match: requiredRoles.includes(userRole as UserRole)
+        });
+
+        const hasRole = requiredRoles.some((role) => userRole === role);
         if (!hasRole) {
+            console.warn(`[RolesGuard] Forbidden: User ${user.email} with role ${userRole} tried to access ${context.getClass().name}`);
             throw new ForbiddenException('You do not have permission to access this resource');
         }
         return true;

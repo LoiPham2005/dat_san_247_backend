@@ -19,12 +19,14 @@ export class VenuesService {
     ) { }
 
     async findAll(filter: VenueFilterDto) {
-        const { page = 1, limit = 10, status, search, city, sportType } = filter;
+        const { page = 1, limit = 10, status, search, city, sportType, minPrice, maxPrice, rating, amenities: amenityFilter } = filter;
         const skip = (page - 1) * limit;
 
         const query = this.venueRepository.createQueryBuilder('venue')
             .leftJoinAndSelect('venue.owner', 'owner')
-            .leftJoinAndSelect('venue.images', 'images');
+            .leftJoinAndSelect('venue.images', 'images')
+            .leftJoinAndSelect('venue.amenities', 'amenities')
+            .leftJoinAndSelect('venue.courts', 'courts');
 
         if (status) {
             query.andWhere('venue.status = :status', { status });
@@ -36,6 +38,27 @@ export class VenuesService {
 
         if (city) {
             query.andWhere('venue.city = :city', { city });
+        }
+
+        if (sportType) {
+            query.andWhere('courts.sportType = :sportType', { sportType });
+        }
+
+        if (minPrice) {
+            query.andWhere('courts.pricePerHour >= :minPrice', { minPrice });
+        }
+
+        if (maxPrice) {
+            query.andWhere('courts.pricePerHour <= :maxPrice', { maxPrice });
+        }
+
+        if (rating) {
+            query.andWhere('venue.rating >= :rating', { rating });
+        }
+
+        if (amenityFilter) {
+            const amenityList = amenityFilter.split(',').map(a => a.trim());
+            query.andWhere('amenities.name IN (:...amenityList)', { amenityList });
         }
 
         const [items, total] = await query
@@ -71,6 +94,7 @@ export class VenuesService {
     async updateStatus(id: string, status: VenueStatus, reason?: string) {
         const venue = await this.findOne(id);
         venue.status = status;
+        if (reason) venue.rejectionReason = reason;
         return this.venueRepository.save(venue);
     }
 
@@ -119,7 +143,25 @@ export class VenuesService {
     }
 
     async createOwnerVenue(ownerId: string, data: any) {
-        const venue = this.venueRepository.create({ ...data, ownerId });
+        let { name, slug } = data;
+        if (!slug && name) {
+            slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+        }
+
+        // Check if slug exists
+        const existing = await this.venueRepository.findOne({ where: { slug } });
+        if (existing) {
+            // Append random string to slug if duplicate
+            slug = `${slug}-${Math.random().toString(36).substring(7)}`;
+        }
+
+        const venue = this.venueRepository.create({
+            ...data,
+            slug,
+            ownerId,
+            status: VenueStatus.PENDING, // Default status
+            isActive: true
+        });
         return this.venueRepository.save(venue);
     }
 
@@ -136,7 +178,7 @@ export class VenuesService {
 
     async findAllStaffByOwner(ownerId: string) {
         return this.venueStaffRepository.createQueryBuilder('staff')
-            .innerJoin('staff.venue', 'venue')
+            .innerJoinAndSelect('staff.venue', 'venue')
             .innerJoinAndSelect('staff.user', 'user')
             .where('venue.ownerId = :ownerId', { ownerId })
             .getMany();

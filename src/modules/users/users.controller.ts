@@ -5,8 +5,11 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
 import { User } from './entities/user.entity';
 
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
 @ApiTags('Client - Profile')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('profile')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }

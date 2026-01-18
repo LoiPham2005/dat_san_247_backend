@@ -2,19 +2,25 @@ import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards } fro
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserFilterDto } from './dto/user-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { User } from './entities/user.entity';
 
+import { RolesService } from '../roles/roles.service';
+
 @ApiTags('Admin - Users')
 @ApiBearerAuth()
-@Roles(UserRole.ADMIN)
-@UseGuards(RolesGuard)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('admin/users')
 export class AdminUsersController {
-    constructor(private readonly usersService: UsersService) { }
+    constructor(
+        private readonly usersService: UsersService,
+        private readonly rolesService: RolesService,
+    ) { }
 
     @Get()
     @ApiOperation({ summary: 'Lấy danh sách người dùng' })
@@ -34,6 +40,10 @@ export class AdminUsersController {
     @ApiOperation({ summary: 'Tạo mới người dùng' })
     @ApiSuccessResponse(User)
     async create(@Body() data: any) {
+        if (data.role) {
+            const role = await this.rolesService.findBySlug(data.role);
+            data.role = role;
+        }
         return this.usersService.create(data);
     }
 
@@ -41,6 +51,10 @@ export class AdminUsersController {
     @ApiOperation({ summary: 'Cập nhật thông tin người dùng' })
     @ApiSuccessResponse()
     async update(@Param('id') id: string, @Body() data: any) {
+        if (data.role) {
+            const role = await this.rolesService.findBySlug(data.role);
+            data.role = role;
+        }
         return this.usersService.update(id, data);
     }
 

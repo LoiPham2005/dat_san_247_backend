@@ -5,12 +5,13 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
 
 @ApiTags('Owner - Staff')
 @ApiBearerAuth()
 @Roles(UserRole.OWNER)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('owner/staff')
 export class OwnerStaffController {
     constructor(private readonly venuesService: VenuesService) { }

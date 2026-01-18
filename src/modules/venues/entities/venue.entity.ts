@@ -66,6 +66,9 @@ export class Venue extends BaseEntity {
     @Index()
     status: VenueStatus;
 
+    @Column({ name: 'rejection_reason', type: 'text', nullable: true })
+    rejectionReason: string;
+
     @Column({ name: 'thumbnail_url', type: 'text', nullable: true })
     thumbnailUrl: string;
 

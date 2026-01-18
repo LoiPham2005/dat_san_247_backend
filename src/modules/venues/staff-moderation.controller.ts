@@ -6,13 +6,14 @@ import { ReviewsService } from '../reviews/reviews.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
 import { VenueStatus } from '../../common/constants/venue-status.constant';
 
 @ApiTags('Staff - Moderation')
 @ApiBearerAuth()
 @Roles(UserRole.STAFF)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('staff/moderation')
 export class StaffModerationController {
     constructor(

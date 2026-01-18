@@ -24,4 +24,21 @@ export class VenueFilterDto extends PaginationDto {
     @IsOptional()
     @IsString()
     city?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    minPrice?: number;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    maxPrice?: number;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    rating?: number;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    amenities?: string; // Comma separated amenity names or IDs
 }

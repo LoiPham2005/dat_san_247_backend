@@ -7,6 +7,8 @@ import { OwnerVenuesController } from './owner-venues.controller';
 import { OwnerStaffController } from './owner-staff.controller';
 import { SuperAdminModerationController } from './super-admin-moderation.controller';
 import { VenueStaffVenuesController } from './venue-staff-venues.controller';
+import { StaffModerationController } from './staff-moderation.controller';
+import { AdminVenuesController } from './admin-venues.controller';
 import { Venue } from './entities/venue.entity';
 import { VenueImage } from './entities/venue-image.entity';
 import { VenueAmenity } from './entities/venue-amenity.entity';
@@ -32,8 +34,10 @@ import { ReviewsModule } from '../reviews/reviews.module';
     SuperAdminVenuesController,
     OwnerVenuesController,
     OwnerStaffController,
+    StaffModerationController,
     SuperAdminModerationController,
     VenueStaffVenuesController,
+    AdminVenuesController,
   ],
   providers: [VenuesService],
   exports: [VenuesService],

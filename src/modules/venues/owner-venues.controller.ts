@@ -4,6 +4,7 @@ import { VenuesService } from './venues.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { VenueFilterDto } from './dto/venue-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
@@ -12,7 +13,7 @@ import { Venue } from './entities/venue.entity';
 @ApiTags('Owner - Venues')
 @ApiBearerAuth()
 @Roles(UserRole.OWNER)
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('owner/venues')
 export class OwnerVenuesController {
     constructor(private readonly venuesService: VenuesService) { }
