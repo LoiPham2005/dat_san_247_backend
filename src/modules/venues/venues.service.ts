@@ -136,7 +136,7 @@ export class VenuesService {
     async findOneByOwner(ownerId: string, id: string) {
         const venue = await this.venueRepository.findOne({
             where: { id, ownerId },
-            relations: ['images', 'amenities', 'courts']
+            relations: ['images', 'amenities', 'courts', 'courts.images', 'courts.pricingRules']
         });
         if (!venue) throw new NotFoundException('Venue not found or not owned by user');
         return venue;

@@ -16,6 +16,9 @@ import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 import { ActivityLog } from '../../analytics/entities/activity-log.entity';
 import { File } from '../../uploads/entities/file.entity';
 import { Role } from '../../roles/entities/role.entity';
+import { ChatSettings } from '../../chat/entities/chat-settings.entity';
+import { ConversationParticipant } from '../../chat/entities/participant.entity';
+import { OneToOne } from 'typeorm';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -79,4 +82,10 @@ export class User extends BaseEntity {
 
     @OneToMany(() => File, (f) => f.user)
     files: File[];
+
+    @OneToOne(() => ChatSettings, (settings) => settings.user)
+    chatSettings: ChatSettings;
+
+    @OneToMany(() => ConversationParticipant, (cp) => cp.user)
+    chats: ConversationParticipant[];
 }
