@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { VenuesService } from './venues.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
@@ -7,6 +8,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { VenueFilterDto } from './dto/venue-filter.dto';
+import { CreateVenueDto, UpdateVenueDto } from './dto/create-venue.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Venue } from './entities/venue.entity';
 
@@ -26,10 +28,22 @@ export class OwnerVenuesController {
     }
 
     @Post()
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'thumbnail', maxCount: 1 },
+        { name: 'images', maxCount: 10 },
+    ]))
     @ApiOperation({ summary: 'Thêm sân mới' })
     @ApiSuccessResponse(Venue)
-    async create(@CurrentUser('id') ownerId: string, @Body() data: any) {
-        return this.venuesService.createOwnerVenue(ownerId, data);
+    async create(
+        @CurrentUser('id') ownerId: string,
+        @Body() data: CreateVenueDto,
+        @UploadedFiles() files: { thumbnail?: Express.Multer.File[], images?: Express.Multer.File[] }
+    ) {
+        return this.venuesService.createOwnerVenue(ownerId, data, {
+            thumbnail: files.thumbnail?.[0],
+            images: files.images
+        });
     }
 
     @Get(':id')
@@ -40,10 +54,23 @@ export class OwnerVenuesController {
     }
 
     @Put(':id')
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'thumbnail', maxCount: 1 },
+        { name: 'images', maxCount: 10 },
+    ]))
     @ApiOperation({ summary: 'Cập nhật thông tin sân' })
     @ApiSuccessResponse()
-    async update(@CurrentUser('id') ownerId: string, @Param('id') id: string, @Body() data: any) {
-        return this.venuesService.updateByOwner(ownerId, id, data);
+    async update(
+        @CurrentUser('id') ownerId: string,
+        @Param('id') id: string,
+        @Body() data: UpdateVenueDto,
+        @UploadedFiles() files: { thumbnail?: Express.Multer.File[], images?: Express.Multer.File[] }
+    ) {
+        return this.venuesService.updateByOwner(ownerId, id, data, {
+            thumbnail: files.thumbnail?.[0],
+            images: files.images
+        });
     }
 
     @Delete(':id')

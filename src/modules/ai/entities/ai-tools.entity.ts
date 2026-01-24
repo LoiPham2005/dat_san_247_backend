@@ -125,11 +125,11 @@ export class AIImageAnalysis {
     analyzedAt: Date;
 
     @ManyToOne(() => Venue, { nullable: true })
-    @JoinColumn({ name: 'source_id' })
+    @JoinColumn({ name: 'venue_id' })
     venue: Venue;
 
     @ManyToOne(() => Review, { nullable: true })
-    @JoinColumn({ name: 'source_id' })
+    @JoinColumn({ name: 'review_id' })
     review: Review;
 }
 

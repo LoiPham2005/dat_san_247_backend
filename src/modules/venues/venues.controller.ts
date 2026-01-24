@@ -5,7 +5,8 @@ import { VenueFilterDto } from './dto/venue-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
 import { Venue } from './entities/venue.entity';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Client - Venues')
 @Controller('venues')
@@ -29,10 +30,11 @@ export class VenuesController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Chi tiết sân' })
   @ApiSuccessResponse(Venue)
-  async findOne(@Param('id') id: string) {
-    return this.venuesService.findOne(id);
+  async findOne(@Param('id') id: string, @CurrentUser('id') userId?: string) {
+    return this.venuesService.findOne(id, userId);
   }
 
   @Get(':id/reviews')
@@ -44,6 +46,7 @@ export class VenuesController {
 
   @Post(':id/favorite')
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Thêm vào yêu thích' })
   @ApiSuccessResponse()
   async addToFavorite(@CurrentUser('id') userId: string, @Param('id') venueId: string) {
@@ -52,6 +55,7 @@ export class VenuesController {
 
   @Delete(':id/favorite')
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Xóa khỏi yêu thích' })
   @ApiSuccessResponse()
   async removeFromFavorite(@CurrentUser('id') userId: string, @Param('id') venueId: string) {
@@ -60,6 +64,7 @@ export class VenuesController {
 
   @Get('my/favorites')
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Danh sách sân yêu thích của tôi' })
   @ApiSuccessResponse(Venue, true)
   async getMyFavorites(@CurrentUser('id') userId: string) {

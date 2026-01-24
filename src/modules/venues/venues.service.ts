@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Venue } from './entities/venue.entity';
 import { VenueStaff } from './entities/venue-staff.entity';
 import { FavoriteVenue } from './entities/favorite-venue.entity';
+import { VenueImage } from './entities/venue-image.entity';
+import { VenueAmenity } from './entities/venue-amenity.entity';
 import { VenueFilterDto } from './dto/venue-filter.dto';
 import { VenueStatus } from '../../common/constants/venue-status.constant';
+import { StorageService } from '../../shared/storage/storage.service';
+import { CreateVenueDto, UpdateVenueDto } from './dto/create-venue.dto';
 
 @Injectable()
 export class VenuesService {
@@ -16,6 +20,12 @@ export class VenuesService {
         private venueStaffRepository: Repository<VenueStaff>,
         @InjectRepository(FavoriteVenue)
         private favoriteVenueRepository: Repository<FavoriteVenue>,
+        @InjectRepository(VenueImage)
+        private venueImageRepository: Repository<VenueImage>,
+        @InjectRepository(VenueAmenity)
+        private venueAmenityRepository: Repository<VenueAmenity>,
+        private storageService: StorageService,
+        private dataSource: DataSource,
     ) { }
 
     async findAll(filter: VenueFilterDto) {
@@ -82,13 +92,23 @@ export class VenuesService {
         };
     }
 
-    async findOne(id: string) {
+    async findOne(id: string, userId?: string) {
         const venue = await this.venueRepository.findOne({
             where: { id },
-            relations: ['owner', 'images', 'amenities', 'courts', 'courts.images']
+            relations: ['owner', 'images', 'amenities', 'courts', 'courts.images', 'courts.pricingRules']
         });
         if (!venue) throw new NotFoundException('Venue not found');
-        return venue;
+
+        // Add isFavorited if userId is provided
+        let isFavorited = false;
+        if (userId) {
+            const favorite = await this.favoriteVenueRepository.findOne({
+                where: { userId, venueId: id }
+            });
+            isFavorited = !!favorite;
+        }
+
+        return { ...venue, isFavorited };
     }
 
     async updateStatus(id: string, status: VenueStatus, reason?: string) {
@@ -110,14 +130,20 @@ export class VenuesService {
     }
 
     async findAllByOwner(ownerId: string, filter: VenueFilterDto) {
-        const { page = 1, limit = 10, status, search } = filter;
+        const { page = 1, limit = 10, status, search, city, sportType, minPrice, maxPrice } = filter;
         const skip = (page - 1) * limit;
 
         const query = this.venueRepository.createQueryBuilder('venue')
+            .leftJoinAndSelect('venue.courts', 'courts')
+            .leftJoinAndSelect('venue.images', 'images')
             .where('venue.ownerId = :ownerId', { ownerId });
 
         if (status) query.andWhere('venue.status = :status', { status });
         if (search) query.andWhere('venue.name ILIKE :search', { search: `%${search}%` });
+        if (city) query.andWhere('venue.city = :city', { city });
+        if (sportType) query.andWhere('courts.sportType = :sportType', { sportType });
+        if (minPrice) query.andWhere('courts.pricePerHour >= :minPrice', { minPrice });
+        if (maxPrice) query.andWhere('courts.pricePerHour <= :maxPrice', { maxPrice });
 
         const [items, total] = await query
             .orderBy('venue.createdAt', 'DESC')
@@ -142,33 +168,147 @@ export class VenuesService {
         return venue;
     }
 
-    async createOwnerVenue(ownerId: string, data: any) {
-        let { name, slug } = data;
-        if (!slug && name) {
-            slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
-        }
+    async createOwnerVenue(ownerId: string, dto: CreateVenueDto, files: { thumbnail?: any, images?: any[] }) {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
-        // Check if slug exists
-        const existing = await this.venueRepository.findOne({ where: { slug } });
-        if (existing) {
-            // Append random string to slug if duplicate
-            slug = `${slug}-${Math.random().toString(36).substring(7)}`;
-        }
+        try {
+            let { name } = dto;
+            let slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
-        const venue = this.venueRepository.create({
-            ...data,
-            slug,
-            ownerId,
-            status: VenueStatus.PENDING, // Default status
-            isActive: true
-        });
-        return this.venueRepository.save(venue);
+            // Check if slug exists
+            const existing = await queryRunner.manager.findOne(Venue, { where: { slug } });
+            if (existing) {
+                slug = `${slug}-${Math.random().toString(36).substring(7)}`;
+            }
+
+            // 1. Upload Thumbnail if exists
+            let thumbnailUrl: string | undefined = undefined;
+            if (files.thumbnail) {
+                thumbnailUrl = await this.storageService.uploadFile(files.thumbnail, 'venues/thumbnails');
+            }
+
+            // 2. Create Venue
+            const { amenities, ...venueDto } = dto;
+            const venueData: Partial<Venue> = {
+                ...venueDto,
+                slug,
+                ownerId,
+                thumbnailUrl,
+                status: VenueStatus.PENDING,
+                isActive: true
+            };
+            const venue = queryRunner.manager.create(Venue, venueData);
+            const savedVenue = await queryRunner.manager.save(venue);
+
+            // 3. Upload and Save Images
+            if (files.images && files.images.length > 0) {
+                const imageEntities: VenueImage[] = [];
+                for (let i = 0; i < files.images.length; i++) {
+                    const url = await this.storageService.uploadFile(files.images[i], `venues/${savedVenue.id}/gallery`);
+                    imageEntities.push(
+                        queryRunner.manager.create(VenueImage, {
+                            venueId: savedVenue.id,
+                            imageUrl: url,
+                            displayOrder: i
+                        })
+                    );
+                }
+                await queryRunner.manager.save(VenueImage, imageEntities);
+            }
+
+            // 4. Save Amenities
+            if (amenities && amenities.length > 0) {
+                const amenityEntities = amenities.map(name =>
+                    queryRunner.manager.create(VenueAmenity, {
+                        venueId: savedVenue.id,
+                        name
+                    })
+                );
+                await queryRunner.manager.save(VenueAmenity, amenityEntities);
+            }
+
+            await queryRunner.commitTransaction();
+            return this.findOneByOwner(ownerId, savedVenue.id);
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
-    async updateByOwner(ownerId: string, id: string, data: any) {
+    async updateByOwner(ownerId: string, id: string, dto: UpdateVenueDto, files: { thumbnail?: any, images?: any[] } = {}) {
         const venue = await this.findOneByOwner(ownerId, id);
-        Object.assign(venue, data);
-        return this.venueRepository.save(venue);
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            const { amenities, ...venueDto } = dto;
+
+            // 1. Handle Thumbnail Update
+            if (files.thumbnail) {
+                // Delete old thumbnail if exists (optional but recommended)
+                if (venue.thumbnailUrl) {
+                    await this.storageService.deleteFile(venue.thumbnailUrl).catch(() => { });
+                }
+                const thumbnailUrl = await this.storageService.uploadFile(files.thumbnail, 'venues/thumbnails');
+                venue.thumbnailUrl = thumbnailUrl;
+            }
+
+            // 2. Handle Gallery Images (Append or Replace? Usually Replace if provided or just append. I'll Replace for simplicity or better UI experience)
+            if (files.images && files.images.length > 0) {
+                // For a robust system, we might want to delete specific images.
+                // Here I'll just append new ones. Or if the user wants to replace, they'd need a different API.
+                // Let's just append for now.
+                const imageEntities: VenueImage[] = [];
+                for (let i = 0; i < files.images.length; i++) {
+                    const url = await this.storageService.uploadFile(files.images[i], `venues/${id}/gallery`);
+                    imageEntities.push(
+                        queryRunner.manager.create(VenueImage, {
+                            venue,
+                            imageUrl: url,
+                            displayOrder: (venue.images?.length || 0) + i
+                        })
+                    );
+                }
+                await queryRunner.manager.save(VenueImage, imageEntities);
+            }
+
+            // 3. Handle Amenities Update (Replace existing)
+            if (amenities !== undefined) {
+                // Delete existing amenities from DB first
+                await queryRunner.manager.delete(VenueAmenity, { venueId: id });
+
+                let amenityEntities: VenueAmenity[] = [];
+                if (amenities.length > 0) {
+                    amenityEntities = amenities.map(name =>
+                        queryRunner.manager.create(VenueAmenity, {
+                            venue,
+                            name
+                        })
+                    );
+                    await queryRunner.manager.save(VenueAmenity, amenityEntities);
+                }
+                venue.amenities = amenityEntities;
+            }
+
+            // 4. Update basic info
+            Object.assign(venue, venueDto);
+            // Optimization: Remove relations from the object to prevent TypeORM from trying to update them again during save()
+            const { images, amenities: _, courts, ...saveData } = venue;
+            const updatedVenue = await queryRunner.manager.save(Venue, saveData);
+
+            await queryRunner.commitTransaction();
+            return this.findOneByOwner(ownerId, id);
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
     async softDeleteByOwner(ownerId: string, id: string) {
