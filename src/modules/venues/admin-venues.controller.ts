@@ -54,13 +54,19 @@ export class AdminVenuesController {
         return this.venuesService.updateStatus(id, VenueStatus.REJECTED, reason, req.user.id);
     }
 
+    @Put(':id')
+    @ApiOperation({ summary: 'Cập nhật thông tin sân' })
+    @ApiSuccessResponse()
+    async update(@Param('id') id: string, @Body() data: any) {
+        return this.venuesService.update(id, data);
+    }
+
     @Put(':id/toggle-featured')
     @ApiOperation({ summary: 'Đánh dấu sân nổi bật' })
     @ApiSuccessResponse()
     async toggleFeatured(@Param('id') id: string) {
         return this.venuesService.toggleFeatured(id);
     }
-
     @Delete(':id')
     @ApiOperation({ summary: 'Xóa sân' })
     @ApiSuccessResponse()

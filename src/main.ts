@@ -29,8 +29,16 @@ async function bootstrap() {
         logger.log('✅ Sentry initialized');
     }
 
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, {
+        logger: ['error', 'warn', 'log', 'debug', 'verbose'], // Default, but Winston will override if injected properly via app.useLogger
+    });
+
+    // Use Winston for system logs
+    const { WINSTON_MODULE_NEST_PROVIDER } = await import('nest-winston');
+    app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+
     const config = app.get(ConfigService);
+
 
     // Security & Performance
     app.use(helmet());

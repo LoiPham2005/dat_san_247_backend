@@ -1,10 +1,17 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
+import { AppLoggerService } from '../services/app-logger.service';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-    constructor(private reflector: Reflector) { }
+    constructor(
+        private reflector: Reflector,
+        private readonly logger: AppLoggerService
+    ) {
+        this.logger.setContext('PermissionsGuard');
+    }
+
 
     canActivate(context: ExecutionContext): boolean {
         const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
@@ -18,10 +25,12 @@ export class PermissionsGuard implements CanActivate {
 
         const { user } = context.switchToHttp().getRequest();
         if (!user) {
+            this.logger.warn('User not authenticated');
             throw new ForbiddenException('User not authenticated');
         }
 
         if (!user.role) {
+            this.logger.warn(`User ${user.id} has no role assigned`);
             throw new ForbiddenException('User has no role assigned');
         }
 
@@ -39,6 +48,7 @@ export class PermissionsGuard implements CanActivate {
         );
 
         if (!hasAllPermissions) {
+            this.logger.warn(`User ${user.id} (${user.role.slug}) denied access. Required: [${requiredPermissions.join(', ')}], Possessed: [${userPermissions.join(', ')}]`);
             throw new ForbiddenException(
                 `You do not have the required permissions: ${requiredPermissions.join(', ')}`,
             );

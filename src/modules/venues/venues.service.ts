@@ -214,6 +214,12 @@ export class VenuesService {
         return { ...venue, isFavorited };
     }
 
+    async update(id: string, data: any) {
+        await this.venueRepository.update(id, data);
+        return this.findOne(id);
+    }
+
+
     async updateStatus(id: string, status: VenueStatus, reason?: string, userId?: string) {
         const venue = await this.findOne(id);
         venue.status = status;

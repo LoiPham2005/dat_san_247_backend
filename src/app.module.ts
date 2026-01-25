@@ -39,6 +39,12 @@ import { SmsModule } from './shared/sms/sms.module';
 import { FcmModule } from './shared/fcm/fcm.module';
 
 import { AppController } from './app.controller';
+import { WinstonModule } from 'nest-winston';
+import { createWinstonFormat, createWinstonTransports } from './config/logger.config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { HttpLoggingInterceptor } from './common/interceptors/http-logging.interceptor';
+import { AppLoggerService } from './common/services/app-logger.service';
+import { LoggerModule } from './common/services/logger.module';
 
 @Module({
     imports: [
@@ -103,12 +109,29 @@ import { AppController } from './app.controller';
         // CacheModule,
         // QueueModule,
         FcmModule,
+        LoggerModule,
+
+        // 6. Logging (Winston)
+        WinstonModule.forRootAsync({
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => {
+                const loggerConfig = config.get('logger');
+                return {
+                    transports: createWinstonTransports(loggerConfig),
+                    format: createWinstonFormat(),
+                };
+            },
+        }),
     ],
     controllers: [AppController],
     providers: [
         {
             provide: APP_GUARD,
             useClass: ThrottlerGuard,
+        },
+        {
+            provide: APP_INTERCEPTOR,
+            useClass: HttpLoggingInterceptor,
         },
     ],
 })
