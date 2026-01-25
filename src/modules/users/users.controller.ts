@@ -28,6 +28,13 @@ export class UsersController {
     return this.usersService.update(userId, data);
   }
 
+  @Patch('change-password')
+  @ApiOperation({ summary: 'Đổi mật khẩu' })
+  async changePassword(@CurrentUser('id') userId: string, @Body() data: any) {
+    return this.usersService.changePassword(userId, data);
+  }
+
+
   @Patch('fcm-token')
   @ApiOperation({ summary: 'Cập nhật token thông báo (FCM Token)' })
   async updateFcmToken(@CurrentUser('id') userId: string, @Body('fcmToken') fcmToken: string) {

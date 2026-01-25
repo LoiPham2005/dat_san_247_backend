@@ -8,11 +8,11 @@ import { ApiSuccessResponse } from '../../common/decorators/api-response.decorat
 import { Ticket } from './entities/ticket.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
-@ApiTags('Super Admin - Support')
+@ApiTags('Admin - Support')
 @ApiBearerAuth()
-@Roles(UserRole.SUPER_ADMIN)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('super-admin/support')
+@Controller('admin/support')
 export class SuperAdminSupportController {
     constructor(private readonly supportService: SupportService) { }
 

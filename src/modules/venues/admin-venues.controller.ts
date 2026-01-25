@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { VenuesService } from './venues.service';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -43,15 +43,15 @@ export class AdminVenuesController {
     @Post(':id/approve')
     @ApiOperation({ summary: 'Duyệt sân' })
     @ApiSuccessResponse()
-    async approve(@Param('id') id: string) {
-        return this.venuesService.updateStatus(id, VenueStatus.APPROVED);
+    async approve(@Param('id') id: string, @Req() req: any) {
+        return this.venuesService.updateStatus(id, VenueStatus.APPROVED, undefined, req.user.id);
     }
 
     @Post(':id/reject')
     @ApiOperation({ summary: 'Từ chối sân' })
     @ApiSuccessResponse()
-    async reject(@Param('id') id: string, @Body('reason') reason: string) {
-        return this.venuesService.updateStatus(id, VenueStatus.REJECTED, reason);
+    async reject(@Param('id') id: string, @Body('reason') reason: string, @Req() req: any) {
+        return this.venuesService.updateStatus(id, VenueStatus.REJECTED, reason, req.user.id);
     }
 
     @Put(':id/toggle-featured')

@@ -81,9 +81,32 @@ export class UsersService {
     }
 
     async update(id: string, data: any) {
+        if (data.password) {
+            data.password = await bcrypt.hash(data.password, 10);
+        }
         await this.userRepository.update(id, data);
         return this.findOne(id);
     }
+
+    async changePassword(id: string, data: any) {
+        const user = await this.userRepository.findOne({
+            where: { id },
+            select: ['id', 'password']
+        });
+
+        if (!user) throw new NotFoundException('User not found');
+
+        const isMatch = await bcrypt.compare(data.oldPassword, user.password);
+        if (!isMatch) {
+            throw new Error('Mật khẩu hiện tại không chính xác');
+        }
+
+        const hashedNewPassword = await bcrypt.hash(data.newPassword, 10);
+        await this.userRepository.update(id, { password: hashedNewPassword });
+
+        return { message: 'Đổi mật khẩu thành công' };
+    }
+
 
     async toggleStatus(id: string) {
         const user = await this.findOne(id);

@@ -37,6 +37,13 @@ export class VenuesController {
     return this.venuesService.findOne(id, userId);
   }
 
+  @Get(':id/availability')
+  @ApiOperation({ summary: 'Lấy danh sách sân trống và giá theo ngày' })
+  @ApiSuccessResponse()
+  async getAvailability(@Param('id') id: string, @Query('date') date: string) {
+    return this.venuesService.getAvailability(id, date);
+  }
+
   @Get(':id/reviews')
   @ApiOperation({ summary: 'Lấy đánh giá của sân' })
   @ApiSuccessResponse()

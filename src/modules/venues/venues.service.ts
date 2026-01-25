@@ -1,7 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { Venue } from './entities/venue.entity';
+import { PricingRule } from '../time-slots/entities/pricing-rule.entity';
+import { Booking } from '../bookings/entities/booking.entity';
+import { BookingStatus } from '../../common/constants/booking-status.constant';
+import { DayOfWeek } from '../../common/constants/day-of-week.constant';
 import { VenueStaff } from './entities/venue-staff.entity';
 import { FavoriteVenue } from './entities/favorite-venue.entity';
 import { VenueImage } from './entities/venue-image.entity';
@@ -10,6 +14,8 @@ import { VenueFilterDto } from './dto/venue-filter.dto';
 import { VenueStatus } from '../../common/constants/venue-status.constant';
 import { StorageService } from '../../shared/storage/storage.service';
 import { CreateVenueDto, UpdateVenueDto } from './dto/create-venue.dto';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { ActivityType } from '../../common/constants/activity-type.constant';
 
 @Injectable()
 export class VenuesService {
@@ -24,9 +30,106 @@ export class VenuesService {
         private venueImageRepository: Repository<VenueImage>,
         @InjectRepository(VenueAmenity)
         private venueAmenityRepository: Repository<VenueAmenity>,
+        @InjectRepository(PricingRule)
+        private pricingRuleRepository: Repository<PricingRule>,
+        @InjectRepository(Booking)
+        private bookingRepository: Repository<Booking>,
         private storageService: StorageService,
         private dataSource: DataSource,
+        private analyticsService: AnalyticsService,
     ) { }
+
+    async getAvailability(venueId: string, dateStr: string) {
+        const date = new Date(dateStr);
+        const dayOfWeek = this.getDayOfWeek(date);
+
+        const venue = await this.venueRepository.findOne({
+            where: { id: venueId },
+            relations: ['courts', 'courts.pricingRules']
+        });
+
+        if (!venue) throw new NotFoundException('Venue not found');
+
+        const bookings = await this.bookingRepository.find({
+            where: {
+                venueId,
+                bookingDate: dateStr as any,
+                status: In([BookingStatus.CONFIRMED, BookingStatus.PENDING, BookingStatus.CHECKED_IN] as any)
+            }
+        });
+
+        const openingTime = venue.openingTime || '06:00:00';
+        const closingTime = venue.closingTime || '22:00:00';
+        const slots = this.generateTimeSlots(openingTime, closingTime);
+
+        const availability = venue.courts.map(court => {
+            const courtBookings = bookings.filter(b => b.courtId === court.id);
+            const courtPricingRules = court.pricingRules.filter(r => r.dayOfWeek === dayOfWeek && r.isActive);
+
+            const courtSlots = slots.map(slotTime => {
+                const isBooked = courtBookings.some(b => {
+                    const bStart = b.startTime;
+                    const bEnd = b.endTime;
+                    return slotTime >= bStart && slotTime < bEnd;
+                });
+
+                // Find applicable price for this slot
+                const applicableRule = courtPricingRules.find(r =>
+                    slotTime >= r.startTime && slotTime < r.endTime
+                );
+
+                // If no rule, use default court price (prorated to 30 mins)
+                const price = applicableRule ? applicableRule.price / 2 : court.pricePerHour / 2;
+
+                return {
+                    time: slotTime.substring(0, 5),
+                    available: !isBooked,
+                    price: Number(price)
+                };
+            });
+
+            return {
+                courtId: court.id,
+                courtName: court.name,
+                sportType: court.sportType,
+                pricePerHour: court.pricePerHour,
+                slots: courtSlots
+            };
+        });
+
+        return {
+            venueId,
+            date: dateStr,
+            openingTime: openingTime.substring(0, 5),
+            closingTime: closingTime.substring(0, 5),
+            courts: availability
+        };
+    }
+
+    private getDayOfWeek(date: Date): DayOfWeek {
+        const days = [DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY];
+        return days[date.getDay()];
+    }
+
+    private generateTimeSlots(start: string, end: string): string[] {
+        const slots: string[] = [];
+        let current = start;
+
+        while (current < end) {
+            slots.push(current);
+            const [h, m, s] = current.split(':').map(Number);
+            let nextH = h;
+            let nextM = m + 30;
+            if (nextM >= 60) {
+                nextH++;
+                nextM = 0;
+            }
+            if (nextH >= 24) break;
+            current = `${nextH.toString().padStart(2, '0')}:${nextM.toString().padStart(2, '0')}:00`;
+        }
+
+        return slots;
+    }
 
     async findAll(filter: VenueFilterDto) {
         const { page = 1, limit = 10, status, search, city, sportType, minPrice, maxPrice, rating, amenities: amenityFilter } = filter;
@@ -111,11 +214,25 @@ export class VenuesService {
         return { ...venue, isFavorited };
     }
 
-    async updateStatus(id: string, status: VenueStatus, reason?: string) {
+    async updateStatus(id: string, status: VenueStatus, reason?: string, userId?: string) {
         const venue = await this.findOne(id);
         venue.status = status;
         if (reason) venue.rejectionReason = reason;
-        return this.venueRepository.save(venue);
+        const savedVenue = await this.venueRepository.save(venue);
+
+        // Log activity if userId is provided
+        if (userId) {
+            await this.analyticsService.logActivity({
+                userId,
+                activityType: status === VenueStatus.APPROVED ? ActivityType.VENUE_APPROVED : ActivityType.VENUE_REJECTED,
+                entityType: 'VENUE',
+                entityId: id,
+                description: `${status === VenueStatus.APPROVED ? 'Approved' : 'Rejected'} venue: ${venue.name}${reason ? `. Reason: ${reason}` : ''}`,
+                metadata: { status, reason }
+            });
+        }
+
+        return savedVenue;
     }
 
     async toggleFeatured(id: string) {

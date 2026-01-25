@@ -14,8 +14,11 @@ import { VenueImage } from './entities/venue-image.entity';
 import { VenueAmenity } from './entities/venue-amenity.entity';
 import { FavoriteVenue } from './entities/favorite-venue.entity';
 import { VenueStaff } from './entities/venue-staff.entity';
+import { PricingRule } from '../time-slots/entities/pricing-rule.entity';
+import { Booking } from '../bookings/entities/booking.entity';
 import { UsersModule } from '../users/users.module';
 import { ReviewsModule } from '../reviews/reviews.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
   imports: [
@@ -24,10 +27,13 @@ import { ReviewsModule } from '../reviews/reviews.module';
       VenueImage,
       VenueAmenity,
       FavoriteVenue,
-      VenueStaff
+      VenueStaff,
+      PricingRule,
+      Booking
     ]),
     forwardRef(() => UsersModule),
     forwardRef(() => ReviewsModule),
+    AnalyticsModule,
   ],
   controllers: [
     VenuesController,

@@ -116,6 +116,7 @@ export class BookingsService {
         // Logic tạo booking trực tiếp
         const booking = this.bookingRepository.create({
             ...data,
+            customerId: data.customerId || ownerId,
             status: BookingStatus.CONFIRMED,
             bookingCode: 'W' + Date.now().toString().slice(-8),
         });
@@ -177,7 +178,7 @@ export class BookingsService {
         const booking = this.bookingRepository.create({
             ...data,
             customerId: userId,
-            status: BookingStatus.PENDING,
+            status: data.status || BookingStatus.PENDING,
             bookingCode: 'B' + Date.now().toString().slice(-8),
         });
         return this.bookingRepository.save(booking);
@@ -193,6 +194,36 @@ export class BookingsService {
         booking.cancelledAt = new Date();
         return this.bookingRepository.save(booking);
     }
+
+    async rescheduleBooking(userId: string, id: string, data: any) {
+        const booking = await this.findOneByUser(userId, id);
+
+        // Only allow rescheduling if it's PENDING or CONFIRMED
+        if (booking.status !== BookingStatus.PENDING && booking.status !== BookingStatus.CONFIRMED) {
+            throw new Error('Cannot reschedule booking in current status');
+        }
+
+        // Update booking details
+        Object.assign(booking, {
+            bookingDate: data.bookingDate,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            note: data.note || booking.note
+        });
+
+        return this.bookingRepository.save(booking);
+    }
+
+    async requestInvoice(userId: string, id: string, data: any) {
+        const booking = await this.findOneByUser(userId, id);
+
+        // Log invoice request - In real app, we might create an InvoiceRequest entity
+        console.log(`[BookingsService] Invoice request for booking ${booking.bookingCode} by user ${userId}`);
+        console.log(`[BookingsService] Invoice details:`, JSON.stringify(data, null, 2));
+
+        return { success: true, message: 'Invoice request submitted successfully' };
+    }
+
 
     async findAllForVenues(venueIds: string[], filter: any) {
         const { page = 1, limit = 10, status, date } = filter;

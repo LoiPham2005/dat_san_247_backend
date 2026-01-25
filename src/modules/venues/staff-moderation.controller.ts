@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Body, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, UseGuards, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { VenuesService } from './venues.service';
 import { UsersService } from '../users/users.service';
@@ -32,15 +32,15 @@ export class StaffModerationController {
     @Post('venues/:id/approve')
     @ApiOperation({ summary: 'Duyệt sân' })
     @ApiSuccessResponse()
-    async approveVenue(@Param('id') id: string) {
-        return this.venuesService.updateStatus(id, VenueStatus.APPROVED);
+    async approveVenue(@Param('id') id: string, @Req() req: any) {
+        return this.venuesService.updateStatus(id, VenueStatus.APPROVED, undefined, req.user.id);
     }
 
     @Post('venues/:id/reject')
     @ApiOperation({ summary: 'Từ chối sân' })
     @ApiSuccessResponse()
-    async rejectVenue(@Param('id') id: string, @Body('reason') reason: string) {
-        return this.venuesService.updateStatus(id, VenueStatus.REJECTED, reason);
+    async rejectVenue(@Param('id') id: string, @Body('reason') reason: string, @Req() req: any) {
+        return this.venuesService.updateStatus(id, VenueStatus.REJECTED, reason, req.user.id);
     }
 
     @Put('reviews/:id/visibility')
