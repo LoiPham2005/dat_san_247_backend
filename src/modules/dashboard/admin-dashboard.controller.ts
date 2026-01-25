@@ -5,12 +5,12 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'; // Giả sử đã có JwtAuthGuard
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Admin - Dashboard')
 @ApiBearerAuth()
 @Roles(UserRole.ADMIN)
-@UseGuards(JwtAuthGuard, RolesGuard) // Thêm JwtAuthGuard vào đây khi đã implement hoàn chỉnh
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('admin/dashboard')
 export class AdminDashboardController {
     constructor(private readonly dashboardService: DashboardService) { }
@@ -48,5 +48,12 @@ export class AdminDashboardController {
     @ApiSuccessResponse()
     async getRecentActivities() {
         return this.dashboardService.getRecentActivities();
+    }
+
+    @Get('sport-distribution')
+    @ApiOperation({ summary: 'Phân bố loại hình thể thao' })
+    @ApiSuccessResponse()
+    async getSportDistribution() {
+        return this.dashboardService.getSportDistribution();
     }
 }

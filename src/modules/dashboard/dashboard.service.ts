@@ -2,10 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Venue } from '../venues/entities/venue.entity';
+import { Court } from '../courts/entities/court.entity';
 import { Booking } from '../bookings/entities/booking.entity';
 import { Payment } from '../payments/entities/payment.entity';
+import { Ticket, TicketStatus } from '../support/entities/ticket.entity';
 import { UserRole } from '../../common/constants/role.constant';
 import { BookingStatus } from '../../common/constants/booking-status.constant';
+import { VenueStatus } from '../../common/constants/venue-status.constant';
 
 @Injectable()
 export class DashboardService {
@@ -14,6 +17,13 @@ export class DashboardService {
     async getSuperAdminOverview() {
         const userCount = await this.dataSource.getRepository(User).count();
         const venueCount = await this.dataSource.getRepository(Venue).count();
+        const pendingVenueCount = await this.dataSource.getRepository(Venue).count({
+            where: { status: VenueStatus.PENDING }
+        });
+
+        const openTicketCount = await this.dataSource.getRepository(Ticket).count({
+            where: { status: TicketStatus.OPEN }
+        });
 
         const revenueResult = await this.dataSource.getRepository(Payment)
             .createQueryBuilder('payment')
@@ -21,8 +31,14 @@ export class DashboardService {
             .where('payment.status = :status', { status: 'PAID' })
             .getRawOne();
 
+        const pendingPayoutResult = await this.dataSource.getRepository(Payment)
+            .createQueryBuilder('payment')
+            .select('SUM(payment.amount)', 'total')
+            .where('payment.status = :status', { status: 'PENDING' })
+            .getRawOne();
+
         const bookingToday = await this.dataSource.getRepository(Booking).count({
-            where: { bookingDate: new Date() } // Đơn giản hóa, thực tế cần xử lý timezone
+            where: { bookingDate: new Date() } // Simplified, real-world needs timezone handling
         });
 
         return {
@@ -30,6 +46,9 @@ export class DashboardService {
             activeVenues: venueCount,
             totalRevenue: parseFloat(revenueResult?.total || 0),
             bookingsToday: bookingToday,
+            pendingVenues: pendingVenueCount,
+            openTickets: openTicketCount,
+            pendingPayouts: parseFloat(pendingPayoutResult?.total || 0),
         };
     }
 
@@ -141,5 +160,14 @@ export class DashboardService {
             todayBookings: parseInt(stats?.total || 0),
             pendingCheckins: parseInt(stats?.pending || 0),
         };
+    }
+
+    async getSportDistribution() {
+        return this.dataSource.getRepository(Court)
+            .createQueryBuilder('court')
+            .select('court.sportType', 'label')
+            .addSelect('COUNT(court.id)', 'count')
+            .groupBy('court.sportType')
+            .getRawMany();
     }
 }

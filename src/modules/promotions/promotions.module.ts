@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PromotionsService } from './promotions.service';
 import { PromotionsController } from './promotions.controller';
 import { OwnerPromotionsController } from './owner-promotions.controller';
+import { AdminPromotionsController } from './admin-promotions.controller';
 import { Promotion } from './entities/promotion.entity';
 import { PromotionVenue } from './entities/promotion-venue.entity';
 import { PromotionUsage } from './entities/promotion-usage.entity';
@@ -21,7 +22,8 @@ import { StaffMarketingController } from './staff-marketing.controller';
   controllers: [
     PromotionsController,
     OwnerPromotionsController,
-    StaffMarketingController, 
+    StaffMarketingController,
+    AdminPromotionsController
   ],
   providers: [PromotionsService],
   exports: [PromotionsService],
