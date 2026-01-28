@@ -5,7 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
-import * as compression from 'compression';
+import compression from 'compression';
 import * as Sentry from '@sentry/nestjs';
 
 import { AppModule } from './app.module';
