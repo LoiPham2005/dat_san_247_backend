@@ -9,13 +9,15 @@ import { PromotionVenue } from './entities/promotion-venue.entity';
 import { PromotionUsage } from './entities/promotion-usage.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { StaffMarketingController } from './staff-marketing.controller';
+import { Venue } from '../venues/entities/venue.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Promotion,
       PromotionVenue,
-      PromotionUsage
+      PromotionUsage,
+      Venue
     ]),
     forwardRef(() => NotificationsModule),
   ],

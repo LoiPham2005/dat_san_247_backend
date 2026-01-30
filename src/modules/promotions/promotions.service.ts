@@ -1,14 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { Promotion } from './entities/promotion.entity';
 import { PromotionFilterDto } from './dto/promotion-filter.dto';
+import { PromotionVenue } from './entities/promotion-venue.entity';
+import { Venue } from '../venues/entities/venue.entity';
 
 @Injectable()
 export class PromotionsService {
     constructor(
         @InjectRepository(Promotion)
         private promotionRepository: Repository<Promotion>,
+        @InjectRepository(PromotionVenue)
+        private promotionVenueRepository: Repository<PromotionVenue>,
+        @InjectRepository(Venue)
+        private venueRepository: Repository<Venue>,
     ) { }
 
     async findAll(filter: PromotionFilterDto) {
@@ -53,6 +59,9 @@ export class PromotionsService {
     }
 
     async create(data: any) {
+        const existing = await this.promotionRepository.findOne({ where: { code: data.code } });
+        if (existing) throw new ConflictException('Promotion code already exists');
+
         const promo = this.promotionRepository.create(data);
         return this.promotionRepository.save(promo);
     }
@@ -74,10 +83,18 @@ export class PromotionsService {
         const query = this.promotionRepository.createQueryBuilder('promotion')
             .innerJoin('promotion.venues', 'pv')
             .innerJoin('pv.venue', 'venue')
-            .where('venue.ownerId = :ownerId', { ownerId });
+            .where('venue.ownerId = :ownerId', { ownerId })
+            .distinct(true);
 
         if (status) query.andWhere('promotion.status = :status', { status });
-        if (search) query.andWhere('promotion.code ILIKE :search', { search: `%${search}%` });
+        if (search) {
+            query.andWhere(
+                new Brackets(qb => {
+                    qb.where('promotion.code ILIKE :search', { search: `%${search}%` })
+                        .orWhere('promotion.name ILIKE :search', { search: `%${search}%` });
+                })
+            );
+        }
 
         const [items, total] = await query
             .orderBy('promotion.createdAt', 'DESC')
@@ -94,9 +111,25 @@ export class PromotionsService {
     }
 
     async createByOwner(ownerId: string, data: any) {
-        // Luôn gán khuyến mãi vào ít nhất 1 sân của owner
+        const existing = await this.promotionRepository.findOne({ where: { code: data.code } });
+        if (existing) throw new ConflictException('Promotion code already exists');
+
         const promo = this.promotionRepository.create(data);
-        return this.promotionRepository.save(promo);
+        const savedPromo = await this.promotionRepository.save(promo) as any;
+
+        // Link to all owner venues
+        const ownerVenues = await this.venueRepository.find({ where: { ownerId } });
+        if (ownerVenues.length > 0) {
+            const promoVenues = ownerVenues.map(venue => {
+                return this.promotionVenueRepository.create({
+                    promotionId: savedPromo.id,
+                    venueId: venue.id
+                });
+            });
+            await this.promotionVenueRepository.save(promoVenues);
+        }
+
+        return savedPromo;
     }
 
     async softDeleteByOwner(ownerId: string, id: string) {
