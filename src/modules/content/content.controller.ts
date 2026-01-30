@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseInterceptors, UploadedFiles, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseInterceptors, UploadedFile, UploadedFiles, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ContentService } from './content.service';
@@ -9,6 +9,9 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '../../common/constants/role.constant';
+import { CreateBlogPostDto, UpdateBlogPostDto } from './dto/blog.dto';
+import { CreateEmailTemplateDto, UpdateEmailTemplateDto } from './dto/email-template.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Content')
 @Controller('content')
@@ -85,6 +88,104 @@ export class ContentController {
     @ApiOperation({ summary: 'Lấy danh sách bài viết blog' })
     async findBlogPosts() {
         return this.contentService.findBlogPosts();
+    }
+
+    @Get('blogs/:id')
+    @ApiOperation({ summary: 'Chi tiết bài viết blog' })
+    async findBlogPost(@Param('id') id: string) {
+        return this.contentService.findBlogPostById(id);
+    }
+
+    @Post('blogs')
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseInterceptors(FileInterceptor('thumbnail'))
+    @ApiOperation({ summary: 'Tạo bài viết blog mới (Admin)' })
+    async createBlogPost(
+        @Body() dto: CreateBlogPostDto,
+        @CurrentUser('id') userId: string,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        return this.contentService.createBlogPost(dto, userId, file);
+    }
+
+    @Patch('blogs/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseInterceptors(FileInterceptor('thumbnail'))
+    @ApiOperation({ summary: 'Cập nhật bài viết blog (Admin)' })
+    async updateBlogPost(
+        @Param('id') id: string,
+        @Body() dto: UpdateBlogPostDto,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        return this.contentService.updateBlogPost(id, dto, file);
+    }
+
+    @Delete('blogs/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiOperation({ summary: 'Xóa bài viết blog (Admin)' })
+    async deleteBlogPost(@Param('id') id: string) {
+        return this.contentService.deleteBlogPost(id);
+    }
+
+    // Email Template Endpoints
+    @Get('email-templates')
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiOperation({ summary: 'Lấy danh sách mẫu email (Admin)' })
+    async findEmailTemplates() {
+        return this.contentService.findEmailTemplates();
+    }
+
+    @Get('email-templates/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiOperation({ summary: 'Chi tiết mẫu email (Admin)' })
+    async findEmailTemplate(@Param('id') id: string) {
+        return this.contentService.findEmailTemplateById(id);
+    }
+
+    @Post('email-templates')
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiOperation({ summary: 'Tạo mẫu email mới (Admin)' })
+    async createEmailTemplate(
+        @Body() dto: CreateEmailTemplateDto,
+        @CurrentUser('id') userId: string,
+    ) {
+        return this.contentService.createEmailTemplate(dto, userId);
+    }
+
+    @Patch('email-templates/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiOperation({ summary: 'Cập nhật mẫu email (Admin)' })
+    async updateEmailTemplate(
+        @Param('id') id: string,
+        @Body() dto: UpdateEmailTemplateDto,
+    ) {
+        return this.contentService.updateEmailTemplate(id, dto);
+    }
+
+    @Delete('email-templates/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiOperation({ summary: 'Xóa mẫu email (Admin)' })
+    async deleteEmailTemplate(@Param('id') id: string) {
+        return this.contentService.deleteEmailTemplate(id);
+    }
+
+    @Post('email-templates/:id/send-test')
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiOperation({ summary: 'Gửi email test (Admin)' })
+    async sendTestEmail(
+        @Param('id') id: string,
+        @Body('email') email: string,
+    ) {
+        return this.contentService.sendTestEmail(id, email);
     }
 
     @Get('faqs')

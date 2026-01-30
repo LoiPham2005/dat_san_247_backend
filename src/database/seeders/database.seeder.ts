@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PermissionsSeeder } from './permissions.seeder';
 import { RolesSeeder } from './roles.seeder';
 import { UsersSeeder } from './users.seeder';
+import { logger } from '@sentry/nestjs';
 
 @Injectable()
 export class DatabaseSeeder implements OnModuleInit {
@@ -12,7 +13,7 @@ export class DatabaseSeeder implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        console.log('🌱 Starting database seeding...');
+        logger.info('🌱 Starting database seeding...');
 
         try {
             // Seed permissions first
@@ -24,9 +25,9 @@ export class DatabaseSeeder implements OnModuleInit {
             // Seed users (depends on roles)
             await this.usersSeeder.seed();
 
-            console.log('✅ Database seeding completed successfully');
+            logger.info('✅ Database seeding completed successfully');
         } catch (error) {
-            console.error('❌ Database seeding failed:', error);
+            logger.error('❌ Database seeding failed:', error);
             throw error;
         }
     }

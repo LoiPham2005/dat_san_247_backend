@@ -10,6 +10,13 @@ import { Promotion } from './entities/promotion.entity';
 export class PromotionsController {
   constructor(private readonly promotionsService: PromotionsService) { }
 
+  @Get()
+  @ApiOperation({ summary: 'Lấy tất cả khuyến mãi (Public)' })
+  @ApiSuccessResponse(Promotion, true)
+  async getPromotions() {
+    return this.promotionsService.findAll({ limit: 100 } as any);
+  }
+
   @Get('banner')
   @ApiOperation({ summary: 'Lấy danh sách khuyến mãi hot (Home)' })
   @ApiSuccessResponse(Promotion, true)

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Permission } from '../../modules/permissions/entities/permission.entity';
+import { logger } from '@sentry/nestjs';
 
 @Injectable()
 export class PermissionsSeeder {
@@ -75,9 +76,9 @@ export class PermissionsSeeder {
         }
 
         if (seededCount > 0) {
-            console.log(`✅ Seeded ${seededCount} new permissions`);
+            logger.info(`✅ Seeded ${seededCount} new permissions`);
         } else {
-            console.log('✅ Permissions already up to date');
+            logger.info('✅ Permissions already up to date');
         }
     }
 }

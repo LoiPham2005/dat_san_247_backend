@@ -7,19 +7,32 @@ import { ApiSuccessResponse } from '../../common/decorators/api-response.decorat
 import { Ticket } from './entities/ticket.entity';
 
 @ApiTags('Client - Support')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('support')
 export class SupportController {
     constructor(private readonly supportService: SupportService) { }
 
     @Post('tickets')
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Tạo yêu cầu hỗ trợ mới' })
     @ApiSuccessResponse(Ticket)
     async createTicket(@CurrentUser('id') userId: string, @Body() data: any) {
         return this.supportService.createTicket({
             ...data,
             userId,
+        });
+    }
+
+    @Post('contact')
+    @ApiOperation({ summary: 'Gửi liên hệ (Public)' })
+    @ApiSuccessResponse()
+    async submitContact(@Body() data: any) {
+        return this.supportService.createTicket({
+            ...data,
+            title: `Contact: ${data.subject}`,
+            description: `From: ${data.name} <${data.email}>\n\nMessage: ${data.message}`,
+            priority: 'LOW',
+            status: 'OPEN',
         });
     }
 }

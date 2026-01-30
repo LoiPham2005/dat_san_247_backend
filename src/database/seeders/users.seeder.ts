@@ -15,13 +15,13 @@ export class UsersSeeder {
     ) { }
 
     async seed() {
-        const hashedPassword = await bcrypt.hash('Password123@', 10);
+        const hashedPassword = await bcrypt.hash('123456', 10);
         const roles = await this.rolesRepository.find();
         const roleMap = new Map(roles.map((r) => [r.slug, r]));
 
         const userConfigs = [
             {
-                email: 'superadmin@datsan247.com',
+                email: 'superadmin@test.com',
                 password: hashedPassword,
                 fullName: 'Super Admin',
                 phone: '0900000000',

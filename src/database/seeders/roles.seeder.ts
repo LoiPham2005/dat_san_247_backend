@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from '../../modules/roles/entities/role.entity';
 import { Permission } from '../../modules/permissions/entities/permission.entity';
+import { logger } from '@sentry/nestjs';
 
 @Injectable()
 export class RolesSeeder {
@@ -103,9 +104,9 @@ export class RolesSeeder {
         }
 
         if (seededCount > 0) {
-            console.log(`✅ Seeded ${seededCount} new roles`);
+            logger.info(`✅ Seeded ${seededCount} new roles`);
         } else {
-            console.log('✅ Roles already up to date');
+            logger.info('✅ Roles already up to date');
         }
     }
 }
