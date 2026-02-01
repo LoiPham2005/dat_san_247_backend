@@ -30,7 +30,7 @@ import { SupportModule } from './modules/support/support.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ContentModule } from './modules/content/content.module';
 import { ChatModule } from './modules/chat/chat.module';
-import { AIModule } from './modules/ai/ai.module';
+// import { AIModule } from './modules/ai/ai.module';
 
 // Shared services
 import { StorageModule } from './shared/storage/storage.module';
@@ -100,7 +100,7 @@ import { LoggerModule } from './common/services/logger.module';
         SettingsModule,
         ContentModule,
         ChatModule,
-        AIModule,
+        // AIModule,
 
         // 5. Shared Modules
         StorageModule,

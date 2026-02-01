@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { User } from '../users/entities/user.entity';
 import { FcmService } from '../../shared/fcm/fcm.service';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
@@ -13,6 +14,7 @@ export class NotificationsService {
         @InjectRepository(User)
         private userRepository: Repository<User>,
         private fcmService: FcmService,
+        private notificationsGateway: NotificationsGateway,
     ) { }
 
     async broadcast(data: any) {
@@ -32,6 +34,9 @@ export class NotificationsService {
             await this.fcmService.sendMulticast(tokens, data.title, data.message, data.data);
         }
 
+        // Send Socket.io notifications
+        this.notificationsGateway.sendToAll('new_notification', data);
+
         return saved;
     }
 
@@ -44,6 +49,9 @@ export class NotificationsService {
         if (user?.fcmToken) {
             await this.fcmService.sendPushNotification(user.fcmToken, data.title, data.message, data.data);
         }
+
+        // Send Socket.io notification
+        this.notificationsGateway.sendToUser(data.userId, 'new_notification', saved);
 
         return saved;
     }

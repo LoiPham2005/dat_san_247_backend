@@ -8,6 +8,10 @@ import { ChatTemplate } from './entities/chat-template.entity';
 import { ChatSettings, ChatBlock } from './entities/chat-settings.entity';
 import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
+import { ChatGateway } from './chat.gateway';
+import { WsJwtGuard } from '../../common/guards/ws-jwt.guard';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
     imports: [
@@ -20,8 +24,10 @@ import { ChatController } from './chat.controller';
             ChatSettings,
             ChatBlock,
         ]),
+        JwtModule,
+        ConfigModule,
     ],
-    providers: [ChatService],
+    providers: [ChatService, ChatGateway, WsJwtGuard],
     controllers: [ChatController],
     exports: [ChatService],
 })
