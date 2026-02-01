@@ -8,10 +8,12 @@ import { AdminNotificationsController } from './admin-notifications.controller';
 import { NotificationsGateway } from './notifications.gateway';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { UserDevice } from './entities/user-device.entity';
+import { SystemAnnouncement } from './entities/system-announcement.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Notification, User]),
+    TypeOrmModule.forFeature([Notification, User, UserDevice, SystemAnnouncement]),
     ConfigModule,
     JwtModule,
   ],

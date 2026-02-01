@@ -11,12 +11,19 @@ import { Venue } from './entities/venue.entity';
 import { VenueImage } from './entities/venue-image.entity';
 import { VenueAmenity } from './entities/venue-amenity.entity';
 import { FavoriteVenue } from './entities/favorite-venue.entity';
+import { VenueMembership } from './entities/venue-membership.entity';
+import { VenueService } from './entities/venue-service.entity';
 import { VenueStaff } from './entities/venue-staff.entity';
 import { PricingRule } from '../time-slots/entities/pricing-rule.entity';
 import { Booking } from '../bookings/entities/booking.entity';
 import { UsersModule } from '../users/users.module';
 import { ReviewsModule } from '../reviews/reviews.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { Organization } from './entities/organization.entity';
+import { VenueScheduleException } from './entities/schedule-exception.entity';
+import { RefundPolicy } from './entities/refund-policy.entity';
+import { StaffShift } from './entities/staff-shift.entity';
+
 
 @Module({
   imports: [
@@ -25,9 +32,15 @@ import { AnalyticsModule } from '../analytics/analytics.module';
       VenueImage,
       VenueAmenity,
       FavoriteVenue,
+      VenueMembership,
+      VenueService,
       VenueStaff,
       PricingRule,
-      Booking
+      Booking,
+      Organization,
+      VenueScheduleException,
+      RefundPolicy,
+      StaffShift,
     ]),
     forwardRef(() => UsersModule),
     forwardRef(() => ReviewsModule),

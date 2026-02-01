@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { User } from '../users/entities/user.entity';
+import { UserDevice } from './entities/user-device.entity';
 import { FcmService } from '../../shared/fcm/fcm.service';
 import { NotificationsGateway } from './notifications.gateway';
 
@@ -13,12 +14,14 @@ export class NotificationsService {
         private notificationRepository: Repository<Notification>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
+        @InjectRepository(UserDevice)
+        private userDeviceRepository: Repository<UserDevice>,
         private fcmService: FcmService,
         private notificationsGateway: NotificationsGateway,
     ) { }
 
     async broadcast(data: any) {
-        const users = await this.userRepository.find({ select: ['id', 'fcmToken'] });
+        const users = await this.userRepository.find({ select: ['id'] });
 
         const notificationData = users.map(user => ({
             ...data,
@@ -28,8 +31,13 @@ export class NotificationsService {
         // Save DB notifications
         const saved = await this.notificationRepository.save(notificationData);
 
-        // Send Push notifications
-        const tokens = users.map(u => u.fcmToken).filter(token => !!token) as string[];
+        // Send Push notifications - Multi-device support
+        const devices = await this.userDeviceRepository.find({
+            where: { isActive: true },
+            select: ['fcmToken']
+        });
+        const tokens = devices.map(d => d.fcmToken).filter(token => !!token);
+
         if (tokens.length > 0) {
             await this.fcmService.sendMulticast(tokens, data.title, data.message, data.data);
         }
@@ -44,10 +52,15 @@ export class NotificationsService {
         const notification = this.notificationRepository.create(data);
         const saved = await this.notificationRepository.save(notification);
 
-        // Send Push notification
-        const user = await this.userRepository.findOne({ where: { id: data.userId }, select: ['id', 'fcmToken'] });
-        if (user?.fcmToken) {
-            await this.fcmService.sendPushNotification(user.fcmToken, data.title, data.message, data.data);
+        // Send Push notification - All devices of this user
+        const devices = await this.userDeviceRepository.find({
+            where: { userId: data.userId, isActive: true },
+            select: ['fcmToken']
+        });
+
+        if (devices.length > 0) {
+            const tokens = devices.map(d => d.fcmToken);
+            await this.fcmService.sendMulticast(tokens, data.title, data.message, data.data);
         }
 
         // Send Socket.io notification
@@ -55,6 +68,7 @@ export class NotificationsService {
 
         return saved;
     }
+
 
     async findByUser(userId: string) {
         return this.notificationRepository.find({

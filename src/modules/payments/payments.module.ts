@@ -7,11 +7,12 @@ import { WalletController } from './wallet.controller';
 import { Payment } from './entities/payment.entity';
 import { Wallet } from './entities/wallet.entity';
 import { Transaction } from './entities/transaction.entity';
+import { PayoutRequest } from './entities/payout-request.entity';
 import { AdminPaymentsController } from './admin-payments.controller';
 import { StaffFinanceController } from './staff-finance.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Payment, Wallet, Transaction])],
+  imports: [TypeOrmModule.forFeature([Payment, Wallet, Transaction, PayoutRequest])],
   controllers: [
     PaymentsController,
     OwnerRevenueController,

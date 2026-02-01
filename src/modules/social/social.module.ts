@@ -12,6 +12,10 @@ import { MatchFinding } from './entities/match-finding.entity';
 import { MatchApplication } from './entities/match-application.entity';
 import { MatchResult } from './entities/match-result.entity';
 import { Tournament } from './entities/tournament.entity';
+import { TournamentBracket, TournamentMatch } from './entities/tournament-bracket.entity';
+import { MatchEscrow } from './entities/match-escrow.entity';
+
+
 
 
 // Social entities
@@ -46,6 +50,9 @@ import { UserBlock } from './entities/user-block.entity';
             MatchApplication,
             MatchResult,
             Tournament,
+            TournamentBracket,
+            TournamentMatch,
+            MatchEscrow,
             // Social
             Post,
             PostLike,

@@ -15,6 +15,7 @@ import { Court } from '../../courts/entities/court.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { FavoriteVenue } from './favorite-venue.entity';
+import { Organization } from './organization.entity';
 
 @Entity('venues')
 export class Venue extends BaseEntity {
@@ -25,6 +26,14 @@ export class Venue extends BaseEntity {
     @Column({ name: 'owner_id' })
     @Index()
     ownerId: string;
+
+    @Column({ name: 'organization_id', type: 'uuid', nullable: true })
+    @Index()
+    organizationId: string;
+
+    @ManyToOne(() => Organization, (org) => org.venues, { nullable: true })
+    @JoinColumn({ name: 'organization_id' })
+    organization: Organization;
 
     @Column()
     name: string;

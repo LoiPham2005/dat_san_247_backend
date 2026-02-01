@@ -29,6 +29,15 @@ export class PricingRule extends BaseEntity {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     price: number;
 
+    @Column({ name: 'start_date', type: 'date', nullable: true, comment: 'Seasonal or special event start date' })
+    startDate: Date;
+
+    @Column({ name: 'end_date', type: 'date', nullable: true, comment: 'Seasonal or special event end date' })
+    endDate: Date;
+
+    @Column({ name: 'priority', default: 1, comment: 'Higher priority rules override lower ones' })
+    priority: number;
+
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 

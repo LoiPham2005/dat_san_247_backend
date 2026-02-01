@@ -10,6 +10,7 @@ import { PromotionUsage } from './entities/promotion-usage.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { StaffMarketingController } from './staff-marketing.controller';
 import { Venue } from '../venues/entities/venue.entity';
+import { UserVoucher } from './entities/user-voucher.entity';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { Venue } from '../venues/entities/venue.entity';
       Promotion,
       PromotionVenue,
       PromotionUsage,
-      Venue
+      Venue,
+      UserVoucher
     ]),
     forwardRef(() => NotificationsModule),
   ],

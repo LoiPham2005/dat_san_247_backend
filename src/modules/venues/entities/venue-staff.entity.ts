@@ -18,6 +18,14 @@ export class VenueStaff extends BaseEntity {
     @Column({ name: 'user_id' })
     userId: string;
 
+    @Column({
+        name: 'role',
+        type: 'varchar',
+        default: 'STAFF',
+        comment: 'OWNER, MANAGER, STAFF, RECEPTIONIST'
+    })
+    role: string;
+
     @Column({ name: 'assigned_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     assignedAt: Date;
 

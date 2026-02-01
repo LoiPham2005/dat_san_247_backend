@@ -40,14 +40,18 @@ export class Court extends BaseEntity {
     size: string;
 
     @Column({ name: 'surface_type', nullable: true })
-    surfaceType: string;
-
     @Column({ name: 'is_indoor', default: false })
     isIndoor: boolean;
 
     @Column({ name: 'is_active', default: true })
     @Index()
     isActive: boolean;
+
+    @Column({ name: 'is_outdoor', default: false, comment: 'Crucial for weather integration' })
+    isOutdoor: boolean;
+
+    @Column({ name: 'surface_type', nullable: true, comment: 'e.g., Artificial Grass, Clay, Hard Court' })
+    surfaceType: string;
 
     @Column({ name: 'thumbnail_url', type: 'text', nullable: true })
     thumbnailUrl: string;

@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { MatchFinding } from './match-finding.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
@@ -7,6 +7,7 @@ import { User } from '../../users/entities/user.entity';
 @Entity('match_results')
 export class MatchResult extends BaseEntity {
     @Column({ name: 'match_finding_id', type: 'uuid' })
+    @Index()
     matchFindingId: string;
 
     @Column({ name: 'booking_id', type: 'uuid', nullable: true })
@@ -16,45 +17,31 @@ export class MatchResult extends BaseEntity {
     @Column({ name: 'team_a_id', type: 'uuid', nullable: true })
     teamAId: string;
 
-    @Column({ name: 'team_a_type', length: 20, nullable: true })
-    teamAType: string;
-
-    @Column({ name: 'team_a_score', nullable: true })
+    @Column({ name: 'team_a_score', default: 0 })
     teamAScore: number;
 
     // Team B
     @Column({ name: 'team_b_id', type: 'uuid', nullable: true })
     teamBId: string;
 
-    @Column({ name: 'team_b_type', length: 20, nullable: true })
-    teamBType: string;
-
-    @Column({ name: 'team_b_score', nullable: true })
+    @Column({ name: 'team_b_score', default: 0 })
     teamBScore: number;
 
-    // Result
-    @Column({ name: 'winner_id', type: 'uuid', nullable: true })
-    winnerId: string;
+    // Premium Social Features
+    @Column({ name: 'media_urls', type: 'jsonb', nullable: true, comment: 'Match photos/videos' })
+    mediaUrls: string[];
 
-    @Column({ name: 'is_draw', default: false })
-    isDraw: boolean;
+    @Column({ name: 'highlight_video_url', type: 'text', nullable: true })
+    highlightVideoUrl: string;
 
-    // Stats
-    @Column({ name: 'duration_minutes', nullable: true })
-    durationMinutes: number;
+    @Column({ name: 'stats', type: 'jsonb', nullable: true, comment: 'Game stats: goals, shots, etc.' })
+    stats: any;
 
     @Column({ name: 'mvp_user_id', type: 'uuid', nullable: true })
     mvpUserId: string;
 
-    // Verification
-    @Column({ name: 'verified_by', type: 'jsonb', nullable: true })
-    verifiedBy: string[];
-
-    @Column({ name: 'is_verified', default: false })
-    isVerified: boolean;
-
-    @Column({ name: 'played_at', type: 'timestamp', nullable: true })
-    playedAt: Date;
+    @Column({ type: 'text', nullable: true })
+    notes: string;
 
     @ManyToOne(() => MatchFinding, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'match_finding_id' })

@@ -13,9 +13,17 @@ import { Venue } from '../../venues/entities/venue.entity';
 import { Payment } from '../../payments/entities/payment.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { BookingStatus } from '../../../common/constants/booking-status.constant';
+import { RecurringBooking } from './recurring-booking.entity';
 
 @Entity('bookings')
 export class Booking extends BaseEntity {
+    @Column({ name: 'recurring_booking_id', type: 'uuid', nullable: true })
+    recurringBookingId: string;
+
+    @ManyToOne(() => RecurringBooking, (rb) => rb.bookings, { nullable: true })
+    @JoinColumn({ name: 'recurring_booking_id' })
+    recurringBooking: RecurringBooking;
+
     @Column({ name: 'booking_code', unique: true })
     @Index()
     bookingCode: string;

@@ -32,6 +32,8 @@ import { ContentModule } from './modules/content/content.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { SocialModule } from './modules/social/social.module';
 import { AIModule } from './modules/ai/ai.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
+
 
 
 // Shared services
@@ -99,6 +101,8 @@ import { LoggerModule } from './common/services/logger.module';
         ChatModule,
         SocialModule,
         AIModule,
+        SubscriptionsModule,
+
 
         // 5. Shared Modules
         StorageModule,
