@@ -28,8 +28,14 @@ export class MatchParticipant extends BaseEntity {
     })
     status: MatchParticipantStatus;
 
+    @Column({ type: 'text', nullable: true, comment: 'Personal message when applying to join' })
+    message: string;
+
     @Column({ name: 'is_host', default: false })
     isHost: boolean;
+
+    @Column({ name: 'side', type: 'int', nullable: true, comment: '1 for Team A, 2 for Team B' })
+    side: number;
 
     @ManyToOne(() => MatchFinding, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'match_finding_id' })

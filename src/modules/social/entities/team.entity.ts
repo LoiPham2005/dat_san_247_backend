@@ -79,6 +79,9 @@ export class Team extends BaseEntity {
     @Column({ name: 'is_verified', default: false })
     isVerified: boolean;
 
+    @Column({ name: 'is_official', default: false, comment: 'For professional/league clubs' })
+    isOfficial: boolean;
+
     @Column({ name: 'created_by', type: 'uuid' })
     createdById: string;
 

@@ -2,7 +2,6 @@ import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Post } from './post.entity';
 import { User } from '../../users/entities/user.entity';
-import { PostCommentLike } from './post-comment-like.entity';
 
 @Entity('post_comments')
 export class PostComment extends BaseEntity {
@@ -41,7 +40,4 @@ export class PostComment extends BaseEntity {
 
     @OneToMany(() => PostComment, comment => comment.parentComment)
     replies: PostComment[];
-
-    @OneToMany(() => PostCommentLike, like => like.comment)
-    likes: PostCommentLike[];
 }

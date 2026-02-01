@@ -108,21 +108,6 @@ export class MatchFinding extends BaseEntity {
     @Index()
     status: MatchStatus;
 
-    // Matched Info
-    @Column({
-        name: 'matched_with_type',
-        type: 'enum',
-        enum: OrganizerType,
-        nullable: true
-    })
-    matchedWithType: OrganizerType;
-
-    @Column({ name: 'matched_with_user_id', type: 'uuid', nullable: true })
-    matchedWithUserId: string;
-
-    @Column({ name: 'matched_with_team_id', type: 'uuid', nullable: true })
-    matchedWithTeamId: string;
-
     @Column({ name: 'matched_at', type: 'timestamp', nullable: true })
     matchedAt: Date;
 

@@ -23,12 +23,9 @@ import { Organization } from './entities/organization.entity';
 import { VenueScheduleException } from './entities/schedule-exception.entity';
 import { RefundPolicy } from './entities/refund-policy.entity';
 import { StaffShift } from './entities/staff-shift.entity';
-import { VenueOpeningHour } from './entities/opening-hour.entity';
+import { VenueOperatingHour } from './entities/venue-operating-hour.entity';
 import { VenueVerification } from './entities/venue-verification.entity';
 import { VenueBlacklist } from './entities/venue-blacklist.entity';
-
-
-
 
 @Module({
   imports: [
@@ -46,12 +43,10 @@ import { VenueBlacklist } from './entities/venue-blacklist.entity';
       VenueScheduleException,
       RefundPolicy,
       StaffShift,
-      VenueOpeningHour,
+      VenueOperatingHour,
       VenueVerification,
       VenueBlacklist
     ]),
-
-
     forwardRef(() => UsersModule),
     forwardRef(() => ReviewsModule),
     AnalyticsModule,

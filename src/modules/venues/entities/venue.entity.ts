@@ -10,7 +10,6 @@ import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { VenueStatus } from '../../../common/constants/venue-status.constant';
 import { VenueImage } from './venue-image.entity';
-import { VenueAmenity } from './venue-amenity.entity';
 import { VenueOperatingHour } from './venue-operating-hour.entity';
 import { Court } from '../../courts/entities/court.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
@@ -141,8 +140,8 @@ export class Venue extends BaseEntity {
     @OneToMany(() => VenueImage, (image) => image.venue)
     images: VenueImage[];
 
-    @OneToMany(() => VenueAmenity, (amenity) => amenity.venue)
-    amenities: VenueAmenity[];
+    @Column({ type: 'jsonb', nullable: true, comment: 'Amenities like {name: "Wifi", icon: "wifi"}' })
+    amenities: { name: string, icon?: string }[];
 
     @OneToMany(() => VenueOperatingHour, (oh) => oh.venue)
     operatingHours: VenueOperatingHour[];

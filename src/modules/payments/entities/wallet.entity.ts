@@ -2,12 +2,20 @@ import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, VersionColumn } f
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 
+export enum WalletOwnerType {
+    USER = 'USER',
+    TEAM = 'TEAM'
+}
+
 @Entity('wallets')
-@Unique(['userId'])
+@Unique(['ownerType', 'ownerId'])
 export class Wallet extends BaseEntity {
-    @Column({ name: 'user_id', type: 'uuid' })
+    @Column({ name: 'owner_type', type: 'enum', enum: WalletOwnerType, default: WalletOwnerType.USER })
+    ownerType: WalletOwnerType;
+
+    @Column({ name: 'owner_id', type: 'uuid' })
     @Index()
-    userId: string;
+    ownerId: string;
 
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
     balance: number;
@@ -27,10 +35,6 @@ export class Wallet extends BaseEntity {
         accountNumber: string;
         accountHolder: string;
     };
-
-    @ManyToOne(() => User, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'user_id' })
-    user: User;
 
     @VersionColumn()
     version: number;

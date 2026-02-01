@@ -21,7 +21,7 @@ export class NotificationsService {
     ) { }
 
     async broadcast(data: any) {
-        const users = await this.userRepository.find({ select: ['id', 'fcmToken'] });
+        const users = await this.userRepository.find({ select: ['id'] });
 
         const notificationData = users.map(user => ({
             ...data,

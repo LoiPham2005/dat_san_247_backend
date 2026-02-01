@@ -1,6 +1,7 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Tournament } from './tournament.entity';
+import { TournamentParticipant } from './tournament-participant.entity';
 import { TournamentMatchStatus } from '../../../common/constants/social.constant';
 
 export enum BracketType {
@@ -42,17 +43,17 @@ export class TournamentMatch extends BaseEntity {
     @Index()
     bracketId: string;
 
-    @Column({ name: 'team_a_id', type: 'uuid', nullable: true })
-    teamAId: string;
+    @Column({ name: 'participant_a_id', type: 'uuid', nullable: true })
+    participantAId: string;
 
-    @Column({ name: 'team_b_id', type: 'uuid', nullable: true })
-    teamBId: string;
+    @Column({ name: 'participant_b_id', type: 'uuid', nullable: true })
+    participantBId: string;
 
-    @Column({ name: 'team_a_score', default: 0 })
-    teamAScore: number;
+    @Column({ name: 'participant_a_score', default: 0 })
+    participantAScore: number;
 
-    @Column({ name: 'team_b_score', default: 0 })
-    teamBScore: number;
+    @Column({ name: 'participant_b_score', default: 0 })
+    participantBScore: number;
 
     @Column({ name: 'match_date', type: 'timestamp', nullable: true })
     matchDate: Date;
@@ -77,6 +78,18 @@ export class TournamentMatch extends BaseEntity {
     @ManyToOne(() => TournamentBracket, (b) => b.matches, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'bracket_id' })
     bracket: TournamentBracket;
+
+    @ManyToOne(() => TournamentParticipant, { nullable: true })
+    @JoinColumn({ name: 'participant_a_id' })
+    participantA: TournamentParticipant;
+
+    @ManyToOne(() => TournamentParticipant, { nullable: true })
+    @JoinColumn({ name: 'participant_b_id' })
+    participantB: TournamentParticipant;
+
+    @ManyToOne(() => TournamentParticipant, { nullable: true })
+    @JoinColumn({ name: 'winner_id' })
+    winner: TournamentParticipant;
 
     @ManyToOne(() => TournamentMatch, { nullable: true })
     @JoinColumn({ name: 'next_match_id' })

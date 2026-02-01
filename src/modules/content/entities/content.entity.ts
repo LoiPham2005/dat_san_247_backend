@@ -89,28 +89,38 @@ export class Content extends BaseEntity {
     @Column({ name: 'og_image', nullable: true })
     ogImage: string;
 
-    @Column({ default: 0 })
-    views: number;
+    @Column({ name: 'display_order', default: 0 })
+    displayOrder: number;
 
-    @Column({ default: 0 })
-    clicks: number;
-
-    @Column({ default: 0 })
-    shares: number;
-
-    @Column({ name: 'author_id', nullable: true })
+    @Column({ name: 'author_id', type: 'uuid', nullable: true })
     authorId: string;
 
     @Column({ name: 'author_type', default: 'ADMIN' })
-    authorType: 'ADMIN' | 'SYSTEM';
+    authorType: string;
 
-    @Column({ default: 1 })
-    version: number;
+    @Column({ name: 'parent_id', type: 'uuid', nullable: true, comment: 'For nested content like FAQ categories' })
+    parentId: string;
 
-    @Column({ name: 'previous_version_id', nullable: true })
-    previousVersionId: string;
+    @Column({ name: 'is_featured', default: false })
+    isFeatured: boolean;
+
+    @Column({ name: 'is_pinned', default: false })
+    isPinned: boolean;
+
+    @Column({ name: 'valid_from', type: 'timestamp', nullable: true })
+    validFrom: Date;
+
+    @Column({ name: 'valid_to', type: 'timestamp', nullable: true })
+    validTo: Date;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'author_id' })
     author: User;
+
+    @ManyToOne(() => Content, { nullable: true })
+    @JoinColumn({ name: 'parent_id' })
+    parent: Content;
+
+    @OneToMany(() => Content, (content) => content.parent)
+    children: Content[];
 }
