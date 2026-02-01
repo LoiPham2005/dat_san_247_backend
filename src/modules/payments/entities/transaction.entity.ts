@@ -24,6 +24,13 @@ export class Transaction extends BaseEntity {
     @Index()
     userId: string;
 
+    @Column({ name: 'wallet_id', type: 'uuid', nullable: true })
+    @Index()
+    walletId: string;
+
+    @Column({ name: 'payment_provider', nullable: true, comment: 'MOMO, VNPAY, STRIPE, ETC.' })
+    paymentProvider: string;
+
     @Column({
         type: 'enum',
         enum: TransactionType,

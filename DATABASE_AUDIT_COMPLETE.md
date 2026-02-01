@@ -324,26 +324,11 @@
 
 ## ⚠️ VẤN ĐỀ CẦN XỬ LÝ
 
-### 1. Content Module - 6 Entities Không Được Đăng Ký
+### 1. Content Module
+✅ **FIXED:** All 6 entities (`Banner`, `BlogPost`, etc.) are now registered in `ContentModule`.
 
-**Files tồn tại nhưng KHÔNG trong module:**
-- `banner.entity.ts`
-- `blog-post.entity.ts`
-- `faq.entity.ts`
-- `policy.entity.ts`
-- `email-template.entity.ts`
-- `promotion-content.entity.ts`
-
-**Options:**
-- ❌ **Xóa** nếu không có kế hoạch sử dụng
-- ✅ **Đăng ký** vào ContentModule nếu cần dùng trong tương lai
-
-### 2. Loyalty Module - File Trùng Lặp
-
-**Duplicate:**
-- `loyalty.entity.ts` chứa cùng code với `user-point.entity.ts` + `point-transaction.entity.ts`
-
-**Recommendation:** ❌ Xóa `loyalty.entity.ts`
+### 2. Loyalty Module
+✅ **FIXED:** Duplicate file `loyalty.entity.ts` has been deleted.
 
 ---
 

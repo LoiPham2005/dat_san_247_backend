@@ -165,9 +165,9 @@ export class DashboardService {
     async getSportDistribution() {
         return this.dataSource.getRepository(Court)
             .createQueryBuilder('court')
-            .select('court.sportType', 'label')
+            .select('jsonb_array_elements_text(court.sportTypes)', 'label')
             .addSelect('COUNT(court.id)', 'count')
-            .groupBy('court.sportType')
+            .groupBy('label')
             .getRawMany();
     }
 }

@@ -8,8 +8,6 @@ import { BookingStatus } from '../../common/constants/booking-status.constant';
 import { DayOfWeek } from '../../common/constants/day-of-week.constant';
 import { VenueStaff } from './entities/venue-staff.entity';
 import { FavoriteVenue } from './entities/favorite-venue.entity';
-import { VenueImage } from './entities/venue-image.entity';
-import { VenueAmenity } from './entities/venue-amenity.entity';
 import { VenueFilterDto } from './dto/venue-filter.dto';
 import { VenueStatus } from '../../common/constants/venue-status.constant';
 import { StorageService } from '../../shared/storage/storage.service';
@@ -17,6 +15,7 @@ import { CreateVenueDto, UpdateVenueDto } from './dto/create-venue.dto';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { ActivityType } from '../../common/constants/activity-type.constant';
 import { UsersService } from '../users/users.service';
+import { File } from '../uploads/entities/file.entity';
 
 @Injectable()
 export class VenuesService {
@@ -27,10 +26,6 @@ export class VenuesService {
         private venueStaffRepository: Repository<VenueStaff>,
         @InjectRepository(FavoriteVenue)
         private favoriteVenueRepository: Repository<FavoriteVenue>,
-        @InjectRepository(VenueImage)
-        private venueImageRepository: Repository<VenueImage>,
-        @InjectRepository(VenueAmenity)
-        private venueAmenityRepository: Repository<VenueAmenity>,
         @InjectRepository(PricingRule)
         private pricingRuleRepository: Repository<PricingRule>,
         @InjectRepository(Booking)
@@ -94,7 +89,7 @@ export class VenuesService {
             return {
                 courtId: court.id,
                 courtName: court.name,
-                sportType: court.sportType,
+                sportTypes: court.sportTypes,
                 pricePerHour: court.pricePerHour,
                 slots: courtSlots
             };
@@ -140,8 +135,6 @@ export class VenuesService {
 
         const query = this.venueRepository.createQueryBuilder('venue')
             .leftJoinAndSelect('venue.owner', 'owner')
-            .leftJoinAndSelect('venue.images', 'images')
-            .leftJoinAndSelect('venue.amenities', 'amenities')
             .leftJoinAndSelect('venue.courts', 'courts');
 
         if (status) {
@@ -157,7 +150,7 @@ export class VenuesService {
         }
 
         if (sportType) {
-            query.andWhere('courts.sportType = :sportType', { sportType });
+            query.andWhere('courts.sportTypes::jsonb @> :sportTypeJson', { sportTypeJson: JSON.stringify([sportType]) });
         }
 
         if (minPrice) {
@@ -174,7 +167,10 @@ export class VenuesService {
 
         if (amenityFilter) {
             const amenityList = amenityFilter.split(',').map(a => a.trim());
-            query.andWhere('amenities.name IN (:...amenityList)', { amenityList });
+            // Filter by jsonb amenities array containing any of the requested names
+            query.andWhere("venue.amenities @> ANY(ARRAY[:...amenityObjects]::jsonb[])", {
+                amenityObjects: amenityList.map(name => JSON.stringify({ name }))
+            });
         }
 
         const [items, total] = await query
@@ -201,9 +197,15 @@ export class VenuesService {
     async findOne(id: string, userId?: string) {
         const venue = await this.venueRepository.findOne({
             where: { id },
-            relations: ['owner', 'images', 'amenities', 'courts', 'courts.images', 'courts.pricingRules']
+            relations: ['owner', 'courts', 'courts.pricingRules']
         });
         if (!venue) throw new NotFoundException('Venue not found');
+
+        // Fetch gallery images from File entity
+        const images = await this.dataSource.getRepository(File).find({
+            where: { targetType: 'VENUE', targetId: id },
+            order: { displayOrder: 'ASC' }
+        });
 
         // Add isFavorited if userId is provided
         let isFavorited = false;
@@ -214,7 +216,7 @@ export class VenuesService {
             isFavorited = !!favorite;
         }
 
-        return { ...venue, isFavorited };
+        return { ...venue, images, isFavorited };
     }
 
     async update(id: string, data: any) {
@@ -222,14 +224,12 @@ export class VenuesService {
         return this.findOne(id);
     }
 
-
     async updateStatus(id: string, status: VenueStatus, reason?: string, userId?: string) {
         const venue = await this.findOne(id);
         venue.status = status;
         if (reason) venue.rejectionReason = reason;
         const savedVenue = await this.venueRepository.save(venue);
 
-        // Log activity if userId is provided
         if (userId) {
             await this.analyticsService.logActivity({
                 userId,
@@ -261,13 +261,12 @@ export class VenuesService {
 
         const query = this.venueRepository.createQueryBuilder('venue')
             .leftJoinAndSelect('venue.courts', 'courts')
-            .leftJoinAndSelect('venue.images', 'images')
             .where('venue.ownerId = :ownerId', { ownerId });
 
         if (status) query.andWhere('venue.status = :status', { status });
         if (search) query.andWhere('venue.name ILIKE :search', { search: `%${search}%` });
         if (city) query.andWhere('venue.city = :city', { city });
-        if (sportType) query.andWhere('courts.sportType = :sportType', { sportType });
+        if (sportType) query.andWhere('courts.sportTypes::jsonb @> :sportTypeJson', { sportTypeJson: JSON.stringify([sportType]) });
         if (minPrice) query.andWhere('courts.pricePerHour >= :minPrice', { minPrice });
         if (maxPrice) query.andWhere('courts.pricePerHour <= :maxPrice', { maxPrice });
 
@@ -288,10 +287,16 @@ export class VenuesService {
     async findOneByOwner(ownerId: string, id: string) {
         const venue = await this.venueRepository.findOne({
             where: { id, ownerId },
-            relations: ['images', 'amenities', 'courts', 'courts.images', 'courts.pricingRules']
+            relations: ['courts', 'courts.pricingRules']
         });
         if (!venue) throw new NotFoundException('Venue not found or not owned by user');
-        return venue;
+
+        const images = await this.dataSource.getRepository(File).find({
+            where: { targetType: 'VENUE', targetId: id },
+            order: { displayOrder: 'ASC' }
+        });
+
+        return { ...venue, images };
     }
 
     async createOwnerVenue(ownerId: string, dto: CreateVenueDto, files: { thumbnail?: any, images?: any[] }) {
@@ -303,22 +308,20 @@ export class VenuesService {
             let { name } = dto;
             let slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
-            // Check if slug exists
             const existing = await queryRunner.manager.findOne(Venue, { where: { slug } });
             if (existing) {
                 slug = `${slug}-${Math.random().toString(36).substring(7)}`;
             }
 
-            // 1. Upload Thumbnail if exists
             let thumbnailUrl: string | undefined = undefined;
             if (files.thumbnail) {
                 thumbnailUrl = await this.storageService.uploadFile(files.thumbnail, 'venues/thumbnails');
             }
 
-            // 2. Create Venue
             const { amenities, ...venueDto } = dto;
             const venueData: Partial<Venue> = {
                 ...venueDto,
+                amenities: amenities ? amenities.map(name => ({ name })) : [],
                 slug,
                 ownerId,
                 thumbnailUrl,
@@ -328,31 +331,20 @@ export class VenuesService {
             const venue = queryRunner.manager.create(Venue, venueData);
             const savedVenue = await queryRunner.manager.save(venue);
 
-            // 3. Upload and Save Images
             if (files.images && files.images.length > 0) {
-                const imageEntities: VenueImage[] = [];
                 for (let i = 0; i < files.images.length; i++) {
                     const url = await this.storageService.uploadFile(files.images[i], `venues/${savedVenue.id}/gallery`);
-                    imageEntities.push(
-                        queryRunner.manager.create(VenueImage, {
-                            venueId: savedVenue.id,
-                            imageUrl: url,
-                            displayOrder: i
-                        })
-                    );
+                    await queryRunner.manager.save(File, {
+                        userId: ownerId,
+                        fileName: files.images[i].originalname,
+                        fileUrl: url,
+                        fileSize: files.images[i].size,
+                        mimeType: files.images[i].mimetype,
+                        targetType: 'VENUE',
+                        targetId: savedVenue.id,
+                        displayOrder: i
+                    });
                 }
-                await queryRunner.manager.save(VenueImage, imageEntities);
-            }
-
-            // 4. Save Amenities
-            if (amenities && amenities.length > 0) {
-                const amenityEntities = amenities.map(name =>
-                    queryRunner.manager.create(VenueAmenity, {
-                        venueId: savedVenue.id,
-                        name
-                    })
-                );
-                await queryRunner.manager.save(VenueAmenity, amenityEntities);
             }
 
             await queryRunner.commitTransaction();
@@ -374,58 +366,37 @@ export class VenuesService {
         try {
             const { amenities, ...venueDto } = dto;
 
-            // 1. Handle Thumbnail Update
             if (files.thumbnail) {
-                // Delete old thumbnail if exists (optional but recommended)
                 if (venue.thumbnailUrl) {
                     await this.storageService.deleteFile(venue.thumbnailUrl).catch(() => { });
                 }
-                const thumbnailUrl = await this.storageService.uploadFile(files.thumbnail, 'venues/thumbnails');
-                venue.thumbnailUrl = thumbnailUrl;
+                venue.thumbnailUrl = await this.storageService.uploadFile(files.thumbnail, 'venues/thumbnails');
             }
 
-            // 2. Handle Gallery Images (Append or Replace? Usually Replace if provided or just append. I'll Replace for simplicity or better UI experience)
             if (files.images && files.images.length > 0) {
-                // For a robust system, we might want to delete specific images.
-                // Here I'll just append new ones. Or if the user wants to replace, they'd need a different API.
-                // Let's just append for now.
-                const imageEntities: VenueImage[] = [];
+                const currentImagesCount = await this.dataSource.getRepository(File).count({ where: { targetType: 'VENUE', targetId: id } });
                 for (let i = 0; i < files.images.length; i++) {
                     const url = await this.storageService.uploadFile(files.images[i], `venues/${id}/gallery`);
-                    imageEntities.push(
-                        queryRunner.manager.create(VenueImage, {
-                            venue,
-                            imageUrl: url,
-                            displayOrder: (venue.images?.length || 0) + i
-                        })
-                    );
+                    await queryRunner.manager.save(File, {
+                        userId: ownerId,
+                        fileName: files.images[i].originalname,
+                        fileUrl: url,
+                        fileSize: files.images[i].size,
+                        mimeType: files.images[i].mimetype,
+                        targetType: 'VENUE',
+                        targetId: id,
+                        displayOrder: currentImagesCount + i
+                    });
                 }
-                await queryRunner.manager.save(VenueImage, imageEntities);
             }
 
-            // 3. Handle Amenities Update (Replace existing)
             if (amenities !== undefined) {
-                // Delete existing amenities from DB first
-                await queryRunner.manager.delete(VenueAmenity, { venueId: id });
-
-                let amenityEntities: VenueAmenity[] = [];
-                if (amenities.length > 0) {
-                    amenityEntities = amenities.map(name =>
-                        queryRunner.manager.create(VenueAmenity, {
-                            venue,
-                            name
-                        })
-                    );
-                    await queryRunner.manager.save(VenueAmenity, amenityEntities);
-                }
-                venue.amenities = amenityEntities;
+                venue.amenities = amenities.map(name => ({ name }));
             }
 
-            // 4. Update basic info
             Object.assign(venue, venueDto);
-            // Optimization: Remove relations from the object to prevent TypeORM from trying to update them again during save()
-            const { images, amenities: _, courts, ...saveData } = venue;
-            const updatedVenue = await queryRunner.manager.save(Venue, saveData);
+            const { images: _, courts: __, ...saveData } = venue;
+            await queryRunner.manager.save(Venue, saveData);
 
             await queryRunner.commitTransaction();
             return this.findOneByOwner(ownerId, id);
@@ -455,16 +426,12 @@ export class VenuesService {
         await this.findOneByOwner(ownerId, venueId);
 
         const user = await this.usersService.findByEmail(email);
-        if (!user) {
-            throw new NotFoundException('User with this email not found');
-        }
+        if (!user) throw new NotFoundException('User with this email not found');
 
         const existing = await this.venueStaffRepository.findOne({
             where: { venueId, userId: user.id }
         });
-        if (existing) {
-            throw new BadRequestException('User is already assigned to this venue');
-        }
+        if (existing) throw new BadRequestException('User is already assigned to this venue');
 
         const staff = this.venueStaffRepository.create({ venueId, userId: user.id });
         return this.venueStaffRepository.save(staff);
@@ -493,19 +460,39 @@ export class VenuesService {
     }
 
     async findFeatured() {
-        return this.venueRepository.find({
+        const venues = await this.venueRepository.find({
             where: { isFeatured: true, status: VenueStatus.APPROVED },
-            take: 10,
-            relations: ['images']
+            take: 10
         });
+
+        // Populate images for each featured venue
+        for (const venue of venues) {
+            const images = await this.dataSource.getRepository(File).find({
+                where: { targetType: 'VENUE', targetId: venue.id },
+                order: { displayOrder: 'ASC' },
+                take: 5
+            });
+            (venue as any).images = images;
+        }
+        return venues;
     }
 
     async findMyFavorites(userId: string) {
         const favorites = await this.favoriteVenueRepository.find({
             where: { userId },
-            relations: ['venue', 'venue.images']
+            relations: ['venue']
         });
-        return favorites.map(f => f.venue);
+
+        const venues = favorites.map(f => f.venue);
+        for (const venue of venues) {
+            const images = await this.dataSource.getRepository(File).find({
+                where: { targetType: 'VENUE', targetId: venue.id },
+                order: { displayOrder: 'ASC' },
+                take: 1
+            });
+            (venue as any).images = images;
+        }
+        return venues;
     }
 
     async toggleFavorite(userId: string, venueId: string, isFavorite: boolean) {
@@ -525,15 +512,23 @@ export class VenuesService {
         const { page = 1, limit = 10 } = pagination;
         const skip = (page - 1) * limit;
 
-        const [items, total] = await this.venueRepository.manager.createQueryBuilder('reviews', 'review')
+        const [items, total] = await this.bookingRepository.manager.createQueryBuilder('reviews', 'review')
             .leftJoinAndSelect('review.user', 'user')
-            .leftJoinAndSelect('review.images', 'images')
             .where('review.venueId = :venueId', { venueId })
             .andWhere('review.isVisible = true')
             .orderBy('review.createdAt', 'DESC')
             .skip(skip)
             .take(limit)
             .getManyAndCount();
+
+        // Populate images from File entity for each review
+        for (const review of items) {
+            const images = await this.dataSource.getRepository(File).find({
+                where: { targetType: 'REVIEW', targetId: review.id },
+                order: { displayOrder: 'ASC' }
+            });
+            (review as any).images = images;
+        }
 
         return {
             items,
@@ -551,9 +546,18 @@ export class VenuesService {
 
     async findByIds(ids: string[]) {
         if (ids.length === 0) return [];
-        return this.venueRepository.createQueryBuilder('venue')
+        const venues = await this.venueRepository.createQueryBuilder('venue')
             .where('venue.id IN (:...ids)', { ids })
-            .leftJoinAndSelect('venue.images', 'images')
             .getMany();
+
+        for (const venue of venues) {
+            const images = await this.dataSource.getRepository(File).find({
+                where: { targetType: 'VENUE', targetId: venue.id },
+                order: { displayOrder: 'ASC' },
+                take: 1
+            });
+            (venue as any).images = images;
+        }
+        return venues;
     }
 }

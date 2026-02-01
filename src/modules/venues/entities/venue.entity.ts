@@ -9,7 +9,7 @@ import {
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { VenueStatus } from '../../../common/constants/venue-status.constant';
-import { VenueImage } from './venue-image.entity';
+
 import { VenueOperatingHour } from './venue-operating-hour.entity';
 import { Court } from '../../courts/entities/court.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
@@ -137,8 +137,7 @@ export class Venue extends BaseEntity {
     @Column({ name: 'cancellation_before_hours', default: 24, comment: 'Default cancellation window if not specified in policy' })
     cancellationBeforeHours: number;
 
-    @OneToMany(() => VenueImage, (image) => image.venue)
-    images: VenueImage[];
+
 
     @Column({ type: 'jsonb', nullable: true, comment: 'Amenities like {name: "Wifi", icon: "wifi"}' })
     amenities: { name: string, icon?: string }[];

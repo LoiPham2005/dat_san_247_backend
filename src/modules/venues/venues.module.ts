@@ -8,8 +8,7 @@ import { VenueStaffVenuesController } from './venue-staff-venues.controller';
 import { StaffModerationController } from './staff-moderation.controller';
 import { AdminVenuesController } from './admin-venues.controller';
 import { Venue } from './entities/venue.entity';
-import { VenueImage } from './entities/venue-image.entity';
-import { VenueAmenity } from './entities/venue-amenity.entity';
+
 import { FavoriteVenue } from './entities/favorite-venue.entity';
 import { VenueMembership } from './entities/venue-membership.entity';
 import { VenueService } from './entities/venue-service.entity';
@@ -31,8 +30,7 @@ import { VenueBlacklist } from './entities/venue-blacklist.entity';
   imports: [
     TypeOrmModule.forFeature([
       Venue,
-      VenueImage,
-      VenueAmenity,
+
       FavoriteVenue,
       VenueMembership,
       VenueService,

@@ -111,14 +111,6 @@ export class Booking extends BaseEntity {
     @Column({ name: 'cancellation_fee', type: 'decimal', precision: 10, scale: 2, default: 0, comment: 'Fee charged for cancelling' })
     cancellationFee: number;
 
-    @Column({ name: 'customer_name' })
-    customerName: string;
-
-    @Column({ name: 'customer_phone' })
-    customerPhone: string;
-
-    @Column({ name: 'customer_email', nullable: true })
-    customerEmail: string;
 
     @Column({ type: 'text', nullable: true })
     note: string;

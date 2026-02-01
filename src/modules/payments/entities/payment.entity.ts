@@ -41,13 +41,7 @@ export class Payment extends BaseEntity {
     @Column({ name: 'paid_at', type: 'timestamp', nullable: true })
     paidAt: Date;
 
-    @Column({ name: 'refunded_at', type: 'timestamp', nullable: true })
-    refundedAt: Date;
-
-    @Column({ name: 'refund_amount', type: 'decimal', precision: 10, scale: 2, default: 0 })
-    refundAmount: number;
-
-    @Column({ name: 'gateway_response', type: 'jsonb', nullable: true })
+    @Column({ name: 'gateway_response', type: 'jsonb', nullable: true, comment: 'Payment gateway response data. Refunds are tracked in Transaction entity.' })
     gatewayResponse: any;
 
     @ManyToOne(() => Booking, (booking) => booking.payments, { onDelete: 'CASCADE' })

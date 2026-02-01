@@ -31,19 +31,13 @@ export class Content extends BaseEntity {
     @Column({ name: 'thumbnail_url', nullable: true })
     thumbnailUrl: string;
 
-    @Column({ name: 'image_urls', type: 'simple-array', nullable: true })
-    imageUrls: string[];
-
-    @Column({ name: 'video_url', nullable: true })
-    videoUrl: string;
-
     @Column({ type: 'jsonb', nullable: true })
     metadata: Record<string, any>;
 
-    @Column({ type: 'simple-array', nullable: true })
+    @Column({ type: 'jsonb', nullable: true })
     tags: string[];
 
-    @Column({ type: 'simple-array', nullable: true })
+    @Column({ type: 'jsonb', nullable: true })
     categories: string[];
 
     @Column({
@@ -54,10 +48,10 @@ export class Content extends BaseEntity {
     })
     targetAudience: TargetAudience;
 
-    @Column({ name: 'target_user_ids', type: 'simple-array', nullable: true })
+    @Column({ name: 'target_user_ids', type: 'jsonb', nullable: true })
     targetUserIds: string[];
 
-    @Column({ name: 'target_regions', type: 'simple-array', nullable: true })
+    @Column({ name: 'target_regions', type: 'jsonb', nullable: true })
     targetRegions: string[];
 
     @Column({
@@ -83,11 +77,8 @@ export class Content extends BaseEntity {
     @Column({ name: 'seo_description', type: 'text', nullable: true })
     seoDescription: string;
 
-    @Column({ name: 'seo_keywords', type: 'simple-array', nullable: true })
+    @Column({ name: 'seo_keywords', type: 'jsonb', nullable: true })
     seoKeywords: string[];
-
-    @Column({ name: 'og_image', nullable: true })
-    ogImage: string;
 
     @Column({ name: 'display_order', default: 0 })
     displayOrder: number;

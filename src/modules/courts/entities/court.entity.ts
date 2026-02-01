@@ -9,7 +9,7 @@ import {
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Venue } from '../../venues/entities/venue.entity';
 import { SportType } from '../../../common/constants/sport-type.constant';
-import { CourtImage } from './court-image.entity';
+
 import { TimeSlot } from '../../time-slots/entities/time-slot.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { PricingRule } from '../../time-slots/entities/pricing-rule.entity';
@@ -79,8 +79,7 @@ export class Court extends BaseEntity {
     @JoinColumn({ name: 'venue_id' })
     venue: Venue;
 
-    @OneToMany(() => CourtImage, (image) => image.court)
-    images: CourtImage[];
+
 
     @OneToMany(() => TimeSlot, (slot) => slot.court)
     timeSlots: TimeSlot[];

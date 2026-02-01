@@ -18,7 +18,7 @@ export class CourtsService {
     async findAllByVenue(venueId: string) {
         return this.courtRepository.find({
             where: { venueId, isActive: true },
-            relations: ['images', 'pricingRules']
+            relations: ['pricingRules']
         });
     }
 

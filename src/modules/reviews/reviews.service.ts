@@ -50,7 +50,7 @@ export class ReviewsService {
     async findOne(id: string) {
         const review = await this.reviewRepository.findOne({
             where: { id },
-            relations: ['user', 'venue', 'images']
+            relations: ['user', 'venue']
         });
         if (!review) throw new NotFoundException('Review not found');
         return review;

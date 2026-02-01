@@ -19,7 +19,7 @@ import * as path from 'path';
 import { OnModuleInit } from '@nestjs/common';
 
 @Injectable()
-export class ContentService {
+export class ContentService implements OnModuleInit {
     constructor(
         @InjectRepository(Content)
         private readonly contentRepository: Repository<Content>,
@@ -129,7 +129,7 @@ export class ContentService {
     async findBanners() {
         return this.bannerRepository.find({
             relations: ['content'],
-            order: { displayOrder: 'ASC' },
+            order: { content: { displayOrder: 'ASC' } },
         });
     }
 
@@ -168,6 +168,7 @@ export class ContentService {
                 status: dto.status || ContentStatus.PUBLISHED,
                 authorId,
                 thumbnailUrl: imageUrl,
+                displayOrder: Number(dto.displayOrder || 0),
             });
             const savedContent = await queryRunner.manager.save(content);
 
@@ -177,13 +178,11 @@ export class ContentService {
                 contentId: savedContent.id,
                 position: dto.position,
                 type: dto.type,
-                imageUrl,
                 mobileImageUrl,
                 actionType: dto.actionType,
                 actionUrl: dto.actionUrl,
                 actionVenueId: dto.actionVenueId,
                 actionPromotionId: dto.actionPromotionId,
-                displayOrder: Number(dto.displayOrder || 0),
                 autoSlide: dto.autoSlide,
                 slideDuration: dto.slideDuration,
                 startDate: new Date(dto.startDate),
@@ -209,11 +208,13 @@ export class ContentService {
         await queryRunner.startTransaction();
 
         try {
+            let newImageUrl = banner.content?.thumbnailUrl;
+
             // Handle image updates
             if (files.image) {
                 // Delete old image
-                if (banner.imageUrl) await this.storageService.deleteFile(banner.imageUrl);
-                banner.imageUrl = await this.storageService.uploadFile(files.image, 'banners');
+                if (banner.content?.thumbnailUrl) await this.storageService.deleteFile(banner.content.thumbnailUrl);
+                newImageUrl = await this.storageService.uploadFile(files.image, 'banners');
             }
 
             if (files.mobileImage) {
@@ -225,7 +226,8 @@ export class ContentService {
             await queryRunner.manager.update(Content, banner.contentId, {
                 title: dto.title,
                 description: dto.description,
-                thumbnailUrl: banner.imageUrl,
+                thumbnailUrl: newImageUrl,
+                displayOrder: dto.displayOrder ? Number(dto.displayOrder) : undefined,
             });
 
             // Update Banner
@@ -250,7 +252,7 @@ export class ContentService {
         const banner = await this.findBannerById(id);
 
         // Delete images from Supabase
-        if (banner.imageUrl) await this.storageService.deleteFile(banner.imageUrl);
+        if (banner.content?.thumbnailUrl) await this.storageService.deleteFile(banner.content.thumbnailUrl);
         if (banner.mobileImageUrl) await this.storageService.deleteFile(banner.mobileImageUrl);
 
         // Delete records
@@ -472,4 +474,3 @@ export class ContentService {
         });
     }
 }
-
