@@ -1,24 +1,25 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Ticket, TicketStatus } from './entities/ticket.entity';
+import { SupportTicket } from './entities/support-ticket.entity';
+import { TicketStatus } from '../../common/constants/chat.constant';
 
 @Injectable()
 export class SupportService {
     constructor(
-        @InjectRepository(Ticket)
-        private ticketRepository: Repository<Ticket>,
+        @InjectRepository(SupportTicket)
+        private ticketRepository: Repository<SupportTicket>,
     ) { }
 
     async findAllTickets(filter: any) {
-        const { status, priority, assignedTo } = filter;
+        const { status, priority, assignedToId } = filter;
         const query = this.ticketRepository.createQueryBuilder('ticket')
-            .leftJoinAndSelect('ticket.user', 'user')
-            .leftJoinAndSelect('ticket.assignedStaff', 'assignedStaff');
+            .leftJoinAndSelect('ticket.customer', 'customer')
+            .leftJoinAndSelect('ticket.assignedTo', 'assignedTo');
 
         if (status) query.andWhere('ticket.status = :status', { status });
         if (priority) query.andWhere('ticket.priority = :priority', { priority });
-        if (assignedTo) query.andWhere('ticket.assignedTo = :assignedTo', { assignedTo });
+        if (assignedToId) query.andWhere('ticket.assignedToId = :assignedToId', { assignedToId });
 
         return query.orderBy('ticket.createdAt', 'DESC').getMany();
     }
@@ -26,7 +27,7 @@ export class SupportService {
     async findOneTicket(id: string) {
         const ticket = await this.ticketRepository.findOne({
             where: { id },
-            relations: ['user', 'assignedStaff'],
+            relations: ['customer', 'assignedTo', 'conversation', 'booking', 'venue'],
         });
         if (!ticket) throw new NotFoundException('Ticket not found');
         return ticket;

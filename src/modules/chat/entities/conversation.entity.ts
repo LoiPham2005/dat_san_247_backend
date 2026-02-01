@@ -1,85 +1,80 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
-import { ConversationType, ConversationStatus } from '../../../common/constants/chat.constant';
-import { Message } from './message.entity';
-import { ConversationParticipant } from './participant.entity';
-import { Booking } from '../../bookings/entities/booking.entity';
+import { ChatType } from '../../../common/constants/chat.constant';
+import { User } from '../../users/entities/user.entity';
 import { Venue } from '../../venues/entities/venue.entity';
+import { ConversationParticipant } from './participant.entity';
+import { Message } from './message.entity';
 
-@Entity('conversations')
+@Entity('chat_conversations')
 export class Conversation extends BaseEntity {
     @Column({
         type: 'enum',
-        enum: ConversationType,
+        enum: ChatType,
     })
     @Index()
-    type: ConversationType;
+    type: ChatType;
 
-    @Column({
-        type: 'enum',
-        enum: ConversationStatus,
-        default: ConversationStatus.ACTIVE,
-    })
-    @Index()
-    status: ConversationStatus;
+    @Column({ nullable: true, length: 255 })
+    name: string;
 
-    @Column({ name: 'booking_id', nullable: true })
-    bookingId: string;
-
-    @Column({ name: 'venue_id', nullable: true })
-    venueId: string;
-
-    @Column({ nullable: true })
-    title: string;
-
-    @Column({ nullable: true })
-    avatar: string;
+    @Column({ name: 'avatar_url', type: 'text', nullable: true })
+    avatarUrl: string;
 
     @Column({ type: 'text', nullable: true })
     description: string;
 
-    @Column({ name: 'last_message_id', nullable: true })
+    // Venue context
+    @Column({ name: 'venue_id', type: 'uuid', nullable: true })
+    venueId: string;
+
+    @ManyToOne(() => Venue, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'venue_id' })
+    venue: Venue;
+
+    // Team context
+    @Column({ name: 'is_team', default: false })
+    isTeam: boolean;
+
+    @Column({ name: 'team_sport_type', nullable: true })
+    teamSportType: string;
+
+    @Column({ name: 'max_members', default: 50 })
+    maxMembers: number;
+
+    // Settings
+    @Column({ name: 'is_muted', default: false })
+    isMuted: boolean;
+
+    @Column({ name: 'is_archived', default: false })
+    isArchived: boolean;
+
+    @Column({ name: 'allow_members_invite', default: true })
+    allowMembersInvite: boolean;
+
+    // Metadata
+    @Column({ name: 'last_message_id', type: 'uuid', nullable: true })
     lastMessageId: string;
 
     @Column({ name: 'last_message_at', type: 'timestamp', nullable: true })
     lastMessageAt: Date;
 
-    @Column({ name: 'last_message_preview', nullable: true })
-    lastMessagePreview: string;
+    @Column({ name: 'total_messages', default: 0 })
+    totalMessages: number;
 
-    @Column({ name: 'participant_count', default: 0 })
-    participantCount: number;
+    @Column({ name: 'total_members', default: 0 })
+    totalMembers: number;
 
-    @Column({ name: 'is_encrypted', default: false })
-    isEncrypted: boolean;
+    @Column({ name: 'created_by', type: 'uuid', nullable: true })
+    createdById: string;
 
-    @Column({ name: 'auto_close_after', nullable: true })
-    autoCloseAfter: number; // Minutes
-
-    @Column({ name: 'closed_at', type: 'timestamp', nullable: true })
-    closedAt: Date;
-
-    @Column({ name: 'closed_by', nullable: true })
-    closedBy: string;
-
-    @Column({ name: 'created_by' })
-    createdBy: string;
-
-    @ManyToOne(() => Booking, { nullable: true })
-    @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
-
-    @ManyToOne(() => Venue, { nullable: true })
-    @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'created_by' })
+    createdBy: User;
 
     @OneToMany(() => ConversationParticipant, (participant) => participant.conversation)
     participants: ConversationParticipant[];
 
     @OneToMany(() => Message, (message) => message.conversation)
     messages: Message[];
-
-    @ManyToOne(() => Message, { nullable: true })
-    @JoinColumn({ name: 'last_message_id' })
-    lastMessage: Message;
 }

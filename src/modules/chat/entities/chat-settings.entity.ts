@@ -1,10 +1,11 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, JoinColumn, OneToOne, Index } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('chat_settings')
 export class ChatSettings extends BaseEntity {
-    @Column({ name: 'user_id', unique: true })
+    @Column({ name: 'user_id', type: 'uuid', unique: true })
+    @Index()
     userId: string;
 
     @Column({ name: 'is_online', default: false })
@@ -15,6 +16,7 @@ export class ChatSettings extends BaseEntity {
 
     @Column({
         name: 'last_seen_privacy',
+        type: 'varchar',
         default: 'EVERYONE',
     })
     lastSeenPrivacy: 'EVERYONE' | 'CONTACTS' | 'NOBODY';
@@ -34,6 +36,7 @@ export class ChatSettings extends BaseEntity {
     @Column({ name: 'typing_indicator', default: true })
     typingIndicator: boolean;
 
+    // Professional Auto-reply for Venues/Support
     @Column({ name: 'auto_reply_enabled', default: false })
     autoReplyEnabled: boolean;
 
@@ -46,27 +49,4 @@ export class ChatSettings extends BaseEntity {
     @OneToOne(() => User, (user) => user.chatSettings, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
     user: User;
-}
-
-@Entity('chat_blocks')
-export class ChatBlock extends BaseEntity {
-    @Column({ name: 'blocker_id' })
-    blockerId: string;
-
-    @Column({ name: 'blocked_id' })
-    blockedId: string;
-
-    @Column({ type: 'text', nullable: true })
-    reason: string;
-
-    @Column({ name: 'expires_at', type: 'timestamp', nullable: true })
-    expiresAt: Date;
-
-    @ManyToOne(() => User)
-    @JoinColumn({ name: 'blocker_id' })
-    blocker: User;
-
-    @ManyToOne(() => User)
-    @JoinColumn({ name: 'blocked_id' })
-    blocked: User;
 }

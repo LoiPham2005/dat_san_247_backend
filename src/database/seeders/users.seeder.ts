@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import * as argon2 from 'argon2';
 import { User } from '../../modules/users/entities/user.entity';
 import { Role } from '../../modules/roles/entities/role.entity';
+import { logger } from '@sentry/nestjs';
 
 @Injectable()
 export class UsersSeeder {
@@ -89,9 +90,11 @@ export class UsersSeeder {
         }
 
         if (seededCount > 0) {
-            console.log(`✅ Seeded ${seededCount} new users (Password: Password123@)`);
+            logger.info(
+                `✅ Seeded ${seededCount} users successfully (default password set via seeder)`
+            );
         } else {
-            console.log('✅ Users already seeded');
+            logger.info('✅ Users already seeded');
         }
     }
 }

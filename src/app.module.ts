@@ -3,7 +3,7 @@
 // ==========================================
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -30,7 +30,9 @@ import { SupportModule } from './modules/support/support.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ContentModule } from './modules/content/content.module';
 import { ChatModule } from './modules/chat/chat.module';
-// import { AIModule } from './modules/ai/ai.module';
+import { SocialModule } from './modules/social/social.module';
+import { AIModule } from './modules/ai/ai.module';
+
 
 // Shared services
 import { StorageModule } from './shared/storage/storage.module';
@@ -66,18 +68,13 @@ import { LoggerModule } from './common/services/logger.module';
         // 3. Database
         TypeOrmModule.forRootAsync({
             inject: [ConfigService],
-            useFactory: (config: ConfigService) => ({
-                type: 'postgres',
-                host: config.get('database.host'),
-                port: config.get('database.port'),
-                username: config.get('database.username'),
-                password: config.get('database.password'),
-                database: config.get('database.database'),
-                autoLoadEntities: true,
-                synchronize: config.get('app.env') === 'development', // Careful in production!
-                logging: config.get('database.logging'),
-                ssl: config.get('app.env') === 'production' ? { rejectUnauthorized: false } : false,
-            }),
+            useFactory: (config: ConfigService) => {
+                const dbConfig = config.get<TypeOrmModuleOptions>('database');
+                if (!dbConfig) {
+                    throw new Error('Database configuration not found');
+                }
+                return dbConfig;
+            },
         }),
 
         // 4. Feature Modules
@@ -100,7 +97,8 @@ import { LoggerModule } from './common/services/logger.module';
         SettingsModule,
         ContentModule,
         ChatModule,
-        // AIModule,
+        SocialModule,
+        AIModule,
 
         // 5. Shared Modules
         StorageModule,

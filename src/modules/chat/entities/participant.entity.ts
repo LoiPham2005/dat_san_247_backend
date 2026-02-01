@@ -1,26 +1,39 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
-import { ParticipantRole } from '../../../common/constants/chat.constant';
+import { ChatMemberRole } from '../../../common/constants/chat.constant';
 import { Conversation } from './conversation.entity';
 import { User } from '../../users/entities/user.entity';
 
-@Entity('conversation_participants')
-@Index(['conversationId', 'userId'], { unique: true })
+@Entity('chat_members')
+@Unique(['conversationId', 'userId'])
 export class ConversationParticipant extends BaseEntity {
-    @Column({ name: 'conversation_id' })
+    @Column({ name: 'conversation_id', type: 'uuid' })
+    @Index()
     conversationId: string;
 
-    @Column({ name: 'user_id' })
+    @Column({ name: 'user_id', type: 'uuid' })
+    @Index()
     userId: string;
 
     @Column({
         type: 'enum',
-        enum: ParticipantRole,
-        default: ParticipantRole.MEMBER,
+        enum: ChatMemberRole,
+        default: ChatMemberRole.MEMBER,
     })
-    role: ParticipantRole;
+    role: ChatMemberRole;
 
-    @Column({ name: 'last_read_message_id', nullable: true })
+    // Member settings
+    @Column({ nullable: true, length: 100 })
+    nickname: string;
+
+    @Column({ name: 'is_muted', default: false })
+    isMuted: boolean;
+
+    @Column({ name: 'is_pinned', default: false })
+    isPinned: boolean;
+
+    // Read status
+    @Column({ name: 'last_read_message_id', type: 'uuid', nullable: true })
     lastReadMessageId: string;
 
     @Column({ name: 'last_read_at', type: 'timestamp', nullable: true })
@@ -29,32 +42,21 @@ export class ConversationParticipant extends BaseEntity {
     @Column({ name: 'unread_count', default: 0 })
     unreadCount: number;
 
-    @Column({ name: 'is_muted', default: false })
-    isMuted: boolean;
+    // Notifications
+    @Column({ name: 'notification_enabled', default: true })
+    notificationEnabled: boolean;
 
-    @Column({ name: 'muted_until', type: 'timestamp', nullable: true })
-    mutedUntil: Date;
-
-    @Column({ name: 'is_pinned', default: false })
-    isPinned: boolean;
-
-    @Column({ name: 'custom_name', nullable: true })
-    customName: string;
-
-    @Column({ name: 'is_active', default: true })
-    isActive: boolean;
+    @Column({ name: 'joined_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    joinedAt: Date;
 
     @Column({ name: 'left_at', type: 'timestamp', nullable: true })
     leftAt: Date;
-
-    @Column({ name: 'invited_by', nullable: true })
-    invitedBy: string;
 
     @ManyToOne(() => Conversation, (conversation) => conversation.participants, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'conversation_id' })
     conversation: Conversation;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
     user: User;
 }

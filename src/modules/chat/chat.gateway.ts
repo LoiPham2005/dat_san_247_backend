@@ -62,8 +62,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @MessageBody() payload: { conversationId: string; content: string; type?: string },
     ) {
         const userId = client.data.user.sub;
-        const role = client.data.user.role;
-        const message = await this.chatService.sendMessage(userId, { ...payload, senderRole: role });
+        const message = await this.chatService.sendMessage(userId, payload.conversationId, {
+            content: payload.content,
+            type: payload.type as any,
+        });
 
         // Emit to conversation room (all participants)
         this.server.to(`conversation_${payload.conversationId}`).emit('newMessage', message);

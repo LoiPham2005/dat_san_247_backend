@@ -1,27 +1,21 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
-import { MessageType, MessageStatus } from '../../../common/constants/chat.constant';
+import { MessageType } from '../../../common/constants/chat.constant';
 import { Conversation } from './conversation.entity';
 import { User } from '../../users/entities/user.entity';
-import { UserRole } from '../../../common/constants/role.constant';
+import { MessageReceipt } from './message-receipt.entity';
+import { MessageReaction } from './message-reaction.entity';
 
-@Entity('messages')
+@Entity('chat_messages')
 export class Message extends BaseEntity {
-    @Column({ name: 'conversation_id' })
+    @Column({ name: 'conversation_id', type: 'uuid' })
     @Index()
     conversationId: string;
 
-    @Column({ name: 'sender_id' })
-    @Index()
+    @Column({ name: 'sender_id', type: 'uuid' })
     senderId: string;
 
-    @Column({
-        name: 'sender_role',
-        type: 'enum',
-        enum: UserRole,
-    })
-    senderRole: UserRole;
-
+    // Message content
     @Column({
         type: 'enum',
         enum: MessageType,
@@ -32,49 +26,25 @@ export class Message extends BaseEntity {
     @Column({ type: 'text', nullable: true })
     content: string;
 
-    @Column({ name: 'media_urls', type: 'simple-array', nullable: true })
-    mediaUrls: string[];
+    // Rich content
+    @Column({ name: 'media_urls', type: 'jsonb', nullable: true })
+    mediaUrls: any;
 
-    @Column({ name: 'thumbnail_urls', type: 'simple-array', nullable: true })
-    thumbnailUrls: string[];
-
-    @Column({ name: 'voice_url', nullable: true })
-    voiceUrl: string;
-
-    @Column({ name: 'voice_duration', nullable: true })
-    voiceDuration: number;
-
-    @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
-    latitude: number;
-
-    @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
-    longitude: number;
-
-    @Column({ name: 'location_name', nullable: true })
-    locationName: string;
-
-    @Column({ name: 'reply_to_message_id', nullable: true })
-    replyToMessageId: string;
-
-    @Column({ name: 'forwarded_from_message_id', nullable: true })
-    forwardedFromMessageId: string;
-
-    @Column({ name: 'booking_id', nullable: true })
+    // Special message types
+    @Column({ name: 'booking_id', type: 'uuid', nullable: true })
     bookingId: string;
 
-    @Column({ name: 'venue_id', nullable: true })
+    @Column({ name: 'venue_id', type: 'uuid', nullable: true })
     venueId: string;
 
     @Column({ type: 'jsonb', nullable: true })
-    metadata: Record<string, any>;
+    location: any;
 
-    @Column({
-        type: 'enum',
-        enum: MessageStatus,
-        default: MessageStatus.SENT,
-    })
-    status: MessageStatus;
+    // Reply/Thread
+    @Column({ name: 'reply_to_message_id', type: 'uuid', nullable: true })
+    replyToMessageId: string;
 
+    // Message metadata
     @Column({ name: 'is_edited', default: false })
     isEdited: boolean;
 
@@ -84,18 +54,29 @@ export class Message extends BaseEntity {
     @Column({ name: 'is_deleted', default: false })
     isDeleted: boolean;
 
-    @Column({ name: 'deleted_by', nullable: true })
-    deletedBy: string;
+    @Column({ name: 'deleted_for_everyone', default: false })
+    deletedForEveryone: boolean;
+
+    // Reactions
+    @Column({ type: 'jsonb', nullable: true })
+    reactions: Record<string, string[]>; // { "👍": ["userId1", "userId2"] }
 
     @ManyToOne(() => Conversation, (conversation) => conversation.messages, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'conversation_id' })
     conversation: Conversation;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'sender_id' })
     sender: User;
 
     @ManyToOne(() => Message, { nullable: true })
     @JoinColumn({ name: 'reply_to_message_id' })
     replyToMessage: Message;
+
+    // Relations for receipts and reactions
+    @OneToMany(() => MessageReceipt, receipt => receipt.message)
+    receipts: MessageReceipt[];
+
+    @OneToMany(() => MessageReaction, reaction => reaction.message)
+    messageReactions: MessageReaction[];
 }

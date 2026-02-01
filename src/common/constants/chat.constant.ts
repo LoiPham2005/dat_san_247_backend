@@ -1,44 +1,51 @@
-export enum ConversationType {
-    DIRECT = 'DIRECT',                 // 1-1 chat
-    GROUP = 'GROUP',                   // Nhóm chat
-    SUPPORT = 'SUPPORT',               // Chat hỗ trợ (Customer - Support Team)
-    BOOKING = 'BOOKING',               // Chat về booking cụ thể
-    VENUE = 'VENUE'                    // Chat về sân (Customer - Owner/VenueStaff)
+export enum ChatType {
+    DIRECT = 'DIRECT',
+    GROUP = 'GROUP',
+    TEAM = 'TEAM',
+    VENUE_SUPPORT = 'VENUE_SUPPORT',
+    CUSTOMER_SUPPORT = 'CUSTOMER_SUPPORT'
 }
 
-export enum ConversationStatus {
-    ACTIVE = 'ACTIVE',
-    ARCHIVED = 'ARCHIVED',
-    CLOSED = 'CLOSED',
-    BLOCKED = 'BLOCKED'
-}
-
-export enum ParticipantRole {
-    OWNER = 'OWNER',                   // Người tạo nhóm
-    ADMIN = 'ADMIN',                   // Admin nhóm
-    MEMBER = 'MEMBER',                 // Thành viên
-    SUPPORT = 'SUPPORT'                // Nhân viên hỗ trợ
+export enum ChatMemberRole {
+    OWNER = 'OWNER',
+    ADMIN = 'ADMIN',
+    MEMBER = 'MEMBER'
 }
 
 export enum MessageType {
-    TEXT = 'TEXT',                     // Text thuần
-    IMAGE = 'IMAGE',                   // Ảnh
-    VIDEO = 'VIDEO',                   // Video
-    FILE = 'FILE',                     // File đính kèm
-    VOICE = 'VOICE',                   // Voice message
-    LOCATION = 'LOCATION',             // Vị trí
-    BOOKING = 'BOOKING',               // Share booking
-    VENUE = 'VENUE',                   // Share venue
-    SYSTEM = 'SYSTEM',                 // Thông báo hệ thống
-    DELETED = 'DELETED'                // Đã xóa
+    TEXT = 'TEXT',
+    IMAGE = 'IMAGE',
+    VIDEO = 'VIDEO',
+    FILE = 'FILE',
+    AUDIO = 'AUDIO',
+    LOCATION = 'LOCATION',
+    BOOKING = 'BOOKING',
+    VENUE = 'VENUE',
+    SYSTEM = 'SYSTEM'
 }
 
 export enum MessageStatus {
-    SENDING = 'SENDING',               // Đang gửi
-    SENT = 'SENT',                     // Đã gửi
-    DELIVERED = 'DELIVERED',           // Đã nhận
-    READ = 'READ',                     // Đã đọc
-    FAILED = 'FAILED'                  // Gửi thất bại
+    SENT = 'SENT',
+    DELIVERED = 'DELIVERED',
+    READ = 'READ',
+    FAILED = 'FAILED'
+}
+
+export enum TemplateCategory {
+    GREETING = 'GREETING',
+    PRICING = 'PRICING',
+    AVAILABILITY = 'AVAILABILITY',
+    LOCATION = 'LOCATION',
+    RULES = 'RULES',
+    OTHER = 'OTHER'
+}
+
+export enum TicketStatus {
+    OPEN = 'OPEN',
+    IN_PROGRESS = 'IN_PROGRESS',
+    RESOLVED = 'RESOLVED',
+    CLOSED = 'CLOSED',
+    REOPENED = 'REOPENED'
 }
 
 export enum TicketPriority {
@@ -48,30 +55,14 @@ export enum TicketPriority {
     URGENT = 'URGENT'
 }
 
-export enum TicketStatus {
-    OPEN = 'OPEN',
-    IN_PROGRESS = 'IN_PROGRESS',
-    WAITING_CUSTOMER = 'WAITING_CUSTOMER',
-    RESOLVED = 'RESOLVED',
-    CLOSED = 'CLOSED'
-}
-
 export enum TicketCategory {
     BOOKING_ISSUE = 'BOOKING_ISSUE',
     PAYMENT_ISSUE = 'PAYMENT_ISSUE',
-    ACCOUNT_ISSUE = 'ACCOUNT_ISSUE',
     VENUE_ISSUE = 'VENUE_ISSUE',
+    USER_ISSUE = 'USER_ISSUE',
     TECHNICAL_ISSUE = 'TECHNICAL_ISSUE',
-    COMPLAINT = 'COMPLAINT',
-    SUGGESTION = 'SUGGESTION',
+    REFUND_REQUEST = 'REFUND_REQUEST',
     OTHER = 'OTHER'
 }
 
-export enum TemplateCategory {
-    GREETING = 'GREETING',             // Chào hỏi
-    BOOKING = 'BOOKING',               // Về đặt sân
-    PAYMENT = 'PAYMENT',               // Về thanh toán
-    CANCELLATION = 'CANCELLATION',     // Về hủy sân
-    FAQ = 'FAQ',                       // Câu hỏi thường gặp
-    CUSTOM = 'CUSTOM'                  // Tùy chỉnh
-}
+

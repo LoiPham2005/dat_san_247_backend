@@ -98,7 +98,7 @@ export class Content extends BaseEntity {
     @Column({ default: 0 })
     shares: number;
 
-    @Column({ name: 'author_id' })
+    @Column({ name: 'author_id', nullable: true })
     authorId: string;
 
     @Column({ name: 'author_type', default: 'ADMIN' })

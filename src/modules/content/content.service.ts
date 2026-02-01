@@ -94,7 +94,7 @@ export class ContentService {
                         fromName: 'DatSan247',
                         fromEmail: 'no-reply@datsan247.com',
                         sampleData: t.sampleData
-                    }, 'SYSTEM_SEED');
+                    }, null);
                     console.log(`Seeded email template: ${t.key}`);
                 } catch (e) {
                     console.error(`Failed to seed template ${t.key}:`, e);
@@ -379,7 +379,7 @@ export class ContentService {
         return template;
     }
 
-    async createEmailTemplate(dto: CreateEmailTemplateDto, authorId: string) {
+    async createEmailTemplate(dto: CreateEmailTemplateDto, authorId: string | null) {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -391,7 +391,8 @@ export class ContentService {
                 description: dto.description,
                 content: dto.subject, // Store subject in content for overview
                 status: dto.status || ContentStatus.PUBLISHED,
-                authorId,
+                authorId: authorId || undefined,
+                authorType: authorId ? 'ADMIN' : 'SYSTEM',
             });
             const savedContent = await queryRunner.manager.save(content);
 
