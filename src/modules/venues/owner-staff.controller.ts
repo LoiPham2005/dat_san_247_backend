@@ -36,4 +36,11 @@ export class OwnerStaffController {
     async remove(@CurrentUser('id') ownerId: string, @Param('id') id: string) {
         return this.venuesService.removeStaff(ownerId, id);
     }
+
+    @Put(':id/toggle-status')
+    @ApiOperation({ summary: 'Bật/Tắt trạng thái hoạt động của nhân viên' })
+    @ApiSuccessResponse()
+    async toggleStatus(@CurrentUser('id') ownerId: string, @Param('id') id: string) {
+        return this.venuesService.toggleStaffStatus(ownerId, id);
+    }
 }

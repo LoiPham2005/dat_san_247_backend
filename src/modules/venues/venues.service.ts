@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
 import { Venue } from './entities/venue.entity';
@@ -16,6 +16,7 @@ import { StorageService } from '../../shared/storage/storage.service';
 import { CreateVenueDto, UpdateVenueDto } from './dto/create-venue.dto';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { ActivityType } from '../../common/constants/activity-type.constant';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class VenuesService {
@@ -37,6 +38,8 @@ export class VenuesService {
         private storageService: StorageService,
         private dataSource: DataSource,
         private analyticsService: AnalyticsService,
+        @Inject(forwardRef(() => UsersService))
+        private usersService: UsersService,
     ) { }
 
     async getAvailability(venueId: string, dateStr: string) {
@@ -448,9 +451,22 @@ export class VenuesService {
     }
 
     async createStaff(ownerId: string, data: any) {
-        const { venueId, userId } = data;
+        const { venueId, email } = data;
         await this.findOneByOwner(ownerId, venueId);
-        const staff = this.venueStaffRepository.create({ venueId, userId });
+
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new NotFoundException('User with this email not found');
+        }
+
+        const existing = await this.venueStaffRepository.findOne({
+            where: { venueId, userId: user.id }
+        });
+        if (existing) {
+            throw new BadRequestException('User is already assigned to this venue');
+        }
+
+        const staff = this.venueStaffRepository.create({ venueId, userId: user.id });
         return this.venueStaffRepository.save(staff);
     }
 
@@ -463,6 +479,17 @@ export class VenuesService {
             throw new NotFoundException('Staff assignment not found or not authorized');
         }
         return this.venueStaffRepository.remove(staff);
+    }
+
+    async toggleStaffStatus(ownerId: string, id: string) {
+        const staff = await this.venueStaffRepository.findOne({
+            where: { id },
+            relations: ['venue']
+        });
+        if (!staff || staff.venue.ownerId !== ownerId) {
+            throw new NotFoundException('Staff assignment not found or not authorized');
+        }
+        return this.usersService.toggleStatus(staff.userId);
     }
 
     async findFeatured() {
