@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+// import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { User } from '../../modules/users/entities/user.entity';
 import { Role } from '../../modules/roles/entities/role.entity';
 
@@ -15,7 +16,8 @@ export class UsersSeeder {
     ) { }
 
     async seed() {
-        const hashedPassword = await bcrypt.hash('123456', 10);
+        // const hashedPassword = await bcrypt.hash('123456', 10);
+        const hashedPassword = await argon2.hash('123456', { type: argon2.argon2id });
         const roles = await this.rolesRepository.find();
         const roleMap = new Map(roles.map((r) => [r.slug, r]));
 

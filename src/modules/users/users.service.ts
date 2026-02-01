@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { User } from './entities/user.entity';
 import { UserFilterDto } from './dto/user-filter.dto';
 
@@ -74,7 +75,8 @@ export class UsersService {
 
     async create(data: Partial<User>): Promise<User> {
         if (data.password) {
-            data.password = await bcrypt.hash(data.password, 10);
+            // data.password = await bcrypt.hash(data.password, 10);
+            data.password = await argon2.hash(data.password, { type: argon2.argon2id });
         }
         const user = this.userRepository.create(data);
         return this.userRepository.save(user);
@@ -82,7 +84,8 @@ export class UsersService {
 
     async update(id: string, data: any) {
         if (data.password) {
-            data.password = await bcrypt.hash(data.password, 10);
+            // data.password = await bcrypt.hash(data.password, 10);
+            data.password = await argon2.hash(data.password, { type: argon2.argon2id });
         }
         await this.userRepository.update(id, data);
         return this.findOne(id);
@@ -96,12 +99,14 @@ export class UsersService {
 
         if (!user) throw new NotFoundException('User not found');
 
-        const isMatch = await bcrypt.compare(data.oldPassword, user.password);
+        // const isMatch = await bcrypt.compare(data.oldPassword, user.password);
+        const isMatch = await argon2.verify(user.password, data.oldPassword);
         if (!isMatch) {
             throw new Error('Mật khẩu hiện tại không chính xác');
         }
 
-        const hashedNewPassword = await bcrypt.hash(data.newPassword, 10);
+        // const hashedNewPassword = await bcrypt.hash(data.newPassword, 10);
+         const hashedNewPassword = await argon2.hash(data.newPassword, { type: argon2.argon2id });
         await this.userRepository.update(id, { password: hashedNewPassword });
 
         return { message: 'Đổi mật khẩu thành công' };

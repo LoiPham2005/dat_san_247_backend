@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
 
 import { UsersService } from '../users/users.service';
@@ -29,7 +30,8 @@ export class AuthService {
             throw new ConflictException('Email already exists');
         }
 
-        const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+        // const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+        const hashedPassword = await argon2.hash(registerDto.password, { type: argon2.argon2id });
 
         // Find default role if not provided
         let role;
@@ -54,7 +56,8 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+        // const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+        const isPasswordValid = await argon2.verify(user.password, loginDto.password);
         if (!isPasswordValid) {
             throw new UnauthorizedException('Invalid credentials');
         }
@@ -137,7 +140,8 @@ export class AuthService {
                 email: profile.email,
                 fullName: profile.fullName,
                 avatarUrl: profile.avatarUrl,
-                password: await bcrypt.hash(Math.random().toString(36).slice(-10), 10), // Random password
+                // password: await bcrypt.hash(Math.random().toString(36).slice(-10), 10), // Random password
+                password: await argon2.hash(Math.random().toString(36).slice(-10), { type: argon2.argon2id }), 
                 role,
                 isVerified: true, // OAuth emails are usually verified
             });
