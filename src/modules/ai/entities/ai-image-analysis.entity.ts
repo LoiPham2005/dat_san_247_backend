@@ -1,7 +1,8 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, OneToOne, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { ModerationStatus, ContentViolationType } from '../../../common/constants/ai.constant';
 import { User } from '../../users/entities/user.entity';
+import { File } from '../../uploads/entities/file.entity';
 
 @Entity('ai_image_analysis')
 export class AIImageAnalysis extends BaseEntity {
@@ -66,5 +67,9 @@ export class AIImageAnalysis extends BaseEntity {
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'reviewed_by' })
-    reviewer: User;
+    reviewer: Relation<User>;
+
+    @OneToOne(() => File, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'file_id' })
+    file: Relation<File>;
 }

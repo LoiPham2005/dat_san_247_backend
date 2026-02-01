@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { ReportType, ReportReason, ReportStatus } from '../../../common/constants/social.constant';
 import { User } from '../../users/entities/user.entity';
@@ -11,30 +11,20 @@ import { Team } from './team.entity';
 export class Report extends BaseEntity {
     // Reporter
     @Column({ name: 'reporter_id', type: 'uuid' })
+    @Index()
     reporterId: string;
 
-    // What is being reported
     @Column({
-        name: 'report_type',
+        name: 'target_type',
         type: 'enum',
         enum: ReportType,
     })
-    reportType: ReportType;
+    @Index()
+    targetType: ReportType;
 
-    @Column({ name: 'reported_user_id', type: 'uuid', nullable: true })
-    reportedUserId: string;
-
-    @Column({ name: 'reported_post_id', type: 'uuid', nullable: true })
-    reportedPostId: string;
-
-    @Column({ name: 'reported_comment_id', type: 'uuid', nullable: true })
-    reportedCommentId: string;
-
-    @Column({ name: 'reported_message_id', type: 'uuid', nullable: true })
-    reportedMessageId: string;
-
-    @Column({ name: 'reported_team_id', type: 'uuid', nullable: true })
-    reportedTeamId: string;
+    @Column({ name: 'target_id', type: 'uuid' })
+    @Index()
+    targetId: string;
 
     // Report details
     @Column({
@@ -52,6 +42,7 @@ export class Report extends BaseEntity {
         enum: ReportStatus,
         default: ReportStatus.PENDING,
     })
+    @Index()
     status: ReportStatus;
 
     // Review
@@ -67,26 +58,6 @@ export class Report extends BaseEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'reporter_id' })
     reporter: User;
-
-    @ManyToOne(() => User, { nullable: true })
-    @JoinColumn({ name: 'reported_user_id' })
-    reportedUser: User;
-
-    @ManyToOne(() => Post, { nullable: true })
-    @JoinColumn({ name: 'reported_post_id' })
-    reportedPost: Post;
-
-    @ManyToOne(() => PostComment, { nullable: true })
-    @JoinColumn({ name: 'reported_comment_id' })
-    reportedComment: PostComment;
-
-    @ManyToOne(() => Message, { nullable: true })
-    @JoinColumn({ name: 'reported_message_id' })
-    reportedMessage: Message;
-
-    @ManyToOne(() => Team, { nullable: true })
-    @JoinColumn({ name: 'reported_team_id' })
-    reportedTeam: Team;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'reviewed_by' })

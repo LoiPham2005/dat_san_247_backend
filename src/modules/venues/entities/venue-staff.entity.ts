@@ -9,6 +9,13 @@ import { BaseEntity } from '../../../database/entities/base.entity';
 import { Venue } from './venue.entity';
 import { User } from '../../users/entities/user.entity';
 
+export enum VenueStaffRole {
+    OWNER = 'OWNER',
+    MANAGER = 'MANAGER',
+    STAFF = 'STAFF',
+    RECEPTIONIST = 'RECEPTIONIST'
+}
+
 @Entity('venue_staff')
 @Unique(['venueId', 'userId'])
 export class VenueStaff extends BaseEntity {
@@ -20,11 +27,12 @@ export class VenueStaff extends BaseEntity {
 
     @Column({
         name: 'role',
-        type: 'varchar',
-        default: 'STAFF',
+        type: 'enum',
+        enum: VenueStaffRole,
+        default: VenueStaffRole.STAFF,
         comment: 'OWNER, MANAGER, STAFF, RECEPTIONIST'
     })
-    role: string;
+    role: VenueStaffRole;
 
     @Column({ name: 'assigned_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     assignedAt: Date;

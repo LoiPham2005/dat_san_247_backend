@@ -3,6 +3,7 @@ import { BaseEntity } from '../../../database/entities/base.entity';
 import { MatchFinding } from './match-finding.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { User } from '../../users/entities/user.entity';
+import { Team } from './team.entity';
 
 @Entity('match_results')
 export class MatchResult extends BaseEntity {
@@ -28,7 +29,7 @@ export class MatchResult extends BaseEntity {
     teamBScore: number;
 
     // Premium Social Features
-    @Column({ name: 'media_urls', type: 'jsonb', nullable: true, comment: 'Match photos/videos' })
+    @Column({ name: 'media_urls', type: 'jsonb', nullable: true, comment: 'Legacy: Use polymorphic File entity instead' })
     mediaUrls: string[];
 
     @Column({ name: 'highlight_video_url', type: 'text', nullable: true })
@@ -54,4 +55,12 @@ export class MatchResult extends BaseEntity {
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'mvp_user_id' })
     mvpUser: User;
+
+    @ManyToOne(() => Team, { nullable: true })
+    @JoinColumn({ name: 'team_a_id' })
+    teamA: Team;
+
+    @ManyToOne(() => Team, { nullable: true })
+    @JoinColumn({ name: 'team_b_id' })
+    teamB: Team;
 }

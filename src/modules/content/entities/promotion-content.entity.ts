@@ -1,7 +1,8 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToOne, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Content } from './content.entity';
 import { TargetAudience, PromotionType } from '../../../common/constants/content.constant';
+import { Promotion } from '../../promotions/entities/promotion.entity';
 
 @Entity('promotion_contents')
 export class PromotionContent extends BaseEntity {
@@ -14,47 +15,12 @@ export class PromotionContent extends BaseEntity {
     })
     promotionType: PromotionType;
 
-    @Column({ nullable: true })
-    code: string;
+    @Column({ name: 'promotion_id', nullable: true })
+    promotionId: string;
 
-    @Column({ name: 'discount_type' })
-    discountType: 'PERCENTAGE' | 'FIXED_AMOUNT';
-
-    @Column({ name: 'discount_value', type: 'decimal', precision: 10, scale: 2 })
-    discountValue: number;
-
-    @Column({ name: 'max_discount', type: 'decimal', precision: 10, scale: 2, nullable: true })
-    maxDiscount: number;
-
-    @Column({ name: 'min_order_value', type: 'decimal', precision: 10, scale: 2, nullable: true })
-    minOrderValue: number;
-
-    @Column({ name: 'applicable_venues', type: 'simple-array', nullable: true })
-    applicableVenues: string[];
-
-    @Column({ name: 'applicable_sports', type: 'simple-array', nullable: true })
-    applicableSports: string[];
-
-    @Column({ name: 'applicable_days', type: 'simple-array', nullable: true })
-    applicableDays: number[];
-
-    @Column({ name: 'applicable_hours', type: 'jsonb', nullable: true })
-    applicableHours: any[];
-
-    @Column({ name: 'max_uses', nullable: true })
-    maxUses: number;
-
-    @Column({ name: 'max_uses_per_user', nullable: true })
-    maxUsesPerUser: number;
-
-    @Column({ name: 'current_uses', default: 0 })
-    currentUses: number;
-
-    @Column({ name: 'start_date', type: 'timestamp' })
-    startDate: Date;
-
-    @Column({ name: 'end_date', type: 'timestamp' })
-    endDate: Date;
+    @ManyToOne(() => Promotion)
+    @JoinColumn({ name: 'promotion_id' })
+    promotion: Relation<Promotion>;
 
     @Column({
         name: 'target_audience',

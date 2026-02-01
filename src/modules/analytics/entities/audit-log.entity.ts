@@ -18,8 +18,11 @@ export class AuditLog extends BaseEntity {
     @Column({ name: 'entity_id', type: 'uuid', nullable: true })
     entityId: string;
 
-    @Column({ type: 'jsonb', nullable: true, comment: 'Changes made: { old: ..., new: ... }' })
-    changes: any;
+    @Column({ type: 'jsonb', nullable: true, comment: 'Values before the change' })
+    oldValues: any;
+
+    @Column({ type: 'jsonb', nullable: true, comment: 'Values after the change' })
+    newValues: any;
 
     @Column({ name: 'ip_address', nullable: true })
     ipAddress: string;

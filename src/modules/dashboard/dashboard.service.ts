@@ -5,7 +5,8 @@ import { Venue } from '../venues/entities/venue.entity';
 import { Court } from '../courts/entities/court.entity';
 import { Booking } from '../bookings/entities/booking.entity';
 import { Payment } from '../payments/entities/payment.entity';
-import { Ticket, TicketStatus } from '../support/entities/ticket.entity';
+import { SupportTicket } from '../support/entities/support-ticket.entity';
+import { TicketStatus } from '../../common/constants/chat.constant';
 import { UserRole } from '../../common/constants/role.constant';
 import { BookingStatus } from '../../common/constants/booking-status.constant';
 import { VenueStatus } from '../../common/constants/venue-status.constant';
@@ -21,7 +22,7 @@ export class DashboardService {
             where: { status: VenueStatus.PENDING }
         });
 
-        const openTicketCount = await this.dataSource.getRepository(Ticket).count({
+        const openTicketCount = await this.dataSource.getRepository(SupportTicket).count({
             where: { status: TicketStatus.OPEN }
         });
 

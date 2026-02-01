@@ -14,6 +14,9 @@ export class BlogPost extends BaseEntity {
     })
     category: BlogCategory;
 
+    @Column({ unique: true })
+    slug: string;
+
     @Column()
     author: string;
 

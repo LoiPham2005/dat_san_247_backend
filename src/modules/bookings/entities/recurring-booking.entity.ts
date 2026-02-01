@@ -32,7 +32,7 @@ export class RecurringBooking extends BaseEntity {
     })
     repeatType: RepeatType;
 
-    @Column({ name: 'days_of_week', type: 'simple-array', nullable: true, comment: '0-6, for weekly repeats. Multiple days supported.' })
+    @Column({ name: 'days_of_week', type: 'jsonb', nullable: true, comment: '0-6, for weekly repeats. Multiple days supported.' })
     daysOfWeek: number[];
 
     @Column({ name: 'start_time', type: 'time' })

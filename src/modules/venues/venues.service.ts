@@ -43,7 +43,7 @@ export class VenuesService {
 
         const venue = await this.venueRepository.findOne({
             where: { id: venueId },
-            relations: ['courts', 'courts.pricingRules']
+            relations: ['courts', 'courts.pricingRules', 'operatingHours']
         });
 
         if (!venue) throw new NotFoundException('Venue not found');
@@ -56,8 +56,20 @@ export class VenuesService {
             }
         });
 
-        const openingTime = venue.openingTime || '06:00:00';
-        const closingTime = venue.closingTime || '22:00:00';
+        // Determine opening/closing times for the specific day
+        const todayHours = venue.operatingHours?.find(oh => oh.dayOfWeek === dayOfWeek);
+
+        if (todayHours?.isClosed) {
+            return {
+                venueId,
+                date: dateStr,
+                isClosed: true,
+                courts: []
+            };
+        }
+
+        const openingTime = todayHours?.openingTime || venue.openingTime || '06:00:00';
+        const closingTime = todayHours?.closingTime || venue.closingTime || '22:00:00';
         const slots = this.generateTimeSlots(openingTime, closingTime);
 
         const availability = venue.courts.map(court => {

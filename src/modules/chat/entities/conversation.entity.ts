@@ -5,6 +5,8 @@ import { User } from '../../users/entities/user.entity';
 import { Venue } from '../../venues/entities/venue.entity';
 import { ConversationParticipant } from './participant.entity';
 import { Message } from './message.entity';
+import { Team } from '../../social/entities/team.entity';
+import { MatchFinding } from '../../social/entities/match-finding.entity';
 
 @Entity('chat_conversations')
 export class Conversation extends BaseEntity {
@@ -36,8 +38,19 @@ export class Conversation extends BaseEntity {
     @Column({ name: 'is_team', default: false })
     isTeam: boolean;
 
-    @Column({ name: 'team_sport_type', nullable: true })
-    teamSportType: string;
+    @Column({ name: 'team_id', type: 'uuid', nullable: true })
+    teamId: string;
+
+    @ManyToOne(() => Team, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'team_id' })
+    team: Team;
+
+    @Column({ name: 'match_finding_id', type: 'uuid', nullable: true })
+    matchFindingId: string;
+
+    @ManyToOne(() => MatchFinding, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'match_finding_id' })
+    matchFinding: MatchFinding;
 
     @Column({ name: 'max_members', default: 50 })
     maxMembers: number;

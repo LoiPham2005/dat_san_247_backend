@@ -1,4 +1,4 @@
-import { Entity, Column, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, JoinColumn, OneToOne, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { SentimentType } from '../../../common/constants/ai.constant';
 import { Review } from '../../reviews/entities/review.entity';
@@ -47,7 +47,7 @@ export class AIReviewAnalysis extends BaseEntity {
     @Column({ name: 'ai_model', nullable: true })
     aiModel: string;
 
-    // @OneToOne(() => Review, { onDelete: 'CASCADE' })
-    // @JoinColumn({ name: 'review_id' })
-    // review: Review;
+    @OneToOne(() => Review, (review) => review.id, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'review_id' })
+    review: Relation<Review>;
 }
