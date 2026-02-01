@@ -2,6 +2,7 @@ import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Court } from '../../courts/entities/court.entity';
+import { WaitlistStatus } from '../../../common/constants/booking-status.constant';
 
 @Entity('booking_waitlist')
 export class BookingWaitlist extends BaseEntity {
@@ -28,8 +29,12 @@ export class BookingWaitlist extends BaseEntity {
     @Column({ name: 'is_notified', default: false })
     isNotified: boolean;
 
-    @Column({ name: 'status', default: 'WAITING' }) // WAITING, CONVERTED, EXPIRED, CANCELLED
-    status: string;
+    @Column({
+        type: 'enum',
+        enum: WaitlistStatus,
+        default: WaitlistStatus.WAITING
+    })
+    status: WaitlistStatus;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })

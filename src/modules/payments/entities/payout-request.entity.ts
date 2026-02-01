@@ -1,6 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
+import { Team } from '../../social/entities/team.entity';
 
 export enum PayoutStatus {
     PENDING = 'PENDING',
@@ -15,6 +16,10 @@ export class PayoutRequest extends BaseEntity {
     @Column({ name: 'user_id', type: 'uuid' })
     @Index()
     userId: string;
+
+    @Column({ name: 'team_id', type: 'uuid', nullable: true, comment: 'If payout is for a team prize' })
+    @Index()
+    teamId: string;
 
     @Column({ type: 'decimal', precision: 15, scale: 2 })
     amount: number;
@@ -56,6 +61,10 @@ export class PayoutRequest extends BaseEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
     user: User;
+
+    @ManyToOne(() => Team, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'team_id' })
+    team: Team;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'processed_by' })

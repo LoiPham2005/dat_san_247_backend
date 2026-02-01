@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, VersionColumn } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -31,4 +31,7 @@ export class Wallet extends BaseEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
     user: User;
+
+    @VersionColumn()
+    version: number;
 }

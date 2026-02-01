@@ -1,6 +1,7 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Tournament } from './tournament.entity';
+import { TournamentMatchStatus } from '../../../common/constants/social.constant';
 
 export enum BracketType {
     SINGLE_ELIMINATION = 'SINGLE_ELIMINATION',
@@ -62,8 +63,13 @@ export class TournamentMatch extends BaseEntity {
     @Column({ name: 'winner_id', type: 'uuid', nullable: true })
     winnerId: string;
 
-    @Column({ name: 'status', default: 'PENDING' }) // PENDING, LIVE, FINISHED, CANCELLED
-    status: string;
+    @Column({
+        name: 'status',
+        type: 'enum',
+        enum: TournamentMatchStatus,
+        default: TournamentMatchStatus.PENDING
+    })
+    status: TournamentMatchStatus;
 
     @Column({ name: 'next_match_id', type: 'uuid', nullable: true, comment: 'ID of the next match in the bracket' })
     nextMatchId: string;

@@ -21,7 +21,7 @@ export class NotificationsService {
     ) { }
 
     async broadcast(data: any) {
-        const users = await this.userRepository.find({ select: ['id'] });
+        const users = await this.userRepository.find({ select: ['id', 'fcmToken'] });
 
         const notificationData = users.map(user => ({
             ...data,
@@ -31,13 +31,9 @@ export class NotificationsService {
         // Save DB notifications
         const saved = await this.notificationRepository.save(notificationData);
 
-        // Send Push notifications - Multi-device support
-        const devices = await this.userDeviceRepository.find({
-            where: { isActive: true },
-            select: ['fcmToken']
-        });
+        // Send Push notifications
+        const devices = await this.userDeviceRepository.find({ where: { isActive: true }, select: ['fcmToken'] });
         const tokens = devices.map(d => d.fcmToken).filter(token => !!token);
-
         if (tokens.length > 0) {
             await this.fcmService.sendMulticast(tokens, data.title, data.message, data.data);
         }
@@ -52,15 +48,19 @@ export class NotificationsService {
         const notification = this.notificationRepository.create(data);
         const saved = await this.notificationRepository.save(notification);
 
-        // Send Push notification - All devices of this user
+        // Send Push notification
         const devices = await this.userDeviceRepository.find({
             where: { userId: data.userId, isActive: true },
             select: ['fcmToken']
         });
+        const tokens = devices.map(d => d.fcmToken).filter(token => !!token);
 
-        if (devices.length > 0) {
-            const tokens = devices.map(d => d.fcmToken);
-            await this.fcmService.sendMulticast(tokens, data.title, data.message, data.data);
+        if (tokens.length > 0) {
+            if (tokens.length === 1) {
+                await this.fcmService.sendPushNotification(tokens[0], data.title, data.message, data.data);
+            } else {
+                await this.fcmService.sendMulticast(tokens, data.title, data.message, data.data);
+            }
         }
 
         // Send Socket.io notification
@@ -68,7 +68,6 @@ export class NotificationsService {
 
         return saved;
     }
-
 
     async findByUser(userId: string) {
         return this.notificationRepository.find({

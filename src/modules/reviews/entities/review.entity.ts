@@ -9,6 +9,7 @@ import {
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { Venue } from '../../venues/entities/venue.entity';
+import { Court } from '../../courts/entities/court.entity';
 import { User } from '../../users/entities/user.entity';
 import { ReviewImage } from './review-image.entity';
 
@@ -21,12 +22,25 @@ export class Review extends BaseEntity {
     @Index()
     venueId: string;
 
+    @Column({ name: 'court_id', type: 'uuid', nullable: true })
+    @Index()
+    courtId: string;
+
     @Column({ name: 'user_id' })
     @Index()
     userId: string;
 
-    @Column({ type: 'int' })
+    @Column({ type: 'int', comment: 'Overall rating 1-5' })
     rating: number;
+
+    @Column({ name: 'rating_cleanliness', type: 'int', nullable: true })
+    ratingCleanliness: number;
+
+    @Column({ name: 'rating_facilities', type: 'int', nullable: true })
+    ratingFacilities: number;
+
+    @Column({ name: 'rating_staff', type: 'int', nullable: true })
+    ratingStaff: number;
 
     @Column({ type: 'text', nullable: true })
     comment: string;
@@ -50,6 +64,10 @@ export class Review extends BaseEntity {
     @ManyToOne(() => Venue, (venue) => venue.reviews, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
     venue: Venue;
+
+    @ManyToOne(() => Court, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'court_id' })
+    court: Court;
 
     @ManyToOne(() => User, (user) => user.reviews, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })

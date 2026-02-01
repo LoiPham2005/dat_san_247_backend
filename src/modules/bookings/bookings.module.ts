@@ -8,12 +8,13 @@ import { Booking } from './entities/booking.entity';
 import { BookingAddon } from './entities/booking-addon.entity';
 import { BookingWaitlist } from './entities/waitlist.entity';
 import { RecurringBooking } from './entities/recurring-booking.entity';
+import { BookingStatusHistory } from './entities/booking-status-history.entity';
 import { VenuesModule } from '../venues/venues.module';
 import { AdminBookingsController } from './admin-bookings.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Booking, BookingAddon, BookingWaitlist, RecurringBooking]),
+    TypeOrmModule.forFeature([Booking, BookingAddon, BookingWaitlist, RecurringBooking, BookingStatusHistory]),
     forwardRef(() => VenuesModule),
   ],
   controllers: [

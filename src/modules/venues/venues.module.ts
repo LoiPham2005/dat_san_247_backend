@@ -23,6 +23,11 @@ import { Organization } from './entities/organization.entity';
 import { VenueScheduleException } from './entities/schedule-exception.entity';
 import { RefundPolicy } from './entities/refund-policy.entity';
 import { StaffShift } from './entities/staff-shift.entity';
+import { VenueOpeningHour } from './entities/opening-hour.entity';
+import { VenueVerification } from './entities/venue-verification.entity';
+import { VenueBlacklist } from './entities/venue-blacklist.entity';
+
+
 
 
 @Module({
@@ -41,7 +46,12 @@ import { StaffShift } from './entities/staff-shift.entity';
       VenueScheduleException,
       RefundPolicy,
       StaffShift,
+      VenueOpeningHour,
+      VenueVerification,
+      VenueBlacklist
     ]),
+
+
     forwardRef(() => UsersModule),
     forwardRef(() => ReviewsModule),
     AnalyticsModule,

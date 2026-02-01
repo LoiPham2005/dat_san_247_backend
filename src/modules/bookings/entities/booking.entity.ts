@@ -24,9 +24,20 @@ export class Booking extends BaseEntity {
     @JoinColumn({ name: 'recurring_booking_id' })
     recurringBooking: RecurringBooking;
 
+    @Column({ name: 'rescheduled_from_id', type: 'uuid', nullable: true })
+    rescheduledFromId: string;
+
+    @ManyToOne(() => Booking, { nullable: true })
+    @JoinColumn({ name: 'rescheduled_from_id' })
+    rescheduledFrom: Booking;
+
     @Column({ name: 'booking_code', unique: true })
     @Index()
     bookingCode: string;
+
+    @Column({ name: 'check_in_code', unique: true, nullable: true, comment: 'Secure token for QR check-in' })
+    @Index()
+    checkInCode: string;
 
     @Column({ name: 'customer_id' })
     @Index()
@@ -67,8 +78,38 @@ export class Booking extends BaseEntity {
     @Column({ name: 'total_amount', type: 'decimal', precision: 10, scale: 2 })
     totalAmount: number;
 
+    @Column({ name: 'sub_total', type: 'decimal', precision: 10, scale: 2, default: 0 })
+    subTotal: number;
+
+    @Column({ name: 'vat_amount', type: 'decimal', precision: 10, scale: 2, default: 0 })
+    vatAmount: number;
+
+    @Column({ name: 'vat_rate', type: 'decimal', precision: 5, scale: 2, default: 0, comment: 'VAT rate applied at booking time' })
+    vatRate: number;
+
+    @Column({ name: 'cancellation_deadline', type: 'timestamp', nullable: true, comment: 'Snapshot of policy: latest time for free cancellation' })
+    cancellationDeadline: Date;
+
+    @Column({ name: 'commission_amount', type: 'decimal', precision: 10, scale: 2, default: 0 })
+    commissionAmount: number;
+
+    @Column({ name: 'platform_fee', type: 'decimal', precision: 10, scale: 2, default: 0, comment: 'Extra fee charged to user' })
+    platformFee: number;
+
     @Column({ name: 'deposit_amount', type: 'decimal', precision: 10, scale: 2, default: 0 })
     depositAmount: number;
+
+    @Column({ name: 'discount_amount', type: 'decimal', precision: 10, scale: 2, default: 0, comment: 'Total discount from promotions' })
+    discountAmount: number;
+
+    @Column({ name: 'promotion_code', nullable: true, comment: 'Applied promotion code' })
+    promotionCode: string;
+
+    @Column({ name: 'refund_amount', type: 'decimal', precision: 10, scale: 2, default: 0, comment: 'Actual amount returned on cancellation' })
+    refundAmount: number;
+
+    @Column({ name: 'cancellation_fee', type: 'decimal', precision: 10, scale: 2, default: 0, comment: 'Fee charged for cancelling' })
+    cancellationFee: number;
 
     @Column({ name: 'customer_name' })
     customerName: string;
@@ -81,6 +122,9 @@ export class Booking extends BaseEntity {
 
     @Column({ type: 'text', nullable: true })
     note: string;
+
+    @Column({ type: 'jsonb', nullable: true, comment: 'Ad-hoc data like equipment rentals, special requests' })
+    metadata: any;
 
     @Column({ name: 'checked_in_at', type: 'timestamp', nullable: true })
     checkedInAt: Date;

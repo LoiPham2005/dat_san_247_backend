@@ -15,6 +15,10 @@ export class Team extends BaseEntity {
     @Index()
     slug: string;
 
+    @Column({ name: 'invitation_code', length: 12, unique: true, nullable: true })
+    @Index()
+    invitationCode: string;
+
     @Column({ name: 'avatar_url', type: 'text', nullable: true })
     avatarUrl: string;
 
@@ -66,7 +70,12 @@ export class Team extends BaseEntity {
     @Column({ name: 'total_wins', default: 0 })
     totalWins: number;
 
-    // Social
+    @Column({ name: 'rank_score', default: 1000, comment: 'Elo/Skill ranking score for the team' })
+    rankScore: number;
+
+    @Column({ name: 'is_looking_for_members', default: true })
+    isLookingForMembers: boolean;
+
     @Column({ name: 'is_verified', default: false })
     isVerified: boolean;
 

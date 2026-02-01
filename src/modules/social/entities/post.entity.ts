@@ -6,7 +6,6 @@ import { Venue } from '../../venues/entities/venue.entity';
 import { Team } from './team.entity';
 import { MatchResult } from './match-result.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
-import { PostLike } from './post-like.entity';
 import { PostComment } from './post-comment.entity';
 
 @Entity('posts')
@@ -113,8 +112,6 @@ export class Post extends BaseEntity {
     @JoinColumn({ name: 'booking_id' })
     booking: Booking;
 
-    @OneToMany(() => PostLike, like => like.post)
-    likes: PostLike[];
 
     @OneToMany(() => PostComment, comment => comment.post)
     comments: PostComment[];

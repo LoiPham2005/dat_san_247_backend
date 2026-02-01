@@ -10,10 +10,11 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { UserDevice } from './entities/user-device.entity';
 import { SystemAnnouncement } from './entities/system-announcement.entity';
+import { NotificationSetting } from './entities/notification-setting.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Notification, User, UserDevice, SystemAnnouncement]),
+    TypeOrmModule.forFeature([Notification, User, UserDevice, SystemAnnouncement, NotificationSetting]),
     ConfigModule,
     JwtModule,
   ],

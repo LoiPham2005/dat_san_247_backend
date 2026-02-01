@@ -12,7 +12,7 @@ export class PostLike extends BaseEntity {
     @Column({ name: 'user_id', type: 'uuid' })
     userId: string;
 
-    @ManyToOne(() => Post, post => post.likes, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Post, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'post_id' })
     post: Post;
 

@@ -15,6 +15,9 @@ export class VenueImage extends BaseEntity {
     @Column({ name: 'image_url', type: 'text' })
     imageUrl: string;
 
+    @Column({ name: 'alt_text', nullable: true })
+    altText: string;
+
     @Column({ name: 'display_order', default: 0 })
     displayOrder: number;
 

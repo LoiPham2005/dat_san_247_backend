@@ -33,6 +33,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { SocialModule } from './modules/social/social.module';
 import { AIModule } from './modules/ai/ai.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
+import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 
 
 
@@ -102,6 +103,7 @@ import { LoggerModule } from './common/services/logger.module';
         SocialModule,
         AIModule,
         SubscriptionsModule,
+        LoyaltyModule,
 
 
         // 5. Shared Modules

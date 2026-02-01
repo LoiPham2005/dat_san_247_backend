@@ -1,6 +1,6 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
-import { MatchStatus, ChallengeType } from '../../../common/constants/social.constant';
+import { MatchStatus, ChallengeType, OrganizerType } from '../../../common/constants/social.constant';
 import { Venue } from '../../venues/entities/venue.entity';
 import { Court } from '../../courts/entities/court.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
@@ -10,8 +10,13 @@ import { Team } from './team.entity';
 @Entity('match_findings')
 export class MatchFinding extends BaseEntity {
     // Organizer logic - Professional Polymorphic style
-    @Column({ name: 'organizer_type', length: 20 })
-    organizerType: 'USER' | 'TEAM';
+    @Column({
+        name: 'organizer_type',
+        type: 'enum',
+        enum: OrganizerType,
+        default: OrganizerType.USER
+    })
+    organizerType: OrganizerType;
 
     @Column({ name: 'organizer_user_id', type: 'uuid', nullable: true })
     organizerUserId: string;
@@ -71,10 +76,20 @@ export class MatchFinding extends BaseEntity {
     @Column({ name: 'team_size', nullable: true })
     teamSize: number;
 
+    @Column({ name: 'entry_fee', type: 'decimal', precision: 10, scale: 2, default: 0, comment: 'Fee per person or per team' })
+    entryFee: number;
+
     @Column({ name: 'skill_level', length: 50, nullable: true })
     skillLevel: string;
 
+    @Column({ name: 'min_skill_level', type: 'int', default: 1 })
+    minSkillLevel: number;
+
+    @Column({ name: 'max_skill_level', type: 'int', default: 100 })
+    maxSkillLevel: number;
+
     @Column({ name: 'max_distance', nullable: true, comment: 'Max distance in km for finding' })
+
     maxDistance: number;
 
     // Content
@@ -94,8 +109,13 @@ export class MatchFinding extends BaseEntity {
     status: MatchStatus;
 
     // Matched Info
-    @Column({ name: 'matched_with_type', length: 20, nullable: true })
-    matchedWithType: 'USER' | 'TEAM';
+    @Column({
+        name: 'matched_with_type',
+        type: 'enum',
+        enum: OrganizerType,
+        nullable: true
+    })
+    matchedWithType: OrganizerType;
 
     @Column({ name: 'matched_with_user_id', type: 'uuid', nullable: true })
     matchedWithUserId: string;

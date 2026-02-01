@@ -8,6 +8,7 @@ import {
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { UserRole } from '../../../common/constants/role.constant';
 import { Gender } from '../../../common/constants/gender.constant';
+import { KYCStatus } from '../../../common/constants/kyc-status.constant';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
@@ -24,6 +25,17 @@ import { OneToOne } from 'typeorm';
 export class User extends BaseEntity {
     @Column({ unique: true })
     email: string;
+
+    @Column({ unique: true, nullable: true })
+    username: string;
+
+    @Column({
+        name: 'kyc_status',
+        type: 'enum',
+        enum: KYCStatus,
+        default: KYCStatus.UNVERIFIED
+    })
+    kycStatus: KYCStatus;
 
     @Column({ select: false })
     password: string;
@@ -58,6 +70,12 @@ export class User extends BaseEntity {
 
     @Column({ name: 'is_verified', default: false })
     isVerified: boolean;
+
+    @Column({ name: 'email_verified_at', type: 'timestamp', nullable: true })
+    emailVerifiedAt: Date;
+
+    @Column({ name: 'phone_verified_at', type: 'timestamp', nullable: true })
+    phoneVerifiedAt: Date;
 
     @Column({ name: 'last_login_at', type: 'timestamp', nullable: true })
     lastLoginAt: Date;

@@ -1,7 +1,8 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Organization } from './organization.entity';
 import { Venue } from './venue.entity';
+import { RefundRule } from './refund-rule.entity';
 
 @Entity('refund_policies')
 export class RefundPolicy extends BaseEntity {
@@ -14,11 +15,11 @@ export class RefundPolicy extends BaseEntity {
     @Column()
     name: string; // e.g., "Flexible", "Strict", "No Refund"
 
-    @Column({ name: 'cancel_before_hours', type: 'int' })
-    cancelBeforeHours: number; // e.g., 24 hours
+    @Column({ type: 'text', nullable: true })
+    description: string;
 
-    @Column({ name: 'refund_percentage', type: 'decimal', precision: 5, scale: 2 })
-    refundPercentage: number; // e.g., 100.00 or 50.00
+    @OneToMany(() => RefundRule, (rule) => rule.policy)
+    rules: RefundRule[];
 
     @Column({ name: 'is_active', default: true })
     isActive: boolean;

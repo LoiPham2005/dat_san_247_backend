@@ -31,7 +31,7 @@ export class VenueMembership extends BaseEntity {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
-    @Column({ name: 'metadata', type: 'jsonb', nullable: true, comment: 'Benefits like free water, towels, etc.' })
+    @Column({ name: 'benefits', type: 'jsonb', nullable: true, comment: 'Benefits like free water, towels, etc.' })
     benefits: any;
 
     @ManyToOne(() => Venue, { onDelete: 'CASCADE' })

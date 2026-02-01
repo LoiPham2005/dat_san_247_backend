@@ -6,3 +6,10 @@ export enum BookingStatus {
     CANCELLED = 'CANCELLED',
     NO_SHOW = 'NO_SHOW',
 }
+
+export enum WaitlistStatus {
+    WAITING = 'WAITING',
+    CONVERTED = 'CONVERTED',
+    EXPIRED = 'EXPIRED',
+    CANCELLED = 'CANCELLED'
+}

@@ -13,16 +13,18 @@ import { MatchApplication } from './entities/match-application.entity';
 import { MatchResult } from './entities/match-result.entity';
 import { Tournament } from './entities/tournament.entity';
 import { TournamentBracket, TournamentMatch } from './entities/tournament-bracket.entity';
+import { TournamentParticipant } from './entities/tournament-participant.entity';
 import { MatchEscrow } from './entities/match-escrow.entity';
+import { MatchEvent } from './entities/match-event.entity';
+
 
 
 
 
 // Social entities
 import { Post } from './entities/post.entity';
-import { PostLike } from './entities/post-like.entity';
+import { SocialLike } from './entities/social-like.entity';
 import { PostComment } from './entities/post-comment.entity';
-import { PostCommentLike } from './entities/post-comment-like.entity';
 
 // Friend entities
 import { Friendship } from './entities/friendship.entity';
@@ -52,12 +54,13 @@ import { UserBlock } from './entities/user-block.entity';
             Tournament,
             TournamentBracket,
             TournamentMatch,
+            TournamentParticipant,
             MatchEscrow,
+            MatchEvent,
             // Social
             Post,
-            PostLike,
+            SocialLike,
             PostComment,
-            PostCommentLike,
             // Friends
             Friendship,
             UserFollower,

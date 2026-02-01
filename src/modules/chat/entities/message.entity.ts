@@ -57,9 +57,6 @@ export class Message extends BaseEntity {
     @Column({ name: 'deleted_for_everyone', default: false })
     deletedForEveryone: boolean;
 
-    // Reactions
-    @Column({ type: 'jsonb', nullable: true })
-    reactions: Record<string, string[]>; // { "👍": ["userId1", "userId2"] }
 
     @ManyToOne(() => Conversation, (conversation) => conversation.messages, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'conversation_id' })

@@ -24,11 +24,12 @@ export class Court extends BaseEntity {
     name: string;
 
     @Column({
-        type: 'enum',
-        enum: SportType,
+        name: 'sport_types',
+        type: 'jsonb',
+        comment: 'List of sports supported by this court. e.g., ["FOOTBALL_5", "FOOTBALL_7"]'
     })
     @Index()
-    sportType: SportType;
+    sportTypes: SportType[];
 
     @Column({ type: 'text', nullable: true })
     description: string;
@@ -39,19 +40,37 @@ export class Court extends BaseEntity {
     @Column({ nullable: true })
     size: string;
 
-    @Column({ name: 'surface_type', nullable: true })
     @Column({ name: 'is_indoor', default: false })
     isIndoor: boolean;
-
-    @Column({ name: 'is_active', default: true })
-    @Index()
-    isActive: boolean;
 
     @Column({ name: 'is_outdoor', default: false, comment: 'Crucial for weather integration' })
     isOutdoor: boolean;
 
     @Column({ name: 'surface_type', nullable: true, comment: 'e.g., Artificial Grass, Clay, Hard Court' })
     surfaceType: string;
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, comment: 'Width in meters' })
+    width: number;
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, comment: 'Length in meters' })
+    length: number;
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, comment: 'Ceiling height for indoor sports' })
+    height: number;
+
+    @Column({ name: 'parent_court_id', type: 'uuid', nullable: true })
+    parentCourtId: string;
+
+    @ManyToOne(() => Court, (court) => court.subCourts, { nullable: true })
+    @JoinColumn({ name: 'parent_court_id' })
+    parentCourt: Court;
+
+    @OneToMany(() => Court, (court) => court.parentCourt)
+    subCourts: Court[];
+
+    @Column({ name: 'is_active', default: true })
+    @Index()
+    isActive: boolean;
 
     @Column({ name: 'thumbnail_url', type: 'text', nullable: true })
     thumbnailUrl: string;

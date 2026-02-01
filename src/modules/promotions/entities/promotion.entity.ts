@@ -7,6 +7,7 @@ import { BaseEntity } from '../../../database/entities/base.entity';
 import { DiscountType } from '../../../common/constants/discount-type.constant';
 import { PromotionStatus } from '../../../common/constants/promotion-status.constant';
 import { PromotionVenue } from './promotion-venue.entity';
+import { PromotionCourt } from './promotion-court.entity';
 import { PromotionUsage } from './promotion-usage.entity';
 
 @Entity('promotions')
@@ -42,6 +43,12 @@ export class Promotion extends BaseEntity {
     @Column({ name: 'usage_count', default: 0 })
     usageCount: number;
 
+    @Column({ name: 'max_usage_per_user', default: 1, comment: 'Limit how many times a single user can use this code' })
+    maxUsagePerUser: number;
+
+    @Column({ name: 'is_public', default: true, comment: 'If false, promotion is hidden from general lists' })
+    isPublic: boolean;
+
     @Column({ name: 'valid_from', type: 'timestamp' })
     validFrom: Date;
 
@@ -57,6 +64,9 @@ export class Promotion extends BaseEntity {
 
     @OneToMany(() => PromotionVenue, (pv) => pv.promotion)
     venues: PromotionVenue[];
+
+    @OneToMany(() => PromotionCourt, (pc) => pc.promotion)
+    courts: PromotionCourt[];
 
     @OneToMany(() => PromotionUsage, (usage) => usage.promotion)
     usages: PromotionUsage[];

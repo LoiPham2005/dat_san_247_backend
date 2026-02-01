@@ -45,7 +45,12 @@ export class UserProfile extends BaseEntity {
     @Column({ name: 'rank_score', default: 1000, comment: 'Elo/Skill ranking score' })
     rankScore: number;
 
+    @Column({ name: 'skill_score', type: 'int', default: 1, comment: 'Global skill rating 1-100' })
+    @Index()
+    skillScore: number;
+
     @Column({ name: 'level', default: 1 })
+
     level: number;
 
     @Column({ name: 'experience_points', default: 0 })

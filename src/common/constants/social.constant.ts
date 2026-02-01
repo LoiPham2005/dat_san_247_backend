@@ -70,3 +70,31 @@ export enum ReportStatus {
     RESOLVED = 'RESOLVED',
     DISMISSED = 'DISMISSED'
 }
+
+export enum OrganizerType {
+    USER = 'USER',
+    TEAM = 'TEAM'
+}
+
+export enum TournamentFormat {
+    SINGLE_ELIMINATION = 'SINGLE_ELIMINATION',
+    DOUBLE_ELIMINATION = 'DOUBLE_ELIMINATION',
+    ROUND_ROBIN = 'ROUND_ROBIN',
+    GROUP_STAGE_KNOCKOUT = 'GROUP_STAGE_KNOCKOUT'
+}
+
+export enum TournamentStatus {
+    PLANNING = 'PLANNING',
+    REGISTRATION_OPEN = 'REGISTRATION_OPEN',
+    REGISTRATION_CLOSED = 'REGISTRATION_CLOSED',
+    IN_PROGRESS = 'IN_PROGRESS',
+    COMPLETED = 'COMPLETED',
+    CANCELLED = 'CANCELLED'
+}
+
+export enum TournamentMatchStatus {
+    PENDING = 'PENDING',
+    LIVE = 'LIVE',
+    FINISHED = 'FINISHED',
+    CANCELLED = 'CANCELLED'
+}

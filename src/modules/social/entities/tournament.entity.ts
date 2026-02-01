@@ -3,14 +3,9 @@ import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Venue } from '../../venues/entities/venue.entity';
 
-export enum TournamentStatus {
-    PLANNING = 'PLANNING',
-    REGISTRATION_OPEN = 'REGISTRATION_OPEN',
-    REGISTRATION_CLOSED = 'REGISTRATION_CLOSED',
-    IN_PROGRESS = 'IN_PROGRESS',
-    COMPLETED = 'COMPLETED',
-    CANCELLED = 'CANCELLED'
-}
+import { TournamentStatus, TournamentFormat } from '../../../common/constants/social.constant';
+
+
 
 @Entity('tournaments')
 export class Tournament extends BaseEntity {
@@ -24,8 +19,16 @@ export class Tournament extends BaseEntity {
     @Index()
     sportType: string;
 
+    @Column({
+        type: 'enum',
+        enum: TournamentFormat,
+        default: TournamentFormat.SINGLE_ELIMINATION
+    })
+    format: TournamentFormat;
+
     @Column({ name: 'start_date', type: 'date' })
     startDate: Date;
+
 
     @Column({ name: 'end_date', type: 'date' })
     endDate: Date;
@@ -40,8 +43,14 @@ export class Tournament extends BaseEntity {
     @Column({ name: 'entry_fee', type: 'decimal', precision: 15, scale: 2, default: 0 })
     entryFee: number;
 
-    @Column({ name: 'prize_pool', type: 'text', nullable: true })
-    prizePool: string;
+    @Column({ name: 'prize_structure', type: 'jsonb', nullable: true, comment: '{ "1st": "10M", "2nd": "5M" }' })
+    prizeStructure: any;
+
+    @Column({ name: 'registration_deadline', type: 'timestamp', nullable: true })
+    registrationDeadline: Date;
+
+    @Column({ type: 'text', nullable: true, comment: 'Tournament rules and regulations' })
+    rules: string;
 
     @Column({
         type: 'enum',

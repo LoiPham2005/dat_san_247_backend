@@ -30,7 +30,6 @@ export class VenueService extends BaseEntity {
     stockQuantity: number;
 
     @Column({ name: 'category', nullable: true })
-
     category: string; // e.g., "FOOD_DRINK", "EQUIPMENT", "PERSONNEL"
 
     @ManyToOne(() => Venue, { onDelete: 'CASCADE' })

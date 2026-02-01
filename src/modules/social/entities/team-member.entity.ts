@@ -45,6 +45,9 @@ export class TeamMember extends BaseEntity {
     @Column({ name: 'goals_scored', default: 0 })
     goalsScored: number;
 
+    @Column({ type: 'jsonb', nullable: true, comment: 'Arbitrary professional stats: assists, clean sheets, etc.' })
+    metadata: any;
+
     @Column({ name: 'joined_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     joinedAt: Date;
 
