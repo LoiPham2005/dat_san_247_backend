@@ -20,9 +20,6 @@ export class FAQ extends BaseEntity {
     @Column({ type: 'text' })
     answer: string;
 
-    @Column({ name: 'display_order', default: 0 })
-    displayOrder: number;
-
     @Column({ name: 'helpful_count', default: 0 })
     helpfulCount: number;
 

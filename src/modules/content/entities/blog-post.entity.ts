@@ -14,9 +14,6 @@ export class BlogPost extends BaseEntity {
     })
     category: BlogCategory;
 
-    @Column({ unique: true })
-    slug: string;
-
     @Column()
     author: string;
 
@@ -43,15 +40,6 @@ export class BlogPost extends BaseEntity {
 
     @Column({ default: 0 })
     bookmarks: number;
-
-    @Column({ default: false })
-    featured: boolean;
-
-    @Column({ default: false })
-    pinned: boolean;
-
-    @Column({ name: 'published_at', nullable: true })
-    publishedAt: Date;
 
     @Column({ name: 'last_edited_at', nullable: true })
     lastEditedAt: Date;

@@ -118,6 +118,18 @@ export class Booking extends BaseEntity {
     @Column({ type: 'jsonb', nullable: true, comment: 'Ad-hoc data like equipment rentals, special requests' })
     metadata: any;
 
+    @Column({ type: 'jsonb', nullable: true, comment: 'AI fraud detection results' })
+    fraudAnalysis: {
+        riskLevel: string;
+        riskScore: number;
+        indicators: Record<string, any>;
+        actionTaken: string;
+        isFalsePositive: boolean;
+        reviewedBy: string;
+        reviewedAt: Date;
+        notes: string;
+    };
+
     @Column({ name: 'checked_in_at', type: 'timestamp', nullable: true })
     checkedInAt: Date;
 

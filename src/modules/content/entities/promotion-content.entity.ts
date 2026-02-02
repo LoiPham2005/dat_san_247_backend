@@ -22,13 +22,6 @@ export class PromotionContent extends BaseEntity {
     @JoinColumn({ name: 'promotion_id' })
     promotion: Relation<Promotion>;
 
-    @Column({
-        name: 'target_audience',
-        type: 'enum',
-        enum: TargetAudience,
-    })
-    targetAudience: TargetAudience;
-
     @Column({ name: 'min_membership_level', nullable: true })
     minMembershipLevel: string;
 

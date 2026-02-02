@@ -58,6 +58,19 @@ export class Review extends BaseEntity {
     @Column({ name: 'is_visible', default: true })
     isVisible: boolean;
 
+    @Column({ type: 'jsonb', nullable: true, comment: 'AI analysis results: sentiment, spam detection, topics, etc.' })
+    aiAnalysis: {
+        sentiment: string;
+        sentimentScore: number;
+        detectedTopics: string[];
+        keyPhrases: string[];
+        isSpam: boolean;
+        isFake: boolean;
+        spamScore: number;
+        reviewQualityScore: number;
+        aiModel: string;
+    };
+
     @ManyToOne(() => Booking, (booking) => booking.reviews, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'booking_id' })
     booking: Booking;
