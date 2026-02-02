@@ -9,7 +9,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Admin - Settings')
 @ApiBearerAuth()
-@Roles(UserRole.SUPER_ADMIN)
+@Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('admin/settings')
 export class SettingsController {

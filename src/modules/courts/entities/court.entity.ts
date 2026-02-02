@@ -13,6 +13,7 @@ import { SportType } from '../../../common/constants/sport-type.constant';
 import { TimeSlot } from '../../time-slots/entities/time-slot.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { PricingRule } from '../../time-slots/entities/pricing-rule.entity';
+import { CourtImage } from './court-image.entity';
 
 @Entity('courts')
 export class Court extends BaseEntity {
@@ -78,6 +79,9 @@ export class Court extends BaseEntity {
     @ManyToOne(() => Venue, (venue) => venue.courts, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
     venue: Venue;
+
+    @OneToMany(() => CourtImage, (image) => image.court)
+    images: CourtImage[];
 
 
 

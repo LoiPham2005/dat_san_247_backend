@@ -11,6 +11,7 @@ import { Booking } from '../../bookings/entities/booking.entity';
 import { Venue } from '../../venues/entities/venue.entity';
 import { Court } from '../../courts/entities/court.entity';
 import { User } from '../../users/entities/user.entity';
+import { ReviewImage } from './review-image.entity';
 
 
 @Entity('reviews')
@@ -73,5 +74,6 @@ export class Review extends BaseEntity {
     @JoinColumn({ name: 'user_id' })
     user: User;
 
-
+    @OneToMany(() => ReviewImage, (image) => image.review)
+    images: ReviewImage[];
 }

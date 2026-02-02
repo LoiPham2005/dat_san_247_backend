@@ -65,7 +65,6 @@ export class ChatService {
                 createdById: userId,
                 isTeam: data.isTeam || false,
                 venueId: data.venueId,
-                teamSportType: data.teamSportType,
             });
             const savedConv = await queryRunner.manager.save(conversation);
 

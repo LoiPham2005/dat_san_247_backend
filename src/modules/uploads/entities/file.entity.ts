@@ -15,14 +15,6 @@ export class File extends BaseEntity {
     @Index()
     userId: string;
 
-    @Column({ name: 'target_type', nullable: true, comment: 'Polymorphic: VENUE, COURT, REVIEW, POST, CONTENT, etc.' })
-    @Index()
-    targetType: string;
-
-    @Column({ name: 'target_id', type: 'uuid', nullable: true, comment: 'ID of the target entity' })
-    @Index()
-    targetId: string;
-
     @Column({
         type: 'enum',
         enum: FileCategory,
@@ -60,9 +52,6 @@ export class File extends BaseEntity {
 
     @Column({ type: 'jsonb', nullable: true })
     metadata: any;
-
-    @Column({ name: 'display_order', default: 0 })
-    displayOrder: number;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'user_id' })
