@@ -44,6 +44,9 @@ export class BlogPost extends BaseEntity {
     @Column({ name: 'last_edited_at', nullable: true })
     lastEditedAt: Date;
 
+    @Column({ name: 'published_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    publishedAt: Date;
+
     @OneToOne(() => Content)
     @JoinColumn({ name: 'content_id' })
     content: Content;

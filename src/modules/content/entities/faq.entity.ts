@@ -35,6 +35,9 @@ export class FAQ extends BaseEntity {
     @Column({ name: 'search_keywords', type: 'simple-array', nullable: true })
     searchKeywords: string[];
 
+    @Column({ name: 'display_order', default: 0 })
+    displayOrder: number;
+
     @OneToOne(() => Content)
     @JoinColumn({ name: 'content_id' })
     content: Content;

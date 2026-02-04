@@ -5,10 +5,11 @@ import { AnalyticsController } from './analytics.controller';
 import { ActivityLog } from './entities/activity-log.entity';
 import { AuditLog } from './entities/audit-log.entity';
 import { VenueRevenueSnapshot } from './entities/venue-revenue-snapshot.entity';
+import { UserBehavior } from './entities/user-behavior.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ActivityLog, AuditLog, VenueRevenueSnapshot]),
+    TypeOrmModule.forFeature([ActivityLog, AuditLog, VenueRevenueSnapshot, UserBehavior]),
   ],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],

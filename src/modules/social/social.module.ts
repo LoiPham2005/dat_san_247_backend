@@ -19,6 +19,7 @@ import { TournamentParticipant } from './entities/tournament-participant.entity'
 import { Post } from './entities/post.entity';
 import { SocialLike } from './entities/social-like.entity';
 import { PostComment } from './entities/post-comment.entity';
+import { SocialMedia } from './entities/social-media.entity';
 
 // Friend entities
 import { Friendship } from './entities/friendship.entity';
@@ -52,6 +53,7 @@ import { UserBlock } from './entities/user-block.entity';
             Post,
             SocialLike,
             PostComment,
+            SocialMedia,
             // Friends
             Friendship,
             UserFollower,

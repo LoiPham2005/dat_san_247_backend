@@ -1,7 +1,6 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
-import { TeamMemberStatus } from '../../../common/constants/social.constant';
-import { ChatMemberRole } from '../../../common/constants/chat.constant';
+import { TeamMemberStatus, TeamMemberRole } from '../../../common/constants/social.constant';
 import { Team } from './team.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -19,10 +18,10 @@ export class TeamMember extends BaseEntity {
     // Role
     @Column({
         type: 'enum',
-        enum: ChatMemberRole,
-        default: ChatMemberRole.MEMBER,
+        enum: TeamMemberRole,
+        default: TeamMemberRole.MEMBER,
     })
-    role: ChatMemberRole;
+    role: TeamMemberRole;
 
     @Column({ nullable: true, length: 100 })
     position: string;

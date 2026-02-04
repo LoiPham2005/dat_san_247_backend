@@ -1,9 +1,10 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { MatchFinding } from './match-finding.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { User } from '../../users/entities/user.entity';
 import { Team } from './team.entity';
+import { SocialMedia } from './social-media.entity';
 
 @Entity('match_results')
 export class MatchResult extends BaseEntity {
@@ -29,8 +30,8 @@ export class MatchResult extends BaseEntity {
     teamBScore: number;
 
     // Premium Social Features
-    @Column({ name: 'media_urls', type: 'jsonb', nullable: true, comment: 'Legacy: Use polymorphic File entity instead' })
-    mediaUrls: string[];
+    @OneToMany(() => SocialMedia, (media) => media.ownerId)
+    media: SocialMedia[];
 
     @Column({ name: 'highlight_video_url', type: 'text', nullable: true })
     highlightVideoUrl: string;

@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, Check } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Tournament } from './tournament.entity';
 import { User } from '../../users/entities/user.entity';
@@ -19,6 +19,7 @@ export enum ParticipantStatus {
 
 @Entity('tournament_participants')
 @Unique(['tournamentId', 'userId', 'teamId'])
+@Check('check_participant_type', '(user_id IS NOT NULL AND team_id IS NULL) OR (user_id IS NULL AND team_id IS NOT NULL)')
 export class TournamentParticipant extends BaseEntity {
     @Column({ name: 'tournament_id', type: 'uuid' })
     @Index()

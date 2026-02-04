@@ -7,6 +7,7 @@ import { Team } from './team.entity';
 import { MatchResult } from './match-result.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { PostComment } from './post-comment.entity';
+import { SocialMedia } from './social-media.entity';
 
 @Entity('posts')
 export class Post extends BaseEntity {
@@ -37,8 +38,8 @@ export class Post extends BaseEntity {
     @Column({ type: 'text', nullable: true })
     content: string;
 
-    @Column({ name: 'media_urls', type: 'jsonb', nullable: true })
-    mediaUrls: any;
+    @OneToMany(() => SocialMedia, (media) => media.ownerId)
+    media: SocialMedia[];
 
     // Tagging features
     @Column({ name: 'tagged_user_ids', type: 'jsonb', nullable: true, comment: 'IDs of tagged users' })

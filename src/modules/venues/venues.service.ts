@@ -349,7 +349,7 @@ export class VenuesService {
                     await queryRunner.manager.save(File, {
                         userId: ownerId,
                         fileName: files.images[i].originalname,
-                        fileUrl: url,
+                        publicUrl: url,
                         fileSize: files.images[i].size,
                         mimeType: files.images[i].mimetype,
                         targetType: 'VENUE',
@@ -392,7 +392,7 @@ export class VenuesService {
                     await queryRunner.manager.save(File, {
                         userId: ownerId,
                         fileName: files.images[i].originalname,
-                        fileUrl: url,
+                        publicUrl: url,
                         fileSize: files.images[i].size,
                         mimeType: files.images[i].mimetype,
                         targetType: 'VENUE',

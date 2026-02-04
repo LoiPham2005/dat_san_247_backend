@@ -10,6 +10,13 @@ export enum TeamMemberStatus {
     BANNED = 'BANNED'
 }
 
+export enum TeamMemberRole {
+    OWNER = 'OWNER',
+    CAPTAIN = 'CAPTAIN',
+    VICE_CAPTAIN = 'VICE_CAPTAIN',
+    MEMBER = 'MEMBER'
+}
+
 export enum MatchStatus {
     OPEN = 'OPEN',
     MATCHED = 'MATCHED',
