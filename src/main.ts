@@ -79,6 +79,9 @@ async function bootstrap() {
     // Global Interceptors
     app.useGlobalInterceptors(new TransformInterceptor());
 
+    // Enable shutdown hooks for graceful shutdown
+    app.enableShutdownHooks();
+
     // Swagger (dev only)
     if (config.get('app.env') !== 'production') {
         setupSwagger(app);
@@ -86,12 +89,14 @@ async function bootstrap() {
 
     // Start server
     const port = config.get('app.port') || 3000;
+    const env = config.get('app.env') || 'development';
 
     await app.listen(port, '0.0.0.0', () => {
         logger.log('\n');
         logger.log('╔══════════════════════════════════════════════════╗');
         logger.log('║  🚀 SERVER STARTED SUCCESSFULLY                  ║');
         logger.log('╠══════════════════════════════════════════════════╣');
+        logger.log(`║  🌍 Environment: ${env.toUpperCase()}                     ║`);
         logger.log(`║  🌐 API URL: http://localhost:${port}/api/v1        ║`);
         logger.log(`║  📚 Swagger Docs: http://localhost:${port}/api/docs ║`);
         logger.log('╚══════════════════════════════════════════════════╝');

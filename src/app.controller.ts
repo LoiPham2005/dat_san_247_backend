@@ -3,21 +3,25 @@
 // ==========================================
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('Health')
 @Controller()
 export class AppController {
+    constructor(private readonly config: ConfigService) { }
+
     @Get()
     @ApiOperation({ summary: 'API Root' })
     getRoot() {
         return {
             success: true,
+            version: this.config.get('app.version') || '1.0.0',
             message: 'Welcome to Dat San 247 API',
-            version: '1.0.0',
+            environment: this.config.get('app.env'),
             docs: '/api/docs',
-            api: '/api/v1', 
+            api: '/api/v1',
             status: 'running',
-            timestamp: new Date().toISOString(),    
+            timestamp: new Date().toISOString(),
         };
     }
 
@@ -26,10 +30,9 @@ export class AppController {
     healthCheck() {
         return {
             status: 'ok',
-            version: '1.0.0',   
-            docs: '/api/docs',  
-            api: '/api/v1', 
+            uptime: process.uptime(),
             timestamp: new Date().toISOString(),
+            memory: process.memoryUsage(),
         };
     }
 }
