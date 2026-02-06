@@ -29,15 +29,18 @@ const dbOptions: DataSourceOptions = {
     // SSL Configuration for production DBs (like Neon, Supabase, RDS)
     ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 
-    // Connection Pool settings
+    // Connection Pool settings - OPTIMIZED FOR DEV
     extra: {
-        max: parseInt(process.env.DB_POOL_MAX || '20', 10), // Maximum number of clients in the pool
-        idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-        connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+        max: parseInt(process.env.DB_POOL_MAX || '10', 10), // Reduced from 20 to 10 for faster local bootstrap
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000, // Increased slightly to avoid timeout on slow networks
     },
 
     // Synchronization - Enable in Development to auto-create tables
-    synchronize: true, // Auto-create tables (dev only)
+    // ⚠️ WARNING: 'true' slows down startup significantly on remote DBs due to schema diffing.
+    // Set DB_SYNCHRONIZE=false in .env for fast startup when not changing entities.
+    // synchronize: process.env.DB_SYNCHRONIZE === 'true', // Defaults to false if not set (safer + faster)
+    synchronize: false,
 
     // Drop schema on startup - Disable to persist data
     dropSchema: false
@@ -52,3 +55,19 @@ export default registerAs('database', (): TypeOrmModuleOptions => ({
 
 // Export DataSource for running migrations via CLI
 export const connectionSource = new DataSource(dbOptions);
+
+
+
+
+
+
+
+// câu lệnh xóa tất cả bảng trong database
+// DO $$
+// DECLARE
+//     r RECORD;
+// BEGIN
+//     FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+//         EXECUTE 'DROP TABLE IF EXISTS public.' || quote_ident(r.tablename) || ' CASCADE';
+//     END LOOP;
+// END $$;

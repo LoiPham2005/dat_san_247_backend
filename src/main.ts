@@ -92,16 +92,39 @@ async function bootstrap() {
     const env = config.get('app.env') || 'development';
 
     await app.listen(port, '0.0.0.0', () => {
+        const lines = [
+            `🌍 Environment: ${env}`,
+            `🌐 API URL:     http://localhost:${port}/api/v1`,
+            `📚 Swagger Docs: http://localhost:${port}/api/docs`
+        ];
+
+        const title = '🚀 SERVER STARTED SUCCESSFULLY';
+        const maxLength = Math.max(title.length, ...lines.map(l => l.length));
+        const border = '═'.repeat(maxLength + 4);
+
         logger.log('\n');
-        logger.log('╔══════════════════════════════════════════════════╗');
-        logger.log('║  🚀 SERVER STARTED SUCCESSFULLY                  ║');
-        logger.log('╠══════════════════════════════════════════════════╣');
-        logger.log(`║  🌍 Environment: ${env.toUpperCase()}                     ║`);
-        logger.log(`║  🌐 API URL: http://localhost:${port}/api/v1        ║`);
-        logger.log(`║  📚 Swagger Docs: http://localhost:${port}/api/docs ║`);
-        logger.log('╚══════════════════════════════════════════════════╝');
+        logger.log(`╔${border}╗`);
+        logger.log(`║  ${title.padEnd(maxLength)}  ║`);
+        logger.log(`╠${border}╣`);
+        lines.forEach(line => {
+            logger.log(`║  ${line.padEnd(maxLength)}  ║`);
+        });
+        logger.log(`╚${border}╝`);
         logger.log('\n');
     });
+
+    // await app.listen(port, '0.0.0.0', () => {
+    //     logger.log('\n');
+    //     logger.log('╔══════════════════════════════════════════════════╗');
+    //     logger.log('║  🚀 SERVER STARTED SUCCESSFULLY                  ║');
+    //     logger.log('╠══════════════════════════════════════════════════╣');
+    //     logger.log(`║  🌍 Environment: ${env.toUpperCase()}                     ║`);
+    //     logger.log(`║  🌐 API URL: http://localhost:${port}/api/v1        ║`);
+    //     logger.log(`║  📚 Swagger Docs: http://localhost:${port}/api/docs ║`);
+    //     logger.log('╚══════════════════════════════════════════════════╝');
+    //     logger.log('\n');
+    // });
+    
 }
 
 bootstrap().catch((err) => {
@@ -109,5 +132,3 @@ bootstrap().catch((err) => {
     Sentry.captureException(err);
     process.exit(1);
 });
-
-

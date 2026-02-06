@@ -100,10 +100,10 @@ import { LoggerModule } from './common/services/logger.module';
         SettingsModule,
         ContentModule,
         ChatModule,
-        SocialModule,
-        AIModule,
         SubscriptionsModule,
         LoyaltyModule,
+        SocialModule,
+        // AIModule,
 
 
         // 5. Shared Modules
