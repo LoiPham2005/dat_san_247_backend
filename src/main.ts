@@ -1,7 +1,7 @@
 // ==========================================
 // 📁 src/main.ts - TỐI ƯU
 // ==========================================
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
@@ -77,7 +77,8 @@ async function bootstrap() {
     );
 
     // Global Interceptors
-    app.useGlobalInterceptors(new TransformInterceptor());
+    // Global Interceptors
+    app.useGlobalInterceptors(new TransformInterceptor(app.get(Reflector)));
 
     // Enable shutdown hooks for graceful shutdown
     app.enableShutdownHooks();
@@ -124,7 +125,7 @@ async function bootstrap() {
     //     logger.log('╚══════════════════════════════════════════════════╝');
     //     logger.log('\n');
     // });
-    
+
 }
 
 bootstrap().catch((err) => {

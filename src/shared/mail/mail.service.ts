@@ -37,8 +37,17 @@ export class MailService {
     }
 
     renderTemplate(html: string, variables: Record<string, any>) {
-        return html.replace(/{{(\w+)}}/g, (match, key) => {
-            return variables[key] !== undefined ? variables[key] : match;
+        return html.replace(/{{([\w.]+)}}/g, (match, key) => {
+            const keys = key.split('.');
+            let value = variables;
+            for (const k of keys) {
+                if (value && typeof value === 'object' && k in value) {
+                    value = value[k];
+                } else {
+                    return match; // Key not found, return original placeholder
+                }
+            }
+            return value !== undefined && value !== null ? String(value) : '';
         });
     }
 

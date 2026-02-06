@@ -9,6 +9,7 @@ import {
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Request, Response } from 'express';
+import { maskSensitiveData } from '../utils/mask.util';
 
 @Injectable()
 export class HttpLoggingInterceptor implements NestInterceptor {
@@ -21,11 +22,7 @@ export class HttpLoggingInterceptor implements NestInterceptor {
         const { method, url, body, query, params, ip } = request;
 
         // Safe Logging: Remove sensitive data
-        const safeBody = { ...body };
-        if (safeBody.password) safeBody.password = '***';
-        if (safeBody.newPassword) safeBody.newPassword = '***';
-        if (safeBody.oldPassword) safeBody.oldPassword = '***';
-        if (safeBody.token) safeBody.token = '***';
+        const safeBody = maskSensitiveData(body);
 
         const user = (request as any).user;
         const userId = user ? user.id : 'anonymous';
