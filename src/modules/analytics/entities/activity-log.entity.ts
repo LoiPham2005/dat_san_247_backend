@@ -3,6 +3,7 @@ import {
     Column,
     ManyToOne,
     JoinColumn,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
@@ -40,5 +41,5 @@ export class ActivityLog extends BaseEntity {
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

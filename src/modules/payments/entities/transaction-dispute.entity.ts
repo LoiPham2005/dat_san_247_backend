@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Transaction } from './transaction.entity';
 import { User } from '../../users/entities/user.entity';
@@ -45,13 +45,13 @@ export class TransactionDispute extends BaseEntity {
 
     @ManyToOne(() => Transaction, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'transaction_id' })
-    transaction: Transaction;
+    transaction: Relation<Transaction>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'reporter_id' })
-    reporter: User;
+    reporter: Relation<User>;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'resolved_by' })
-    resolvedBy: User;
+    resolvedBy: Relation<User>;
 }

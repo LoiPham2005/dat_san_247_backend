@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
@@ -63,9 +63,9 @@ export class Transaction extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'SET NULL' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => Booking, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'reference_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 }

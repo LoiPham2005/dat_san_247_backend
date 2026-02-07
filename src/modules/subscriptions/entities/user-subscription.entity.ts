@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { SubscriptionPlan } from './subscription-plan.entity';
@@ -43,9 +43,9 @@ export class UserSubscription extends BaseEntity {
 
     @ManyToOne(() => User, (user) => user.id, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => SubscriptionPlan, { eager: true })
     @JoinColumn({ name: 'plan_id' })
-    plan: SubscriptionPlan;
+    plan: Relation<SubscriptionPlan>;
 }

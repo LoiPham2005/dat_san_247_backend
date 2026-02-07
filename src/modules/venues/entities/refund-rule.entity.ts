@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { RefundPolicy } from './refund-policy.entity';
 
@@ -15,5 +15,5 @@ export class RefundRule extends BaseEntity {
 
     @ManyToOne(() => RefundPolicy, (policy) => policy.rules, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'policy_id' })
-    policy: RefundPolicy;
+    policy: Relation<RefundPolicy>;
 }

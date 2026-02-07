@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, OneToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, OneToOne, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { Transaction } from './transaction.entity';
@@ -45,13 +45,13 @@ export class Invoice extends BaseEntity {
 
     @OneToOne(() => Booking, { nullable: true })
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 
     @OneToOne(() => Transaction)
     @JoinColumn({ name: 'transaction_id' })
-    transaction: Transaction;
+    transaction: Relation<Transaction>;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'customer_id' })
-    customer: User;
+    customer: Relation<User>;
 }

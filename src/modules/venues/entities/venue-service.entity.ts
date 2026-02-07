@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Venue } from '../../venues/entities/venue.entity';
 
@@ -34,5 +34,5 @@ export class VenueService extends BaseEntity {
 
     @ManyToOne(() => Venue, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 }

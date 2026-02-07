@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -38,5 +38,5 @@ export class SystemAnnouncement extends BaseEntity {
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'created_by' })
-    createdBy: User;
+    createdBy: Relation<User>;
 }

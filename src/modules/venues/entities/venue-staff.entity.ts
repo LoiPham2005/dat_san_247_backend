@@ -4,6 +4,7 @@ import {
     ManyToOne,
     JoinColumn,
     Unique,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Venue } from './venue.entity';
@@ -39,9 +40,9 @@ export class VenueStaff extends BaseEntity {
 
     @ManyToOne(() => Venue, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

@@ -1,4 +1,5 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToOne, Relation } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Content } from './content.entity';
 import { FAQCategory } from '../../../common/constants/content.constant';
@@ -38,7 +39,8 @@ export class FAQ extends BaseEntity {
     @Column({ name: 'display_order', default: 0 })
     displayOrder: number;
 
-    @OneToOne(() => Content)
+    @ApiProperty({ type: () => Content })
+    @OneToOne(() => Content, (content) => content.faq)
     @JoinColumn({ name: 'content_id' })
-    content: Content;
+    content: Relation<Content>;
 }

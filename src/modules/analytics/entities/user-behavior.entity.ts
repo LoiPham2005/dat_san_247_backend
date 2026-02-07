@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Venue } from '../../venues/entities/venue.entity';
@@ -72,13 +72,13 @@ export class UserBehavior extends BaseEntity {
 
     @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => Venue, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     @ManyToOne(() => Court, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'court_id' })
-    court: Court;
+    court: Relation<Court>;
 }

@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToOne, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { TicketPriority, TicketStatus, TicketCategory } from '../../../common/constants/chat.constant';
 import { User } from '../../users/entities/user.entity';
@@ -83,21 +83,21 @@ export class SupportTicket extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'customer_id' })
-    customer: User;
+    customer: Relation<User>;
 
     @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'assigned_to_id' })
-    assignedTo: User;
+    assignedTo: Relation<User>;
 
     @OneToOne(() => Conversation, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'conversation_id' })
-    conversation: Conversation;
+    conversation: Relation<Conversation>;
 
     @ManyToOne(() => Booking, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 
     @ManyToOne(() => Venue, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 }

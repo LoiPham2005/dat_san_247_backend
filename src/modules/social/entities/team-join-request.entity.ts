@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Unique, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Team } from './team.entity';
 import { User } from '../../users/entities/user.entity';
@@ -26,13 +26,13 @@ export class TeamJoinRequest extends BaseEntity {
 
     @ManyToOne(() => Team, team => team.joinRequests, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'team_id' })
-    team: Team;
+    team: Relation<Team>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'reviewed_by' })
-    reviewer: User;
+    reviewer: Relation<User>;
 }

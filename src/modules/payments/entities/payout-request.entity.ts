@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Team } from '../../social/entities/team.entity';
@@ -60,13 +60,13 @@ export class PayoutRequest extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => Team, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'team_id' })
-    team: Team;
+    team: Relation<Team>;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'processed_by' })
-    processedBy: User;
+    processedBy: Relation<User>;
 }

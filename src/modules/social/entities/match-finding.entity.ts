@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { MatchStatus, ChallengeType, OrganizerType } from '../../../common/constants/social.constant';
 import { Venue } from '../../venues/entities/venue.entity';
@@ -26,11 +26,11 @@ export class MatchFinding extends BaseEntity {
 
     @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'organizer_user_id' })
-    organizerUser: User;
+    organizerUser: Relation<User>;
 
     @ManyToOne(() => Team, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'organizer_team_id' })
-    organizerTeam: Team;
+    organizerTeam: Relation<Team>;
 
     // Match details
     @Column({ name: 'sport_type' })
@@ -120,13 +120,13 @@ export class MatchFinding extends BaseEntity {
 
     @ManyToOne(() => Venue, { nullable: true })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     @ManyToOne(() => Court, { nullable: true })
     @JoinColumn({ name: 'court_id' })
-    court: Court;
+    court: Relation<Court>;
 
     @ManyToOne(() => Booking, { nullable: true })
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 }

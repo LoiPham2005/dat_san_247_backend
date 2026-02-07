@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Court } from '../../courts/entities/court.entity';
@@ -38,9 +38,9 @@ export class BookingWaitlist extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => Court, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'court_id' })
-    court: Court;
+    court: Relation<Court>;
 }

@@ -1,4 +1,4 @@
-import { Entity, Column, JoinColumn, OneToOne, Index } from 'typeorm';
+import { Entity, Column, JoinColumn, OneToOne, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -48,5 +48,5 @@ export class ChatSettings extends BaseEntity {
 
     @OneToOne(() => User, (user) => user.chatSettings, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

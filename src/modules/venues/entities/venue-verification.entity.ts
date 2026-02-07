@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Venue } from './venue.entity';
 import { User } from '../../users/entities/user.entity';
@@ -46,9 +46,9 @@ export class VenueVerification extends BaseEntity {
 
     @ManyToOne(() => Venue, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'verified_by' })
-    verifiedBy: User;
+    verifiedBy: Relation<User>;
 }

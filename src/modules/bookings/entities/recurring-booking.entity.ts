@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Venue } from '../../venues/entities/venue.entity';
@@ -55,16 +55,16 @@ export class RecurringBooking extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => Venue)
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     @ManyToOne(() => Court)
     @JoinColumn({ name: 'court_id' })
-    court: Court;
+    court: Relation<Court>;
 
     @OneToMany(() => Booking, (booking) => booking.recurringBooking)
-    bookings: Booking[];
+    bookings: Relation<Booking>[];
 }

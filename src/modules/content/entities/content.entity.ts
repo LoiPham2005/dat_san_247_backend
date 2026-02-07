@@ -1,13 +1,22 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, OneToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, OneToOne, Relation } from 'typeorm';
+import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { ContentType, ContentStatus, TargetAudience } from '../../../common/constants/content.constant';
+import { File } from '../../uploads/entities/file.entity';
+import { Banner } from './banner.entity';
+import { BlogPost } from './blog-post.entity';
+import { FAQ } from './faq.entity';
+import { Policy } from './policy.entity';
+import { EmailTemplate } from './email-template.entity';
+import { PromotionContent } from './promotion-content.entity';
 
 @Entity('contents')
 export class Content extends BaseEntity {
+    @ApiHideProperty()
     @Column({
-        type: 'enum',
-        enum: ContentType,
+        type: 'varchar',
+        length: 50,
     })
     @Index()
     type: ContentType;
@@ -27,6 +36,13 @@ export class Content extends BaseEntity {
 
     @Column({ type: 'text', nullable: true })
     excerpt: string;
+
+    @Column({ name: 'thumbnail_file_id', type: 'uuid', nullable: true })
+    thumbnailFileId: string;
+
+    @ManyToOne(() => File)
+    @JoinColumn({ name: 'thumbnail_file_id' })
+    thumbnail: Relation<File>;
 
     @Column({ name: 'thumbnail_url', nullable: true })
     thumbnailUrl: string;
@@ -106,12 +122,37 @@ export class Content extends BaseEntity {
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'author_id' })
-    author: User;
+    author: Relation<User>;
 
     @ManyToOne(() => Content, { nullable: true })
     @JoinColumn({ name: 'parent_id' })
-    parent: Content;
+    parent: Relation<Content>;
 
     @OneToMany(() => Content, (content) => content.parent)
-    children: Content[];
+    children: Relation<Content>[];
+
+    // Inverse relations for specialized content
+    @ApiProperty({ type: () => Banner })
+    @OneToOne(() => Banner, (banner) => banner.content)
+    banner: Relation<Banner>;
+
+    @ApiProperty({ type: () => BlogPost })
+    @OneToOne(() => BlogPost, (post) => post.content)
+    blogPost: Relation<BlogPost>;
+
+    @ApiProperty({ type: () => FAQ })
+    @OneToOne(() => FAQ, (faq) => faq.content)
+    faq: Relation<FAQ>;
+
+    @ApiProperty({ type: () => Policy })
+    @OneToOne(() => Policy, (policy) => policy.content)
+    policy: Relation<Policy>;
+
+    @ApiProperty({ type: () => EmailTemplate })
+    @OneToOne(() => EmailTemplate, (template) => template.content)
+    emailTemplate: Relation<EmailTemplate>;
+
+    @ApiProperty({ type: () => PromotionContent })
+    @OneToOne(() => PromotionContent, (promo) => promo.content)
+    promotion: Relation<PromotionContent>;
 }

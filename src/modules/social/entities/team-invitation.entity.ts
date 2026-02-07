@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Unique, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Team } from './team.entity';
 import { User } from '../../users/entities/user.entity';
@@ -29,13 +29,13 @@ export class TeamInvitation extends BaseEntity {
 
     @ManyToOne(() => Team, team => team.invitations, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'team_id' })
-    team: Team;
+    team: Relation<Team>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'invited_user_id' })
-    invitedUser: User;
+    invitedUser: Relation<User>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'invited_by' })
-    inviter: User;
+    inviter: Relation<User>;
 }

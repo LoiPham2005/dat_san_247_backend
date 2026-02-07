@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { VenueService } from '../../venues/entities/venue-service.entity';
@@ -24,9 +24,9 @@ export class BookingAddon extends BaseEntity {
 
     @ManyToOne(() => Booking, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 
     @ManyToOne(() => VenueService, { onDelete: 'SET NULL' })
     @JoinColumn({ name: 'service_id' })
-    service: VenueService;
+    service: Relation<VenueService>;
 }

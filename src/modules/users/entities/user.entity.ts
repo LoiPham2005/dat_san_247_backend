@@ -4,6 +4,7 @@ import {
     OneToMany,
     ManyToOne,
     JoinColumn,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { UserRole } from '../../../common/constants/role.constant';
@@ -48,7 +49,7 @@ export class User extends BaseEntity {
 
     @ManyToOne(() => Role, (role) => role.users, { eager: true, nullable: true })
     @JoinColumn({ name: 'role_id' })
-    role: Role;
+    role: Relation<Role>;
 
     @Column({ name: 'avatar_url', nullable: true })
     avatarUrl: string;
@@ -79,29 +80,29 @@ export class User extends BaseEntity {
     lastLoginAt: Date;
 
     @OneToMany(() => Booking, (booking) => booking.customer)
-    bookings: Booking[];
+    bookings: Relation<Booking>[];
 
     @OneToMany(() => Review, (review) => review.user)
-    reviews: Review[];
+    reviews: Relation<Review>[];
 
     @OneToMany(() => Notification, (notification) => notification.user)
-    notifications: Notification[];
+    notifications: Relation<Notification>[];
 
     @OneToMany(() => FavoriteVenue, (fv) => fv.user)
-    favoriteVenues: FavoriteVenue[];
+    favoriteVenues: Relation<FavoriteVenue>[];
 
     @OneToMany(() => RefreshToken, (rt) => rt.user)
-    refreshTokens: RefreshToken[];
+    refreshTokens: Relation<RefreshToken>[];
 
     @OneToMany(() => ActivityLog, (al) => al.user)
-    activityLogs: ActivityLog[];
+    activityLogs: Relation<ActivityLog>[];
 
     @OneToMany(() => File, (f) => f.user)
-    files: File[];
+    files: Relation<File>[];
 
     @OneToOne(() => ChatSettings, (settings) => settings.user)
-    chatSettings: ChatSettings;
+    chatSettings: Relation<ChatSettings>;
 
     @OneToMany(() => ConversationParticipant, (cp) => cp.user)
-    chats: ConversationParticipant[];
+    chats: Relation<ConversationParticipant>[];
 }

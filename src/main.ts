@@ -129,7 +129,11 @@ async function bootstrap() {
 }
 
 bootstrap().catch((err) => {
-    Logger.error('❌ Failed to start:', err);
+    console.error('❌ BOOTSTRAP ERROR:');
+    console.dir(err, { depth: null });
+    if (err instanceof Error) {
+        console.error('❌ STACK:', err.stack);
+    }
     Sentry.captureException(err);
     process.exit(1);
 });

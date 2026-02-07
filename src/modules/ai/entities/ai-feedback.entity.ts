@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { AIMessage } from './ai-message.entity';
@@ -22,9 +22,9 @@ export class AIFeedback extends BaseEntity {
 
     @ManyToOne(() => AIMessage, message => message.feedbacks, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'message_id' })
-    message: AIMessage;
+    message: Relation<AIMessage>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

@@ -1,4 +1,5 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToOne, Relation } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Content } from './content.entity';
 import { EmailTemplateType } from '../../../common/constants/content.constant';
@@ -59,7 +60,8 @@ export class EmailTemplate extends BaseEntity {
     @Column({ name: 'last_used_at', type: 'timestamp', nullable: true })
     lastUsedAt: Date;
 
-    @OneToOne(() => Content)
+    @ApiProperty({ type: () => Content })
+    @OneToOne(() => Content, (content) => content.emailTemplate)
     @JoinColumn({ name: 'content_id' })
-    content: Content;
+    content: Relation<Content>;
 }

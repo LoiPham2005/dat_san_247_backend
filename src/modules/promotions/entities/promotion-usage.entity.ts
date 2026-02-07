@@ -3,6 +3,7 @@ import {
     Column,
     ManyToOne,
     JoinColumn,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Promotion } from './promotion.entity';
@@ -25,13 +26,13 @@ export class PromotionUsage extends BaseEntity {
 
     @ManyToOne(() => Promotion, (promotion) => promotion.usages, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'promotion_id' })
-    promotion: Promotion;
+    promotion: Relation<Promotion>;
 
     @ManyToOne(() => Booking)
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

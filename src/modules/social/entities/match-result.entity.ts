@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { MatchFinding } from './match-finding.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
@@ -31,7 +31,7 @@ export class MatchResult extends BaseEntity {
 
     // Premium Social Features
     @OneToMany(() => SocialMedia, (media) => media.ownerId)
-    media: SocialMedia[];
+    media: Relation<SocialMedia>[];
 
     @Column({ name: 'highlight_video_url', type: 'text', nullable: true })
     highlightVideoUrl: string;
@@ -47,21 +47,21 @@ export class MatchResult extends BaseEntity {
 
     @ManyToOne(() => MatchFinding, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'match_finding_id' })
-    matchFinding: MatchFinding;
+    matchFinding: Relation<MatchFinding>;
 
     @ManyToOne(() => Booking, { nullable: true })
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'mvp_user_id' })
-    mvpUser: User;
+    mvpUser: Relation<User>;
 
     @ManyToOne(() => Team, { nullable: true })
     @JoinColumn({ name: 'team_a_id' })
-    teamA: Team;
+    teamA: Relation<Team>;
 
     @ManyToOne(() => Team, { nullable: true })
     @JoinColumn({ name: 'team_b_id' })
-    teamB: Team;
+    teamB: Relation<Team>;
 }

@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { MatchFinding } from './match-finding.entity';
 import { User } from '../../users/entities/user.entity';
@@ -39,9 +39,9 @@ export class MatchParticipant extends BaseEntity {
 
     @ManyToOne(() => MatchFinding, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'match_finding_id' })
-    matchFinding: MatchFinding;
+    matchFinding: Relation<MatchFinding>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

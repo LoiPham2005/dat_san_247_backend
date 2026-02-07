@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { AIModel } from './ai-model.entity';
 import { User } from '../../users/entities/user.entity';
@@ -124,9 +124,9 @@ export class AIInteraction extends BaseEntity {
     // Relations
     @ManyToOne(() => AIModel, (model) => model.interactions, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'model_id' })
-    model: AIModel;
+    model: Relation<AIModel>;
 
     @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

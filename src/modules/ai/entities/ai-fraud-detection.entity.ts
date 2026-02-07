@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { FraudRiskLevel, FraudActionTaken } from '../../../common/constants/ai.constant';
 import { User } from '../../users/entities/user.entity';
@@ -51,13 +51,13 @@ export class AIFraudDetection extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => Booking, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'reviewed_by' })
-    reviewer: User;
+    reviewer: Relation<User>;
 }

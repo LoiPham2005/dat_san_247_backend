@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Venue } from '../../venues/entities/venue.entity';
 import { AISearchQuery } from './ai-search-query.entity';
@@ -34,9 +34,9 @@ export class AISearchRanking extends BaseEntity {
 
     @ManyToOne(() => AISearchQuery, (query) => query.rankings, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'query_id' })
-    query: AISearchQuery;
+    query: Relation<AISearchQuery>;
 
     @ManyToOne(() => Venue, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 }

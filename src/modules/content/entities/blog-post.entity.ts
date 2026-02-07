@@ -1,4 +1,5 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToOne, OneToMany, Relation } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Content } from './content.entity';
 import { BlogCategory } from '../../../common/constants/content.constant';
@@ -47,7 +48,8 @@ export class BlogPost extends BaseEntity {
     @Column({ name: 'published_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     publishedAt: Date;
 
-    @OneToOne(() => Content)
+    @ApiProperty({ type: () => Content })
+    @OneToOne(() => Content, (content) => content.blogPost)
     @JoinColumn({ name: 'content_id' })
-    content: Content;
+    content: Relation<Content>;
 }

@@ -5,6 +5,7 @@ import {
     OneToMany,
     JoinColumn,
     Index,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
@@ -22,7 +23,7 @@ import { Organization } from './organization.entity';
 export class Venue extends BaseEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'owner_id' })
-    owner: User;
+    owner: Relation<User>;
 
     @Column({ name: 'owner_id' })
     @Index()
@@ -34,7 +35,7 @@ export class Venue extends BaseEntity {
 
     @ManyToOne(() => Organization, (org) => org.venues, { nullable: true })
     @JoinColumn({ name: 'organization_id' })
-    organization: Organization;
+    organization: Relation<Organization>;
 
     @Column()
     name: string;
@@ -144,20 +145,20 @@ export class Venue extends BaseEntity {
     amenities: { name: string, icon?: string }[];
 
     @OneToMany(() => VenueImage, (image) => image.venue)
-    images: VenueImage[];
+    images: Relation<VenueImage>[];
 
     @OneToMany(() => VenueOperatingHour, (oh) => oh.venue)
-    operatingHours: VenueOperatingHour[];
+    operatingHours: Relation<VenueOperatingHour>[];
 
     @OneToMany(() => Court, (court) => court.venue)
-    courts: Court[];
+    courts: Relation<Court>[];
 
     @OneToMany(() => Booking, (booking) => booking.venue)
-    bookings: Booking[];
+    bookings: Relation<Booking>[];
 
     @OneToMany(() => Review, (review) => review.venue)
-    reviews: Review[];
+    reviews: Relation<Review>[];
 
     @OneToMany(() => FavoriteVenue, (fv) => fv.venue)
-    favoritedBy: FavoriteVenue[];
+    favoritedBy: Relation<FavoriteVenue>[];
 }

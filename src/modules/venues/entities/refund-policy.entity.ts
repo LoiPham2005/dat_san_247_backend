@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Organization } from './organization.entity';
 import { Venue } from './venue.entity';
@@ -26,9 +26,9 @@ export class RefundPolicy extends BaseEntity {
 
     @ManyToOne(() => Organization, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'organization_id' })
-    organization: Organization;
+    organization: Relation<Organization>;
 
     @ManyToOne(() => Venue, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 }

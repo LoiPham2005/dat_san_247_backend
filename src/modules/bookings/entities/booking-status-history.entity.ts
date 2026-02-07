@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Booking } from './booking.entity';
 import { BookingStatus } from '../../../common/constants/booking-status.constant';
@@ -24,9 +24,9 @@ export class BookingStatusHistory extends BaseEntity {
 
     @ManyToOne(() => Booking, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'changed_by' })
-    changedBy: User;
+    changedBy: Relation<User>;
 }

@@ -1,7 +1,9 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToOne, Relation } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Content } from './content.entity';
 import { BannerPosition, BannerType } from '../../../common/constants/content.constant';
+import { File } from '../../uploads/entities/file.entity';
 
 @Entity('banners')
 export class Banner extends BaseEntity {
@@ -9,16 +11,23 @@ export class Banner extends BaseEntity {
     contentId: string;
 
     @Column({
-        type: 'enum',
-        enum: BannerPosition,
+        type: 'varchar',
+        length: 50,
     })
     position: BannerPosition;
 
     @Column({
-        type: 'enum',
-        enum: BannerType,
+        type: 'varchar',
+        length: 50,
     })
     type: BannerType;
+
+    @Column({ name: 'mobile_file_id', type: 'uuid', nullable: true })
+    mobileFileId: string | null;
+
+    @ManyToOne(() => File)
+    @JoinColumn({ name: 'mobile_file_id' })
+    mobileImage: Relation<File>;
 
     @Column({ name: 'mobile_image_url', type: 'varchar', nullable: true })
     mobileImageUrl: string | null;
@@ -59,7 +68,8 @@ export class Banner extends BaseEntity {
     @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
     ctr: number;
 
-    @OneToOne(() => Content)
+    @ApiProperty({ type: () => Content })
+    @OneToOne(() => Content, (content) => content.banner)
     @JoinColumn({ name: 'content_id' })
-    content: Content;
+    content: Relation<Content>;
 }

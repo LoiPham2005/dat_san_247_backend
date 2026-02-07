@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Venue } from '../../venues/entities/venue.entity';
@@ -93,7 +93,7 @@ export class AIRecommendation extends BaseEntity {
     // Relations
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     // Optional specific relations (for easier querying)
     @Column({ name: 'venue_id', type: 'uuid', nullable: true })
@@ -107,13 +107,13 @@ export class AIRecommendation extends BaseEntity {
 
     @ManyToOne(() => Venue, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     @ManyToOne(() => Court, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'court_id' })
-    court: Court;
+    court: Relation<Court>;
 
     @ManyToOne(() => Promotion, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'promotion_id' })
-    promotion: Promotion;
+    promotion: Relation<Promotion>;
 }

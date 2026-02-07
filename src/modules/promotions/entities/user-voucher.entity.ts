@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Promotion } from '../../promotions/entities/promotion.entity';
@@ -38,9 +38,9 @@ export class UserVoucher extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => Promotion, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'promotion_id' })
-    promotion: Promotion;
+    promotion: Relation<Promotion>;
 }

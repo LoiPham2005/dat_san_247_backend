@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { PostType, PostPrivacy } from '../../../common/constants/social.constant';
 import { User } from '../../users/entities/user.entity';
@@ -25,7 +25,7 @@ export class Post extends BaseEntity {
 
     @ManyToOne(() => Post, { nullable: true })
     @JoinColumn({ name: 'shared_post_id' })
-    sharedPost: Post;
+    sharedPost: Relation<Post>;
 
     // Post content
     @Column({
@@ -39,7 +39,7 @@ export class Post extends BaseEntity {
     content: string;
 
     @OneToMany(() => SocialMedia, (media) => media.ownerId)
-    media: SocialMedia[];
+    media: Relation<SocialMedia>[];
 
     // Tagging features
     @Column({ name: 'tagged_user_ids', type: 'jsonb', nullable: true, comment: 'IDs of tagged users' })
@@ -95,25 +95,25 @@ export class Post extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => Venue, { nullable: true })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     @ManyToOne(() => Team, { nullable: true })
     @JoinColumn({ name: 'team_id' })
-    team: Team;
+    team: Relation<Team>;
 
     @ManyToOne(() => MatchResult, { nullable: true })
     @JoinColumn({ name: 'match_result_id' })
-    matchResult: MatchResult;
+    matchResult: Relation<MatchResult>;
 
     @ManyToOne(() => Booking, { nullable: true })
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 
 
     @OneToMany(() => PostComment, comment => comment.post)
-    comments: PostComment[];
+    comments: Relation<PostComment>[];
 }

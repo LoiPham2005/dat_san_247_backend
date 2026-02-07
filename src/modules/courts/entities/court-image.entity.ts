@@ -4,6 +4,7 @@ import {
     ManyToOne,
     JoinColumn,
     Index,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Court } from './court.entity';
@@ -17,7 +18,7 @@ export class CourtImage extends BaseEntity {
 
     @ManyToOne(() => Court, (court) => court.images, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'court_id' })
-    court: Court;
+    court: Relation<Court>;
 
     @Column({ name: 'file_id', type: 'uuid' })
     @Index()
@@ -25,7 +26,7 @@ export class CourtImage extends BaseEntity {
 
     @ManyToOne(() => File, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'file_id' })
-    file: File;
+    file: Relation<File>;
 
     @Column({ name: 'display_order', default: 0 })
     displayOrder: number;

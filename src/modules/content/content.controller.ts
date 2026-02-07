@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseInterceptors, UploadedFile, UploadedFiles, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ContentService } from './content.service';
 import { ContentType } from '../../common/constants/content.constant';
@@ -20,6 +20,7 @@ export class ContentController {
 
     @Get()
     @ApiOperation({ summary: 'Lấy danh sách nội dung' })
+    @ApiQuery({ name: 'type', enum: ContentType, required: false })
     async findAll(@Query('type') type: ContentType) {
         return this.contentService.findAll(type);
     }

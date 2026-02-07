@@ -4,6 +4,7 @@ import {
     ManyToOne,
     JoinColumn,
     Unique,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
@@ -20,9 +21,9 @@ export class FavoriteVenue extends BaseEntity {
 
     @ManyToOne(() => User, (user) => user.favoriteVenues, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => Venue, (venue) => venue.favoritedBy, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 }

@@ -5,6 +5,7 @@ import {
     OneToMany,
     JoinColumn,
     Index,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Venue } from '../../venues/entities/venue.entity';
@@ -64,10 +65,10 @@ export class Court extends BaseEntity {
 
     @ManyToOne(() => Court, (court) => court.subCourts, { nullable: true })
     @JoinColumn({ name: 'parent_court_id' })
-    parentCourt: Court;
+    parentCourt: Relation<Court>;
 
     @OneToMany(() => Court, (court) => court.parentCourt)
-    subCourts: Court[];
+    subCourts: Relation<Court>[];
 
     @Column({ name: 'is_active', default: true })
     @Index()
@@ -78,19 +79,19 @@ export class Court extends BaseEntity {
 
     @ManyToOne(() => Venue, (venue) => venue.courts, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     @OneToMany(() => CourtImage, (image) => image.court)
-    images: CourtImage[];
+    images: Relation<CourtImage>[];
 
 
 
     @OneToMany(() => TimeSlot, (slot) => slot.court)
-    timeSlots: TimeSlot[];
+    timeSlots: Relation<TimeSlot>[];
 
     @OneToMany(() => Booking, (booking) => booking.court)
-    bookings: Booking[];
+    bookings: Relation<Booking>[];
 
     @OneToMany(() => PricingRule, (rule) => rule.court)
-    pricingRules: PricingRule[];
+    pricingRules: Relation<PricingRule>[];
 }

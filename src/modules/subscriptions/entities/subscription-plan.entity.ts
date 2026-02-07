@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, Index } from 'typeorm';
+import { Entity, Column, OneToMany, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { UserSubscription } from './user-subscription.entity';
 
@@ -26,5 +26,5 @@ export class SubscriptionPlan extends BaseEntity {
     isActive: boolean;
 
     @OneToMany(() => UserSubscription, (sub) => sub.plan)
-    userSubscriptions: UserSubscription[];
+    userSubscriptions: Relation<UserSubscription>[];
 }

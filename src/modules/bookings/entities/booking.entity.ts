@@ -5,6 +5,7 @@ import {
     OneToMany,
     JoinColumn,
     Index,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
@@ -22,14 +23,14 @@ export class Booking extends BaseEntity {
 
     @ManyToOne(() => RecurringBooking, (rb) => rb.bookings, { nullable: true })
     @JoinColumn({ name: 'recurring_booking_id' })
-    recurringBooking: RecurringBooking;
+    recurringBooking: Relation<RecurringBooking>;
 
     @Column({ name: 'rescheduled_from_id', type: 'uuid', nullable: true })
     rescheduledFromId: string;
 
     @ManyToOne(() => Booking, { nullable: true })
     @JoinColumn({ name: 'rescheduled_from_id' })
-    rescheduledFrom: Booking;
+    rescheduledFrom: Relation<Booking>;
 
     @Column({ name: 'booking_code', unique: true })
     @Index()
@@ -147,19 +148,19 @@ export class Booking extends BaseEntity {
 
     @ManyToOne(() => User, (user) => user.bookings, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'customer_id' })
-    customer: User;
+    customer: Relation<User>;
 
     @ManyToOne(() => Court, (court) => court.bookings, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'court_id' })
-    court: Court;
+    court: Relation<Court>;
 
     @ManyToOne(() => Venue, (venue) => venue.bookings, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     @OneToMany(() => Payment, (payment) => payment.booking)
-    payments: Payment[];
+    payments: Relation<Payment>[];
 
     @OneToMany(() => Review, (review) => review.booking)
-    reviews: Review[];
+    reviews: Relation<Review>[];
 }

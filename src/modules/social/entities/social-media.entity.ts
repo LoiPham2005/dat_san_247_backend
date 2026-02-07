@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { File } from '../../uploads/entities/file.entity';
 
@@ -17,5 +17,5 @@ export class SocialMedia extends BaseEntity {
 
     @ManyToOne(() => File)
     @JoinColumn({ name: 'file_id' })
-    file: File;
+    file: Relation<File>;
 }

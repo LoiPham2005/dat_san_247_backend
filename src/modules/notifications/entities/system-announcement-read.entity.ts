@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { SystemAnnouncement } from './system-announcement.entity';
@@ -19,9 +19,9 @@ export class SystemAnnouncementRead extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => SystemAnnouncement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'announcement_id' })
-    announcement: SystemAnnouncement;
+    announcement: Relation<SystemAnnouncement>;
 }

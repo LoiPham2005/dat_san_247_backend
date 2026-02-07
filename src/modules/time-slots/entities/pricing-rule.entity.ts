@@ -3,6 +3,7 @@ import {
     Column,
     ManyToOne,
     JoinColumn,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Court } from '../../courts/entities/court.entity';
@@ -43,5 +44,5 @@ export class PricingRule extends BaseEntity {
 
     @ManyToOne(() => Court, (court) => court.pricingRules, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'court_id' })
-    court: Court;
+    court: Relation<Court>;
 }

@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { TeamMemberStatus, TeamMemberRole } from '../../../common/constants/social.constant';
 import { Team } from './team.entity';
@@ -55,9 +55,9 @@ export class TeamMember extends BaseEntity {
 
     @ManyToOne(() => Team, team => team.members, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'team_id' })
-    team: Team;
+    team: Relation<Team>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

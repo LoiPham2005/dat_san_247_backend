@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Unique, Check } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Unique, Check, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { FriendStatus } from '../../../common/constants/social.constant';
 import { User } from '../../users/entities/user.entity';
@@ -30,13 +30,13 @@ export class Friendship extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'friend_id' })
-    friend: User;
+    friend: Relation<User>;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'requester_id' })
-    requester: User;
+    requester: Relation<User>;
 }

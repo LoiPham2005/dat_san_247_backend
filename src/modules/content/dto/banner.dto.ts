@@ -93,12 +93,12 @@ export class CreateBannerDto {
 }
 
 export class UpdateBannerDto extends CreateBannerDto {
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ enum: BannerPosition })
     @IsOptional()
     @IsEnum(BannerPosition)
     declare position: BannerPosition;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ enum: BannerType })
     @IsOptional()
     @IsEnum(BannerType)
     declare type: BannerType;

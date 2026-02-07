@@ -4,6 +4,7 @@ import {
     ManyToOne,
     JoinColumn,
     Index,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
@@ -46,5 +47,5 @@ export class Notification extends BaseEntity {
 
     @ManyToOne(() => User, (user) => user.notifications, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

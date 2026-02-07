@@ -4,6 +4,7 @@ import {
     ManyToOne,
     JoinColumn,
     Index,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
@@ -46,5 +47,5 @@ export class Payment extends BaseEntity {
 
     @ManyToOne(() => Booking, (booking) => booking.payments, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 }

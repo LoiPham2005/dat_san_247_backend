@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Tournament } from './tournament.entity';
 import { TournamentParticipant } from './tournament-participant.entity';
@@ -31,10 +31,10 @@ export class TournamentBracket extends BaseEntity {
 
     @ManyToOne(() => Tournament, (t) => t.id, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tournament_id' })
-    tournament: Tournament;
+    tournament: Relation<Tournament>;
 
     @OneToMany(() => TournamentMatch, (m) => m.bracket)
-    matches: TournamentMatch[];
+    matches: Relation<TournamentMatch>[];
 }
 
 @Entity('tournament_matches')
@@ -77,21 +77,21 @@ export class TournamentMatch extends BaseEntity {
 
     @ManyToOne(() => TournamentBracket, (b) => b.matches, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'bracket_id' })
-    bracket: TournamentBracket;
+    bracket: Relation<TournamentBracket>;
 
     @ManyToOne(() => TournamentParticipant, { nullable: true })
     @JoinColumn({ name: 'participant_a_id' })
-    participantA: TournamentParticipant;
+    participantA: Relation<TournamentParticipant>;
 
     @ManyToOne(() => TournamentParticipant, { nullable: true })
     @JoinColumn({ name: 'participant_b_id' })
-    participantB: TournamentParticipant;
+    participantB: Relation<TournamentParticipant>;
 
     @ManyToOne(() => TournamentParticipant, { nullable: true })
     @JoinColumn({ name: 'winner_id' })
-    winner: TournamentParticipant;
+    winner: Relation<TournamentParticipant>;
 
     @ManyToOne(() => TournamentMatch, { nullable: true })
     @JoinColumn({ name: 'next_match_id' })
-    nextMatch: TournamentMatch;
+    nextMatch: Relation<TournamentMatch>;
 }

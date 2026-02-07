@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, OneToMany, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { MessageSenderType } from '../../../common/constants/ai.constant';
 import { AIConversation } from './ai-conversation.entity';
@@ -41,12 +41,12 @@ export class AIMessage extends BaseEntity {
 
     @ManyToOne(() => AIConversation, (conversation) => conversation.messages, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'conversation_id' })
-    conversation: AIConversation;
+    conversation: Relation<AIConversation>;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'sender_id' })
-    sender: User;
+    sender: Relation<User>;
 
     @OneToMany(() => AIFeedback, feedback => feedback.message)
-    feedbacks: AIFeedback[];
+    feedbacks: Relation<AIFeedback>[];
 }

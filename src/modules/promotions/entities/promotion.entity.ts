@@ -2,6 +2,7 @@ import {
     Entity,
     Column,
     OneToMany,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { DiscountType } from '../../../common/constants/discount-type.constant';
@@ -63,11 +64,11 @@ export class Promotion extends BaseEntity {
     status: PromotionStatus;
 
     @OneToMany(() => PromotionVenue, (pv) => pv.promotion)
-    venues: PromotionVenue[];
+    venues: Relation<PromotionVenue>[];
 
     @OneToMany(() => PromotionCourt, (pc) => pc.promotion)
-    courts: PromotionCourt[];
+    courts: Relation<PromotionCourt>[];
 
     @OneToMany(() => PromotionUsage, (usage) => usage.promotion)
-    usages: PromotionUsage[];
+    usages: Relation<PromotionUsage>[];
 }

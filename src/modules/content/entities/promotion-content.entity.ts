@@ -1,4 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, OneToOne, Relation } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Content } from './content.entity';
 import { TargetAudience, PromotionType } from '../../../common/constants/content.constant';
@@ -10,8 +11,9 @@ export class PromotionContent extends BaseEntity {
     contentId: string;
 
     @Column({
-        type: 'enum',
-        enum: PromotionType,
+        name: 'promotion_type',
+        type: 'varchar',
+        length: 50,
     })
     promotionType: PromotionType;
 
@@ -34,7 +36,8 @@ export class PromotionContent extends BaseEntity {
     @Column({ name: 'conversion_rate', type: 'decimal', precision: 5, scale: 2, default: 0 })
     conversionRate: number;
 
-    @OneToOne(() => Content)
+    @ApiProperty({ type: () => Content })
+    @OneToOne(() => Content, (content) => content.promotion)
     @JoinColumn({ name: 'content_id' })
-    content: Content;
+    content: Relation<Content>;
 }

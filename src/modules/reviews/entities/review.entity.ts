@@ -5,6 +5,7 @@ import {
     OneToMany,
     JoinColumn,
     Index,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
@@ -73,20 +74,20 @@ export class Review extends BaseEntity {
 
     @ManyToOne(() => Booking, (booking) => booking.reviews, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'booking_id' })
-    booking: Booking;
+    booking: Relation<Booking>;
 
     @ManyToOne(() => Venue, (venue) => venue.reviews, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     @ManyToOne(() => Court, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'court_id' })
-    court: Court;
+    court: Relation<Court>;
 
     @ManyToOne(() => User, (user) => user.reviews, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @OneToMany(() => ReviewImage, (image) => image.review)
-    images: ReviewImage[];
+    images: Relation<ReviewImage>[];
 }

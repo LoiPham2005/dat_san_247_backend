@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Venue } from '../../venues/entities/venue.entity';
@@ -64,9 +64,9 @@ export class Tournament extends BaseEntity {
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'created_by' })
-    createdBy: User;
+    createdBy: Relation<User>;
 
     @ManyToOne(() => Venue)
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 }

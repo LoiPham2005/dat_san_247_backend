@@ -4,10 +4,14 @@ import {
     ManyToOne,
     JoinColumn,
     Index,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { FileCategory } from '../../../common/constants/file-category.constant';
+import { Content } from '../../content/entities/content.entity';
+import { Banner } from '../../content/entities/banner.entity';
+import { OneToMany } from 'typeorm';
 
 @Entity('files')
 export class File extends BaseEntity {
@@ -83,5 +87,11 @@ export class File extends BaseEntity {
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
+
+    @OneToMany(() => Content, (c) => c.thumbnail)
+    contentsWithThumbnail: Relation<Content>[];
+
+    @OneToMany(() => Banner, (b) => b.mobileImage)
+    bannersWithMobileImage: Relation<Banner>[];
 }

@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { VenueStaff } from './venue-staff.entity';
 import { Venue } from './venue.entity';
@@ -24,9 +24,9 @@ export class StaffShift extends BaseEntity {
 
     @ManyToOne(() => VenueStaff, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'staff_id' })
-    staff: VenueStaff;
+    staff: Relation<VenueStaff>;
 
     @ManyToOne(() => Venue, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 }

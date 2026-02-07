@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToMany } from 'typeorm';
+import { Entity, Column, ManyToMany, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Role } from '../../roles/entities/role.entity';
 
@@ -17,5 +17,5 @@ export class Permission extends BaseEntity {
     description: string; // e.g., 'Ability to create new users'
 
     @ManyToMany(() => Role, (role) => role.permissions)
-    roles: Role[];
+    roles: Relation<Role>[];
 }

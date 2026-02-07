@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, JoinColumn, ManyToOne, Index } from 'typeorm';
+import { Entity, Column, OneToMany, JoinColumn, ManyToOne, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Venue } from '../../venues/entities/venue.entity';
@@ -32,8 +32,8 @@ export class Organization extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'owner_id' })
-    owner: User;
+    owner: Relation<User>;
 
     @OneToMany(() => Venue, (venue) => venue.organization)
-    venues: Venue[];
+    venues: Relation<Venue>[];
 }

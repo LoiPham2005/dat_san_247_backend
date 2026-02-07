@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToMany, JoinTable, OneToMany } from 'typeorm';
+import { Entity, Column, ManyToMany, JoinTable, OneToMany, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Permission } from '../../permissions/entities/permission.entity';
 import { User } from '../../users/entities/user.entity';
@@ -29,8 +29,8 @@ export class Role extends BaseEntity {
         joinColumn: { name: 'role_id', referencedColumnName: 'id' },
         inverseJoinColumn: { name: 'permission_id', referencedColumnName: 'id' },
     })
-    permissions: Permission[];
+    permissions: Relation<Permission>[];
 
     @OneToMany(() => User, (user) => user.role)
-    users: User[];
+    users: Relation<User>[];
 }

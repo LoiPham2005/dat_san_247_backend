@@ -1,4 +1,5 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToOne, Relation } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Content } from './content.entity';
 import { PolicyType } from '../../../common/constants/content.constant';
@@ -38,7 +39,8 @@ export class Policy extends BaseEntity {
     @Column({ name: 'legal_reviewed_at', type: 'timestamp', nullable: true })
     legalReviewedAt: Date;
 
-    @OneToOne(() => Content)
+    @ApiProperty({ type: () => Content })
+    @OneToOne(() => Content, (content) => content.policy)
     @JoinColumn({ name: 'content_id' })
-    content: Content;
+    content: Relation<Content>;
 }

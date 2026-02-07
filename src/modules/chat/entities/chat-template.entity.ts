@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { TemplateCategory } from '../../../common/constants/chat.constant';
 import { UserRole } from '../../../common/constants/role.constant';
@@ -41,5 +41,5 @@ export class ChatTemplate extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'created_by' })
-    createdBy: User;
+    createdBy: Relation<User>;
 }

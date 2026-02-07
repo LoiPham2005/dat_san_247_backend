@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Unique, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Unique, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -103,7 +103,6 @@ export class UserProfile extends BaseEntity {
     timezone: string;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
-
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Unique, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { MessageStatus } from '../../../common/constants/chat.constant';
 import { Message } from './message.entity';
@@ -28,9 +28,9 @@ export class MessageReceipt extends BaseEntity {
 
     @ManyToOne(() => Message, (message) => message.receipts, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'message_id' })
-    message: Message;
+    message: Relation<Message>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

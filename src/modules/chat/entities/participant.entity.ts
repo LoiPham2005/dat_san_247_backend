@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { ChatMemberRole } from '../../../common/constants/chat.constant';
 import { Conversation } from './conversation.entity';
@@ -54,9 +54,9 @@ export class ConversationParticipant extends BaseEntity {
 
     @ManyToOne(() => Conversation, (conversation) => conversation.participants, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'conversation_id' })
-    conversation: Conversation;
+    conversation: Relation<Conversation>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 }

@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Venue } from './venue.entity';
 import { DayOfWeek } from '../../../common/constants/day-of-week.constant';
@@ -25,7 +25,7 @@ export class VenueOperatingHour extends BaseEntity {
     @Column({ name: 'is_closed', default: false, comment: 'Whether the venue is closed on this day' })
     isClosed: boolean;
 
-    @ManyToOne(() => Venue, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Venue, (venue) => venue.operatingHours, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 }

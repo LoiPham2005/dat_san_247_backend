@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { AIConversationStatus, SentimentType } from '../../../common/constants/ai.constant';
 import { User } from '../../users/entities/user.entity';
@@ -44,12 +44,12 @@ export class AIConversation extends BaseEntity {
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'escalated_to_agent_id' })
-    escalatedToAgent: User;
+    escalatedToAgent: Relation<User>;
 
     @OneToMany(() => AIMessage, (message) => message.conversation)
-    messages: AIMessage[];
+    messages: Relation<AIMessage>[];
 }

@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { ChatType } from '../../../common/constants/chat.constant';
 import { User } from '../../users/entities/user.entity';
@@ -32,7 +32,7 @@ export class Conversation extends BaseEntity {
 
     @ManyToOne(() => Venue, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'venue_id' })
-    venue: Venue;
+    venue: Relation<Venue>;
 
     // Team context
     @Column({ name: 'is_team', default: false })
@@ -43,14 +43,14 @@ export class Conversation extends BaseEntity {
 
     @ManyToOne(() => Team, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'team_id' })
-    team: Team;
+    team: Relation<Team>;
 
     @Column({ name: 'match_finding_id', type: 'uuid', nullable: true })
     matchFindingId: string;
 
     @ManyToOne(() => MatchFinding, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'match_finding_id' })
-    matchFinding: MatchFinding;
+    matchFinding: Relation<MatchFinding>;
 
     @Column({ name: 'max_members', default: 50 })
     maxMembers: number;
@@ -83,11 +83,11 @@ export class Conversation extends BaseEntity {
 
     @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'created_by' })
-    createdBy: User;
+    createdBy: Relation<User>;
 
     @OneToMany(() => ConversationParticipant, (participant) => participant.conversation)
-    participants: ConversationParticipant[];
+    participants: Relation<ConversationParticipant>[];
 
     @OneToMany(() => Message, (message) => message.conversation)
-    messages: Message[];
+    messages: Relation<Message>[];
 }

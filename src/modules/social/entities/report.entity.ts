@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { ReportType, ReportReason, ReportStatus } from '../../../common/constants/social.constant';
 import { User } from '../../users/entities/user.entity';
@@ -57,9 +57,9 @@ export class Report extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'reporter_id' })
-    reporter: User;
+    reporter: Relation<User>;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'reviewed_by' })
-    reviewer: User;
+    reviewer: Relation<User>;
 }

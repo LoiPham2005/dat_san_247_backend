@@ -1,5 +1,6 @@
-import { Entity, Column, Index } from 'typeorm';
+import { Entity, Column, Index, OneToMany, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
+import { AIInteraction } from './ai-interaction.entity';
 
 export enum AIModelType {
     LLM = 'LLM', // Large Language Model (ChatGPT, Claude, Gemini)
@@ -131,5 +132,6 @@ export class AIModel extends BaseEntity {
 
     @Column({ name: 'success_rate', type: 'decimal', precision: 5, scale: 4, nullable: true })
     successRate: number;
-    interactions: any;
+    @OneToMany(() => AIInteraction, (interaction) => interaction.model)
+    interactions: Relation<AIInteraction>[];
 }

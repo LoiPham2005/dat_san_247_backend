@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { AIModel } from './ai-model.entity';
 
@@ -43,5 +43,5 @@ export class AICache extends BaseEntity {
 
     @ManyToOne(() => AIModel, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'model_id' })
-    model: AIModel;
+    model: Relation<AIModel>;
 }

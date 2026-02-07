@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Post } from './post.entity';
 import { User } from '../../users/entities/user.entity';
@@ -28,16 +28,16 @@ export class PostComment extends BaseEntity {
 
     @ManyToOne(() => Post, post => post.comments, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'post_id' })
-    post: Post;
+    post: Relation<Post>;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => PostComment, { nullable: true })
     @JoinColumn({ name: 'parent_comment_id' })
-    parentComment: PostComment;
+    parentComment: Relation<PostComment>;
 
     @OneToMany(() => PostComment, comment => comment.parentComment)
-    replies: PostComment[];
+    replies: Relation<PostComment>[];
 }

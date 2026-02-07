@@ -5,6 +5,7 @@ import {
     JoinColumn,
     Index,
     Unique,
+    Relation,
 } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Court } from '../../courts/entities/court.entity';
@@ -40,5 +41,5 @@ export class TimeSlot extends BaseEntity {
 
     @ManyToOne(() => Court, (court) => court.timeSlots, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'court_id' })
-    court: Court;
+    court: Relation<Court>;
 }

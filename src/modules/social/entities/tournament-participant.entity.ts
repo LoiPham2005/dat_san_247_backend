@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, Check } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, Unique, Check, Relation } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Tournament } from './tournament.entity';
 import { User } from '../../users/entities/user.entity';
@@ -59,13 +59,13 @@ export class TournamentParticipant extends BaseEntity {
 
     @ManyToOne(() => Tournament, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tournament_id' })
-    tournament: Tournament;
+    tournament: Relation<Tournament>;
 
     @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user: Relation<User>;
 
     @ManyToOne(() => Team, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'team_id' })
-    team: Team;
+    team: Relation<Team>;
 }
