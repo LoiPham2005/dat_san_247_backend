@@ -34,37 +34,7 @@ import { Report } from './entities/report.entity';
 import { UserBlock } from './entities/user-block.entity';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            // Teams
-            Team,
-            TeamMember,
-            TeamJoinRequest,
-            TeamInvitation,
-            // Matches
-            MatchFinding,
-            MatchParticipant,
-            MatchResult,
-            Tournament,
-            TournamentBracket,
-            TournamentMatch,
-            TournamentParticipant,
-            // Social
-            Post,
-            SocialLike,
-            PostComment,
-            SocialMedia,
-            // Friends
-            Friendship,
-            UserFollower,
-            // Profiles
-            UserProfile,
-            UserAchievement,
-            // Others
-            Report,
-            UserBlock,
-        ]),
-    ],
+    imports: [],
     controllers: [],
     providers: [],
     exports: [],

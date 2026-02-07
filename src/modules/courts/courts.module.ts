@@ -1,18 +1,15 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { CourtsService } from './courts.service';
 import { CourtsController } from './courts.controller';
-import { Court } from './entities/court.entity';
+import { StorageModule } from '../../shared/storage/storage.module';
 
-import { PricingRule } from '../time-slots/entities/pricing-rule.entity';
-import { CourtMaintenance } from './entities/court-maintenance.entity';
 import { VenuesModule } from '../venues/venues.module';
 import { OwnerCourtsController } from './owner-courts.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Court, PricingRule, CourtMaintenance]),
     forwardRef(() => VenuesModule),
+    StorageModule,
   ],
   controllers: [CourtsController, OwnerCourtsController],
   providers: [CourtsService],

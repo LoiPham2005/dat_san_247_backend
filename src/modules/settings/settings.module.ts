@@ -3,8 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SettingsService } from './settings.service';
 import { Setting } from './entities/setting.entity';
 
+
 @Module({
-    imports: [TypeOrmModule.forFeature([Setting])],
+    imports: [],
     controllers: [],
     providers: [SettingsService],
     exports: [SettingsService],

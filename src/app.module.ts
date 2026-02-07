@@ -51,6 +51,8 @@ import { HttpLoggingInterceptor } from './common/interceptors/http-logging.inter
 import { AppLoggerService } from './common/services/app-logger.service';
 import { LoggerModule } from './common/services/logger.module';
 
+import { PrismaModule } from './prisma/prisma.module';
+
 @Module({
     imports: [
         // 1. Config (Global)
@@ -79,6 +81,7 @@ import { LoggerModule } from './common/services/logger.module';
                 return dbConfig;
             },
         }),
+        PrismaModule, // <--- Added PrismaModule here
 
         // 4. Feature Modules
         AuthModule,

@@ -6,9 +6,7 @@ import { TimeSlot } from './entities/time-slot.entity';
 import { PricingRule } from './entities/pricing-rule.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([TimeSlot, PricingRule]),
-  ],
+  imports: [],
   controllers: [TimeSlotsController],
   providers: [TimeSlotsService],
   exports: [TimeSlotsService],

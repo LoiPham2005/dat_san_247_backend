@@ -5,9 +5,7 @@ import { UploadsController } from './uploads.controller';
 import { File } from './entities/file.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([File]),
-  ],
+  imports: [],
   controllers: [UploadsController],
   providers: [UploadsService],
   exports: [UploadsService],

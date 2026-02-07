@@ -1,42 +1,65 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Payment } from './entities/payment.entity';
+import { PrismaService } from '../../prisma/prisma.service';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
 
 @Injectable()
 export class PaymentsService {
     constructor(
-        @InjectRepository(Payment)
-        private paymentRepository: Repository<Payment>,
+        private prisma: PrismaService,
     ) { }
+
+    private mapPayment(payment: any) {
+        if (!payment) return null;
+        return {
+            ...payment,
+            id: payment.id,
+            bookingId: payment.booking_id,
+            transactionId: payment.transaction_id,
+            amount: payment.amount,
+            paymentMethod: payment.payment_method,
+            status: payment.status,
+            paidAt: payment.paid_at,
+            gatewayResponse: payment.gateway_response,
+            createdAt: payment.created_at,
+            updatedAt: payment.updated_at,
+            deletedAt: payment.deleted_at,
+            booking: payment.bookings ? {
+                ...payment.bookings,
+                bookingCode: payment.bookings.booking_code,
+                // map other booking fields if needed
+            } : null,
+        };
+    }
 
     async findAll(filter: PaymentFilterDto) {
         const { page = 1, limit = 10, status, method, search } = filter;
         const skip = (page - 1) * limit;
 
-        const query = this.paymentRepository.createQueryBuilder('payment')
-            .leftJoinAndSelect('payment.booking', 'booking');
-
-        if (status) query.andWhere('payment.status = :status', { status });
-        if (method) query.andWhere('payment.paymentMethod = :method', { method });
+        const where: any = {};
+        if (status) where.status = status;
+        if (method) where.payment_method = method;
         if (search) {
-            query.andWhere(
-                '(payment.transactionId ILIKE :search OR booking.bookingCode ILIKE :search)',
-                { search: `%${search}%` },
-            );
+            where.OR = [
+                { transaction_id: { contains: search, mode: 'insensitive' } },
+                { bookings: { booking_code: { contains: search, mode: 'insensitive' } } }
+            ];
         }
 
-        const [items, total] = await query
-            .orderBy('payment.createdAt', 'DESC')
-            .skip(skip)
-            .take(limit)
-            .getManyAndCount();
+        const [items, total] = await Promise.all([
+            this.prisma.payments.findMany({
+                where,
+                include: { bookings: true },
+                orderBy: { created_at: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.payments.count({ where }),
+        ]);
 
         const totalPages = Math.ceil(total / limit);
 
         return {
-            items,
+            items: items.map(p => this.mapPayment(p)),
             meta: {
                 total,
                 page,
@@ -49,15 +72,13 @@ export class PaymentsService {
     }
 
     async getFinancialStats() {
-        const totalRevenue = await this.paymentRepository
-            .createQueryBuilder('payment')
-            .select('SUM(payment.amount)', 'total')
-            .where('payment.status = :status', { status: 'PAID' })
-            .getRawOne();
+        const result = await this.prisma.payments.aggregate({
+            _sum: { amount: true },
+            where: { status: 'PAID' as any } // Using string to match enum
+        });
 
         return {
-            totalRevenue: parseFloat(totalRevenue?.total || 0),
-            // Thêm các chỉ số khác như doanh thu tháng này, tuần này...
+            totalRevenue: Number(result._sum.amount || 0),
         };
     }
 
@@ -65,46 +86,63 @@ export class PaymentsService {
         const { page = 1, limit = 10, status, search } = filter;
         const skip = (page - 1) * limit;
 
-        const query = this.paymentRepository.createQueryBuilder('payment')
-            .innerJoin('payment.booking', 'booking')
-            .innerJoin('booking.venue', 'venue')
-            .where('venue.ownerId = :ownerId', { ownerId });
+        const where: any = {
+            bookings: {
+                venues: {
+                    owner_id: ownerId
+                }
+            }
+        };
 
-        if (status) query.andWhere('payment.status = :status', { status });
-        if (search) query.andWhere('booking.bookingCode ILIKE :search', { search: `%${search}%` });
+        if (status) where.status = status;
+        if (search) {
+            where.bookings.booking_code = { contains: search, mode: 'insensitive' };
+        }
 
-        const [items, total] = await query
-            .orderBy('payment.createdAt', 'DESC')
-            .skip(skip)
-            .take(limit)
-            .getManyAndCount();
+        const [items, total] = await Promise.all([
+            this.prisma.payments.findMany({
+                where,
+                include: {
+                    bookings: {
+                        include: { venues: true }
+                    }
+                },
+                orderBy: { created_at: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.payments.count({ where }),
+        ]);
 
         const totalPages = Math.ceil(total / limit);
 
         return {
-            items,
+            items: items.map(p => this.mapPayment(p)),
             meta: { total, page, limit, totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 },
         };
     }
 
     async getOwnerRevenueStats(ownerId: string) {
-        const stats = await this.paymentRepository.createQueryBuilder('payment')
-            .innerJoin('payment.booking', 'booking')
-            .innerJoin('booking.venue', 'venue')
-            .select('SUM(payment.amount)', 'total')
-            .addSelect('COUNT(payment.id)', 'count')
-            .where('venue.ownerId = :ownerId', { ownerId })
-            .andWhere('payment.status = :status', { status: 'PAID' })
-            .getRawOne();
+        const where = {
+            bookings: { venues: { owner_id: ownerId } },
+            status: 'PAID' as any
+        };
+
+        const result = await this.prisma.payments.aggregate({
+            _sum: { amount: true },
+            _count: { id: true },
+            where
+        });
 
         return {
-            totalRevenue: parseFloat(stats?.total || 0),
-            totalTransactions: parseInt(stats?.count || 0),
+            totalRevenue: Number(result._sum.amount || 0),
+            totalTransactions: Number(result._count.id || 0),
         };
     }
 
     async getWalletHistory(userId: string) {
         // Logic lấy lịch sử nạp/rút/thanh toán của user
+        // Assuming transactions model usage if implemented
         return [];
     }
 

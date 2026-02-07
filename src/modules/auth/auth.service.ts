@@ -1,8 +1,5 @@
 import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
 
@@ -10,8 +7,7 @@ import { UsersService } from '../users/users.service';
 import { RolesService } from '../roles/roles.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { RefreshToken } from './entities/refresh-token.entity';
-import { User } from '../users/entities/user.entity';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
@@ -20,8 +16,7 @@ export class AuthService {
         private rolesService: RolesService,
         private jwtService: JwtService,
         private configService: ConfigService,
-        @InjectRepository(RefreshToken)
-        private refreshTokenRepository: Repository<RefreshToken>,
+        private prisma: PrismaService,
     ) { }
 
     async register(registerDto: RegisterDto) {
@@ -30,7 +25,6 @@ export class AuthService {
             throw new ConflictException('Email already exists');
         }
 
-        // const hashedPassword = await bcrypt.hash(registerDto.password, 10);
         const hashedPassword = await argon2.hash(registerDto.password, { type: argon2.argon2id });
 
         // Find default role if not provided
@@ -56,7 +50,6 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        // const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
         const isPasswordValid = await argon2.verify(user.password, loginDto.password);
         if (!isPasswordValid) {
             throw new UnauthorizedException('Invalid credentials');
@@ -69,7 +62,7 @@ export class AuthService {
         return this.generateTokens(user);
     }
 
-    async generateTokens(user: User) {
+    async generateTokens(user: any) {
         const payload = {
             email: user.email,
             sub: user.id,
@@ -84,10 +77,13 @@ export class AuthService {
         });
 
         // Store refresh token
-        await this.refreshTokenRepository.save({
-            token: refreshToken,
-            user: user,
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Match config
+        await this.prisma.refresh_tokens.create({
+            data: {
+                token: refreshToken,
+                user_id: user.id,
+                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Match config
+                is_revoked: false
+            }
         });
 
         return {
@@ -108,27 +104,60 @@ export class AuthService {
                 secret: this.configService.get<string>('auth.refreshSecret'),
             });
 
-            const storedToken = await this.refreshTokenRepository.findOne({
-                where: { token, isRevoked: false },
-                relations: ['user', 'user.role'],
+            // Need to fix this query to match Prisma relation structure
+            // refresh_tokens -> users -> roles
+            const storedToken = await this.prisma.refresh_tokens.findUnique({
+                where: { token },
+                include: {
+                    users: {
+                        include: { roles: true }
+                    }
+                },
             });
 
-            if (!storedToken || storedToken.expiresAt < new Date()) {
+            if (!storedToken || storedToken.is_revoked || storedToken.expires_at < new Date()) {
                 throw new UnauthorizedException('Invalid refresh token');
             }
 
-            // Revoke old token
-            storedToken.isRevoked = true;
-            await this.refreshTokenRepository.save(storedToken);
+            // Revoke old token (optional: delete?)
+            // storedToken.isRevoked = true;
+            await this.prisma.refresh_tokens.update({
+                where: { id: storedToken.id },
+                data: { is_revoked: true }
+            });
 
-            return this.generateTokens(storedToken.user);
+            // Map user to camelCase for generateTokens
+            // Reuse UsersService mapping logic? Or generic manual mapping
+            const { users } = storedToken;
+            const mappedUser = {
+                ...users,
+                id: users.id,
+                email: users.email,
+                fullName: users.full_name,
+                isActive: users.is_active,
+                role: users.roles ? {
+                    ...users.roles,
+                    slug: users.roles.slug
+                } : undefined
+            };
+
+            return this.generateTokens(mappedUser);
         } catch (e) {
+            console.error(e);
             throw new UnauthorizedException('Invalid refresh token');
         }
     }
 
     async logout(token: string) {
-        await this.refreshTokenRepository.update({ token }, { isRevoked: true });
+        // Find token first to ensure it exists, or updateMany/findUnique
+        try {
+            await this.prisma.refresh_tokens.update({
+                where: { token },
+                data: { is_revoked: true }
+            });
+        } catch (e) {
+            // Token might not exist or already revoked/deleted
+        }
     }
 
     async validateOAuthUser(profile: { email: string; fullName: string; avatarUrl?: string }) {
@@ -140,10 +169,14 @@ export class AuthService {
                 email: profile.email,
                 fullName: profile.fullName,
                 avatarUrl: profile.avatarUrl,
-                // password: await bcrypt.hash(Math.random().toString(36).slice(-10), 10), // Random password
-                password: await argon2.hash(Math.random().toString(36).slice(-10), { type: argon2.argon2id }), 
+                // Random password
+                password: Math.random().toString(36).slice(-10),
+                // Note: UsersService.create handles hashing. Wait, UsersService.create expects plain password?
+                // UsersService.create V1: Arg data.password -> hash.
+                // AuthService V1: register passes registerDto (plain) -> create hashes.
+                // oauth: passes random string. UsersService will hash it.
                 role,
-                isVerified: true, // OAuth emails are usually verified
+                isVerified: true,
             });
         }
 

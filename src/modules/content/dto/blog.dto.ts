@@ -63,6 +63,11 @@ export class CreateBlogPostDto {
     @IsOptional()
     @IsArray()
     relatedPosts?: string[];
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsObject()
+    tableOfContents?: any;
 }
 
 export class UpdateBlogPostDto extends CreateBlogPostDto { }

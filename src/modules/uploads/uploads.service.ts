@@ -1,14 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { File } from './entities/file.entity';
 import { StorageService } from '../../shared/storage/storage.service';
 
 @Injectable()
 export class UploadsService {
     constructor(
-        @InjectRepository(File)
-        private readonly fileRepository: Repository<File>,
+        private readonly prisma: PrismaService,
         private readonly storageService: StorageService,
     ) { }
 
@@ -17,18 +15,18 @@ export class UploadsService {
      * @param fileId UUID of the file
      */
     async deleteFile(fileId: string): Promise<void> {
-        const file = await this.fileRepository.findOne({ where: { id: fileId } });
+        const file = await this.prisma.files.findUnique({ where: { id: fileId } });
 
         if (!file) {
             throw new NotFoundException(`File with ID ${fileId} not found`);
         }
 
         // 1. Delete from physical storage (R2/S3/Local)
-        // Use r2Key or publicUrl depending on storage service implementation
-        await this.storageService.deleteFile(file.r2Key || file.publicUrl);
+        // Use r2_key or public_url depending on storage service implementation
+        await this.storageService.deleteFile(file.r2_key || file.public_url);
 
         // 2. Delete from database
-        await this.fileRepository.remove(file);
+        await this.prisma.files.delete({ where: { id: fileId } });
     }
 
     /**
@@ -38,11 +36,11 @@ export class UploadsService {
     async deleteManyFiles(fileIds: string[]): Promise<void> {
         if (!fileIds || fileIds.length === 0) return;
 
-        const files = await this.fileRepository.findByIds(fileIds);
+        const files = await this.prisma.files.findMany({ where: { id: { in: fileIds } } });
 
         for (const file of files) {
             try {
-                await this.storageService.deleteFile(file.r2Key || file.publicUrl);
+                await this.storageService.deleteFile(file.r2_key || file.public_url);
             } catch (error) {
                 // Log error but continue deleting other files
                 console.error(`Failed to delete physical file for ID ${file.id}:`, error);
@@ -50,7 +48,7 @@ export class UploadsService {
         }
 
         if (files.length > 0) {
-            await this.fileRepository.remove(files);
+            await this.prisma.files.deleteMany({ where: { id: { in: fileIds } } });
         }
     }
 }

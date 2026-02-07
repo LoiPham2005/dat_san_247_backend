@@ -4,12 +4,7 @@ import { SubscriptionPlan } from './entities/subscription-plan.entity';
 import { UserSubscription } from './entities/user-subscription.entity';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            SubscriptionPlan,
-            UserSubscription,
-        ]),
-    ],
+    imports: [],
     controllers: [],
     providers: [],
     exports: [],

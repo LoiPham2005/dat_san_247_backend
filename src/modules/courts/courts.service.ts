@@ -1,113 +1,291 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Court } from './entities/court.entity';
+import { PrismaService } from '../../prisma/prisma.service';
 import { VenuesService } from '../venues/venues.service';
-import { PricingRule } from '../time-slots/entities/pricing-rule.entity';
+import { StorageService } from '../../shared/storage/storage.service';
 
 @Injectable()
 export class CourtsService {
     constructor(
-        @InjectRepository(Court)
-        private courtRepository: Repository<Court>,
-        @InjectRepository(PricingRule)
-        private pricingRuleRepository: Repository<PricingRule>,
+        private prisma: PrismaService,
         private venuesService: VenuesService,
+        private storageService: StorageService,
     ) { }
 
+    private mapCourt(court: any) {
+        if (!court) return null;
+        const { pricing_rules, court_images, ...rest } = court;
+
+        let images = [];
+        if (court_images) {
+            images = court_images.map((img: any) => img.files ? img.files.public_url : null).filter(Boolean);
+        } else if (court.images) {
+            images = court.images;
+        }
+
+        return {
+            ...rest,
+            id: court.id,
+            venueId: court.venue_id,
+            name: court.name,
+            sportTypes: court.sport_types,
+            surfaceType: court.surface_type,
+            pricePerHour: Number(court.price_per_hour),
+            isActive: court.is_active,
+            createdAt: court.created_at,
+            updatedAt: court.updated_at,
+            amenities: court.amenities,
+            images,
+            description: court.description,
+            // relations
+            venue: court.venues ? this.mapVenue(court.venues) : undefined,
+            pricingRules: pricing_rules ? pricing_rules.map((r: any) => this.mapPricingRule(r)) : undefined,
+        };
+    }
+
+    private mapVenue(venue: any) {
+        return {
+            ...venue,
+            ownerId: venue.owner_id,
+            // ... minimal mapping for check
+        };
+    }
+
+    private mapPricingRule(rule: any) {
+        return {
+            ...rule,
+            courtId: rule.court_id,
+            dayOfWeek: rule.day_of_week,
+            startTime: this.formatTime(rule.start_time),
+            endTime: this.formatTime(rule.end_time),
+            price: rule.price,
+            isActive: rule.is_active,
+        };
+    }
+
+    private formatTime(date: Date | string): string {
+        if (!date) return '';
+        if (typeof date === 'string') return date;
+        const hours = date.getUTCHours().toString().padStart(2, '0');
+        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+        const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
+    }
+
+    private parseTime(time: string | Date): Date {
+        if (time instanceof Date) return time;
+        if (typeof time === 'string') {
+            const [hours, minutes, seconds] = time.split(':').map(Number);
+            const date = new Date();
+            date.setUTCHours(hours || 0, minutes || 0, seconds || 0, 0);
+            return date;
+        }
+        return new Date();
+    }
+
     async findAllByVenue(venueId: string) {
-        return this.courtRepository.find({
-            where: { venueId, isActive: true },
-            relations: ['pricingRules']
+        const courts = await this.prisma.courts.findMany({
+            where: { venue_id: venueId, is_active: true },
+            include: { pricing_rules: true }
         });
+        return courts.map(c => this.mapCourt(c));
     }
 
     async findOne(id: string) {
-        const court = await this.courtRepository.findOne({
+        const court = await (this.prisma.courts as any).findUnique({
             where: { id },
-            relations: ['venue', 'pricingRules']
+            include: {
+                venues: true,
+                pricing_rules: true,
+                court_images: {
+                    include: {
+                        files: true
+                    }
+                }
+            }
         });
         if (!court) throw new NotFoundException('Court not found');
-        return court;
+        return this.mapCourt(court);
     }
 
     async create(ownerId: string, data: any) {
-        const { venueId, pricingRules, ...courtData } = data;
-        // Verify owner owns the venue
-        await this.venuesService.findOneByOwner(ownerId, venueId);
+        // Verify owner
+        await this.venuesService.findOneByOwner(ownerId, data.venueId);
 
-        const court = this.courtRepository.create({ ...courtData, venueId } as any);
-        const savedCourt = await this.courtRepository.save(court);
+        const { venueId, pricingRules, images, ...courtData } = data;
 
-        if (pricingRules && Array.isArray(pricingRules)) {
-            const rules = this.pricingRuleRepository.create(pricingRules.map(rule => ({
-                ...rule,
-                courtId: (savedCourt as any).id
-            })));
-            await this.pricingRuleRepository.save(rules);
-        }
+        const createdCourt = await this.prisma.$transaction(async (tx) => {
+            const court = await tx.courts.create({
+                data: {
+                    venue_id: venueId,
+                    name: courtData.name,
+                    sport_types: courtData.sportTypes || (courtData.sportType ? [courtData.sportType] : []),
+                    surface_type: courtData.surfaceType,
+                    price_per_hour: courtData.pricePerHour,
+                    description: courtData.description,
+                    amenities: courtData.amenities,
+                    is_active: true,
+                }
+            });
 
-        return this.findOne((savedCourt as any).id);
+            if (images && Array.isArray(images)) {
+                for (let i = 0; i < images.length; i++) {
+                    await (tx.files as any).create({
+                        data: {
+                            user_id: ownerId,
+                            original_name: `court-${court.id}-${i}`,
+                            file_name: `court-${court.id}-${i}`,
+                            public_url: images[i],
+                            file_size: 0,
+                            mime_type: 'image/jpeg',
+                            target_type: 'COURT',
+                            target_id: court.id,
+                            display_order: i,
+                            category: 'COURT_IMAGE' as any
+                        }
+                    });
+                }
+            }
+
+            if (pricingRules && Array.isArray(pricingRules)) {
+                await tx.pricing_rules.createMany({
+                    data: pricingRules.map(rule => ({
+                        court_id: court.id,
+                        day_of_week: rule.dayOfWeek,
+                        start_time: this.parseTime(rule.startTime),
+                        end_time: this.parseTime(rule.endTime),
+                        price: rule.price,
+                        is_active: true
+                    }))
+                });
+            }
+            return court;
+        });
+
+        return this.findOne(createdCourt.id);
     }
 
     async update(ownerId: string, id: string, data: any) {
-        const { pricingRules, ...courtData } = data;
-        const court = await this.findOne(id);
-        if (court.venue.ownerId !== ownerId) {
+        const courtCheck = await this.prisma.courts.findUnique({
+            where: { id },
+            include: { venues: true }
+        });
+
+        if (!courtCheck) throw new NotFoundException('Court not found');
+        if (courtCheck.venues.owner_id !== ownerId) {
             throw new ForbiddenException('You do not have permission to update this court');
         }
 
-        Object.assign(court, courtData);
-        await this.courtRepository.save(court);
+        const { pricingRules, images, ...courtData } = data;
 
-        if (pricingRules && Array.isArray(pricingRules)) {
-            await this.pricingRuleRepository.delete({ courtId: id });
-            const rules = this.pricingRuleRepository.create(pricingRules.map(rule => ({
-                ...rule,
-                courtId: id
-            })));
-            await this.pricingRuleRepository.save(rules);
-        }
+        await this.prisma.$transaction(async (tx) => {
+            await tx.courts.update({
+                where: { id },
+                data: {
+                    name: courtData.name,
+                    sport_types: courtData.sportTypes || (courtData.sportType ? [courtData.sportType] : []),
+                    surface_type: courtData.surfaceType,
+                    price_per_hour: courtData.pricePerHour,
+                    description: courtData.description,
+                    amenities: courtData.amenities,
+                    is_active: courtData.isActive,
+                }
+            });
+
+            if (images && Array.isArray(images)) {
+                // Delete old images relation or manage them
+                await (tx.files as any).deleteMany({
+                    where: { target_type: 'COURT', target_id: id }
+                });
+                for (let i = 0; i < images.length; i++) {
+                    await (tx.files as any).create({
+                        data: {
+                            user_id: ownerId,
+                            original_name: `court-${id}-${i}`,
+                            file_name: `court-${id}-${i}`,
+                            public_url: images[i],
+                            file_size: 0,
+                            mime_type: 'image/jpeg',
+                            target_type: 'COURT',
+                            target_id: id,
+                            display_order: i,
+                            category: 'COURT_IMAGE' as any
+                        }
+                    });
+                }
+            }
+
+            if (pricingRules && Array.isArray(pricingRules)) {
+                await tx.pricing_rules.deleteMany({ where: { court_id: id } });
+                await tx.pricing_rules.createMany({
+                    data: pricingRules.map(rule => ({
+                        court_id: id,
+                        day_of_week: rule.dayOfWeek,
+                        start_time: this.parseTime(rule.startTime),
+                        end_time: this.parseTime(rule.endTime),
+                        price: rule.price,
+                        is_active: true
+                    }))
+                });
+            }
+        });
 
         return this.findOne(id);
     }
 
     async softDelete(ownerId: string, id: string) {
-        const court = await this.findOne(id);
-        if (court.venue.ownerId !== ownerId) {
+        const court = await this.prisma.courts.findUnique({
+            where: { id },
+            include: { venues: true }
+        });
+        if (!court) throw new NotFoundException('Court not found');
+        if (court.venues.owner_id !== ownerId) {
             throw new ForbiddenException('You do not have permission to delete this court');
         }
 
-        return this.courtRepository.softRemove(court);
+        await this.prisma.courts.update({
+            where: { id },
+            data: {
+                deleted_at: new Date(),
+                is_active: false
+            }
+        });
+        return { success: true };
     }
 
     async getPricingRules(courtId: string) {
-        return this.pricingRuleRepository.find({
-            where: { courtId, isActive: true },
-            order: { dayOfWeek: 'ASC', startTime: 'ASC' }
+        const rules = await this.prisma.pricing_rules.findMany({
+            where: { court_id: courtId, is_active: true },
+            orderBy: [{ day_of_week: 'asc' }, { start_time: 'asc' }]
         });
+        return rules.map(r => this.mapPricingRule(r));
     }
 
     async updatePricingRules(ownerId: string, courtId: string, rules: any[]) {
-        console.log(`[CourtsService] Updating pricing rules for court ${courtId} by owner ${ownerId}`);
-        const court = await this.findOne(courtId);
-        if (court.venue.ownerId !== ownerId) {
-            console.error(`[CourtsService] Forbidden: Owner ${ownerId} does not own venue for court ${courtId}`);
+        const court = await this.prisma.courts.findUnique({
+            where: { id: courtId },
+            include: { venues: true }
+        });
+        if (!court) throw new NotFoundException('Court not found');
+        if (court.venues.owner_id !== ownerId) {
             throw new ForbiddenException('You do not have permission to update pricing rules for this court');
         }
 
-        // Simple approach: delete old rules and create new ones
-        console.log(`[CourtsService] Deleting ${court.pricingRules?.length || 0} old rules`);
-        await this.pricingRuleRepository.delete({ courtId });
+        await this.prisma.$transaction(async (tx) => {
+            await tx.pricing_rules.deleteMany({ where: { court_id: courtId } });
+            if (rules.length > 0) {
+                await tx.pricing_rules.createMany({
+                    data: rules.map(rule => ({
+                        court_id: courtId,
+                        day_of_week: rule.dayOfWeek,
+                        start_time: rule.startTime,
+                        end_time: rule.endTime,
+                        price: rule.price,
+                        is_active: true
+                    }))
+                });
+            }
+        });
 
-        console.log(`[CourtsService] Creating ${rules.length} new rules:`, JSON.stringify(rules, null, 2));
-        const newRules = this.pricingRuleRepository.create(rules.map(rule => ({
-            ...rule,
-            courtId
-        })));
-
-        const savedRules = await this.pricingRuleRepository.save(newRules);
-        console.log(`[CourtsService] Successfully saved ${savedRules.length} rules`);
-        return savedRules;
+        return this.getPricingRules(courtId);
     }
 }

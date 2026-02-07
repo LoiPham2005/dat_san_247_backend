@@ -1,51 +1,114 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { SupportTicket } from './entities/support-ticket.entity';
 import { TicketStatus } from '../../common/constants/chat.constant';
 
 @Injectable()
 export class SupportService {
-    constructor(
-        @InjectRepository(SupportTicket)
-        private ticketRepository: Repository<SupportTicket>,
-    ) { }
+    constructor(private prisma: PrismaService) { }
+
+    private mapTicket(ticket: any) {
+        if (!ticket) return null;
+        return {
+            ...ticket,
+            // Map relations
+            customer: ticket.users_support_tickets_customer_idTousers,
+            assignedTo: ticket.users_support_tickets_assigned_to_idTousers,
+            conversation: ticket.chat_conversations,
+            booking: ticket.bookings,
+            venue: ticket.venues,
+            // Map fields if necessary (snake_case -> camelCase is automatic?)
+            // Prisma returns snake_case for DB fields if not mapped in schema.
+            // Schema has properties 'customer_id', etc.
+            customerId: ticket.customer_id,
+            assignedToId: ticket.assigned_to_id,
+            bookingId: ticket.booking_id,
+            venueId: ticket.venue_id,
+            conversationId: ticket.conversation_id,
+            ticketNumber: ticket.ticket_number,
+            createdAt: ticket.created_at,
+            updatedAt: ticket.updated_at,
+            resolvedAt: ticket.resolved_at,
+            firstResponseAt: ticket.first_response_at,
+            closedAt: ticket.closed_at,
+        };
+    }
 
     async findAllTickets(filter: any) {
         const { status, priority, assignedToId } = filter;
-        const query = this.ticketRepository.createQueryBuilder('ticket')
-            .leftJoinAndSelect('ticket.customer', 'customer')
-            .leftJoinAndSelect('ticket.assignedTo', 'assignedTo');
+        const where: any = {};
+        if (status) where.status = status;
+        if (priority) where.priority = priority;
+        if (assignedToId) where.assigned_to_id = assignedToId;
 
-        if (status) query.andWhere('ticket.status = :status', { status });
-        if (priority) query.andWhere('ticket.priority = :priority', { priority });
-        if (assignedToId) query.andWhere('ticket.assignedToId = :assignedToId', { assignedToId });
+        const tickets = await this.prisma.support_tickets.findMany({
+            where,
+            include: {
+                users_support_tickets_customer_idTousers: true,
+                users_support_tickets_assigned_to_idTousers: true,
+            },
+            orderBy: { created_at: 'desc' },
+        });
 
-        return query.orderBy('ticket.createdAt', 'DESC').getMany();
+        return tickets.map(t => this.mapTicket(t));
     }
 
     async findOneTicket(id: string) {
-        const ticket = await this.ticketRepository.findOne({
+        const ticket = await this.prisma.support_tickets.findUnique({
             where: { id },
-            relations: ['customer', 'assignedTo', 'conversation', 'booking', 'venue'],
+            include: {
+                users_support_tickets_customer_idTousers: true,
+                users_support_tickets_assigned_to_idTousers: true,
+                chat_conversations: true,
+                bookings: true,
+                venues: true,
+            },
         });
         if (!ticket) throw new NotFoundException('Ticket not found');
-        return ticket;
+        return this.mapTicket(ticket);
     }
 
     async updateTicket(id: string, data: any) {
-        await this.ticketRepository.update(id, data);
+        // Data might be camelCase, map to snake_case
+        const updateData: any = {};
+        if (data.status) updateData.status = data.status;
+        if (data.priority) updateData.priority = data.priority;
+        if (data.assignedToId) updateData.assigned_to_id = data.assignedToId;
+        if (data.resolution) updateData.resolution = data.resolution;
+        if (data.resolvedBy) updateData.resolved_by = data.resolvedBy;
+        if (data.resolvedAt) updateData.resolved_at = data.resolvedAt;
+        if (data.customerRating) updateData.customer_rating = data.customerRating;
+        if (data.customerFeedback) updateData.customer_feedback = data.customerFeedback;
+
+        await this.prisma.support_tickets.update({
+            where: { id },
+            data: updateData,
+        });
+
         return this.findOneTicket(id);
     }
 
     async createTicket(data: any) {
-        const ticket = this.ticketRepository.create(data);
-        return this.ticketRepository.save(ticket);
+        return this.prisma.support_tickets.create({
+            data: {
+                subject: data.subject,
+                description: data.description,
+                customer_id: data.customerId, // assuming coming as customerId
+                category: data.category,
+                priority: data.priority,
+                status: 'OPEN',
+                ticket_number: `TICKET-${Date.now()}`, // Simple generation
+                booking_id: data.bookingId,
+                venue_id: data.venueId,
+                created_at: new Date(),
+                updated_at: new Date(),
+            }
+        });
     }
 
     async getStats() {
-        const open = await this.ticketRepository.count({ where: { status: TicketStatus.OPEN } });
-        const inProgress = await this.ticketRepository.count({ where: { status: TicketStatus.IN_PROGRESS } });
+        const open = await this.prisma.support_tickets.count({ where: { status: TicketStatus.OPEN } });
+        const inProgress = await this.prisma.support_tickets.count({ where: { status: TicketStatus.IN_PROGRESS } });
         return { open, inProgress };
     }
 }

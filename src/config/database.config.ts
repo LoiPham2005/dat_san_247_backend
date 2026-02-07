@@ -40,7 +40,7 @@ const dbOptions: DataSourceOptions = {
     // ⚠️ WARNING: 'true' slows down startup significantly on remote DBs due to schema diffing.
     // Set DB_SYNCHRONIZE=false in .env for fast startup when not changing entities.
     // synchronize: process.env.DB_SYNCHRONIZE === 'true', // Defaults to false if not set (safer + faster)
-    synchronize: true,
+    synchronize: false,
 
     // Drop schema on startup - Disable to persist data
     dropSchema: false

@@ -6,7 +6,7 @@ import { StaffSupportController } from './staff-support.controller';
 import { SupportController } from './support.controller';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([SupportTicket])],
+    imports: [],
     controllers: [StaffSupportController, SupportController],
     providers: [SupportService],
     exports: [SupportService],

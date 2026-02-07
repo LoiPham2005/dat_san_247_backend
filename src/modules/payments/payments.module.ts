@@ -14,7 +14,7 @@ import { AdminPaymentsController } from './admin-payments.controller';
 import { StaffFinanceController } from './staff-finance.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Payment, Wallet, Transaction, PayoutRequest, TransactionDispute, Invoice])],
+  imports: [],
   controllers: [
     PaymentsController,
     OwnerRevenueController,

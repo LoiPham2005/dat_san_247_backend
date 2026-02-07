@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ActivityLog } from './entities/activity-log.entity';
+import { PrismaService } from '../../prisma/prisma.service';
 import { ActivityType } from '../../common/constants/activity-type.constant';
 
 @Injectable()
 export class AnalyticsService {
     constructor(
-        @InjectRepository(ActivityLog)
-        private activityLogRepository: Repository<ActivityLog>,
+        private prisma: PrismaService,
     ) { }
 
     async logActivity(data: {
@@ -19,30 +16,66 @@ export class AnalyticsService {
         description?: string;
         metadata?: any;
     }) {
-        const log = this.activityLogRepository.create(data);
-        return this.activityLogRepository.save(log);
+        return this.prisma.activity_logs.create({
+            data: {
+                user_id: data.userId,
+                activity_type: data.activityType as any,
+                entity_type: data.entityType,
+                entity_id: data.entityId,
+                description: data.description,
+                metadata: data.metadata,
+                created_at: new Date(),
+                updated_at: new Date(),
+            }
+        });
     }
 
     async findActivityLogs(filter: any) {
         const { page = 1, limit = 10, activityType, entityType, userId } = filter;
         const skip = (page - 1) * limit;
 
-        const query = this.activityLogRepository.createQueryBuilder('log')
-            .leftJoinAndSelect('log.user', 'user')
-            .orderBy('log.createdAt', 'DESC');
+        const where: any = {};
 
-        if (activityType) query.andWhere('log.activityType = :activityType', { activityType });
-        if (entityType) query.andWhere('log.entityType = :entityType', { entityType });
-        if (userId) query.andWhere('log.userId = :userId', { userId });
+        if (activityType) where.activity_type = activityType as any;
+        if (entityType) where.entity_type = entityType;
+        if (userId) where.user_id = userId;
 
-        const [items, total] = await query
-            .skip(skip)
-            .take(limit)
-            .getManyAndCount();
+        const [items, total] = await Promise.all([
+            this.prisma.activity_logs.findMany({
+                where,
+                include: { users: true },
+                orderBy: { created_at: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.activity_logs.count({ where }),
+        ]);
 
         return {
-            items,
+            items: items.map(log => this.mapActivityLog(log)),
             meta: { total, page, limit }
+        };
+    }
+
+    private mapActivityLog(log: any) {
+        return {
+            id: log.id,
+            userId: log.user_id,
+            activityType: log.activity_type,
+            entityType: log.entity_type,
+            entityId: log.entity_id,
+            description: log.description,
+            metadata: log.metadata,
+            ipAddress: log.ip_address,
+            userAgent: log.user_agent,
+            createdAt: log.created_at,
+            updatedAt: log.updated_at,
+            user: log.users ? {
+                id: log.users.id,
+                fullName: log.users.full_name,
+                email: log.users.email,
+                avatarUrl: log.users.avatar_url,
+            } : null,
         };
     }
 }

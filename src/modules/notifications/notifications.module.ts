@@ -14,7 +14,6 @@ import { NotificationSetting } from './entities/notification-setting.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Notification, User, UserDevice, SystemAnnouncement, NotificationSetting]),
     ConfigModule,
     JwtModule,
   ],

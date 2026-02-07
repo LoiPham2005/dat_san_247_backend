@@ -1,23 +1,21 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Permission } from './entities/permission.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class PermissionsService {
-    constructor(
-        @InjectRepository(Permission)
-        private permissionsRepository: Repository<Permission>,
-    ) { }
+    constructor(private prisma: PrismaService) { }
 
-    async findAll(): Promise<Permission[]> {
-        return this.permissionsRepository.find({
-            order: { resource: 'ASC', action: 'ASC' },
+    async findAll() {
+        return this.prisma.permissions.findMany({
+            orderBy: [
+                { resource: 'asc' },
+                { action: 'asc' }
+            ],
         });
     }
 
-    async findBySlug(slug: string): Promise<Permission> {
-        const permission = await this.permissionsRepository.findOne({
+    async findBySlug(slug: string) {
+        const permission = await this.prisma.permissions.findUnique({
             where: { slug },
         });
         if (!permission) {
@@ -26,11 +24,15 @@ export class PermissionsService {
         return permission;
     }
 
-    async findByIds(ids: string[]): Promise<Permission[]> {
-        return this.permissionsRepository.findByIds(ids);
+    async findByIds(ids: string[]) {
+        return this.prisma.permissions.findMany({
+            where: {
+                id: { in: ids },
+            },
+        });
     }
 
-    async groupedByResource(): Promise<Record<string, Permission[]>> {
+    async groupedByResource() {
         const permissions = await this.findAll();
         return permissions.reduce((acc, permission) => {
             if (!acc[permission.resource]) {
@@ -38,6 +40,6 @@ export class PermissionsService {
             }
             acc[permission.resource].push(permission);
             return acc;
-        }, {} as Record<string, Permission[]>);
+        }, {} as Record<string, any[]>);
     }
 }

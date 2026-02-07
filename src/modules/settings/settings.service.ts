@@ -1,29 +1,43 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { Setting } from './entities/setting.entity';
 
 @Injectable()
 export class SettingsService {
-    constructor(
-        @InjectRepository(Setting)
-        private settingRepository: Repository<Setting>,
-    ) { }
+    constructor(private prisma: PrismaService) { }
 
     async findAll() {
-        return this.settingRepository.find();
+        const settings = await this.prisma.settings.findMany();
+        return settings.map(s => ({
+            ...s,
+            createdAt: s.created_at,
+            updatedAt: s.updated_at,
+        }));
     }
 
     async upsert(data: any) {
         const { key, value, description } = data;
-        let setting = await this.settingRepository.findOne({ where: { key } });
+        const setting = await this.prisma.settings.findFirst({ where: { key } });
+
         if (setting) {
-            setting.value = value;
-            setting.description = description;
-            return this.settingRepository.save(setting);
+            return this.prisma.settings.update({
+                where: { id: setting.id },
+                data: {
+                    value,
+                    description,
+                    updated_at: new Date(),
+                }
+            });
         } else {
-            const newSetting = this.settingRepository.create(data);
-            return this.settingRepository.save(newSetting);
+            return this.prisma.settings.create({
+                data: {
+                    key,
+                    value,
+                    description,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                }
+            });
         }
     }
 }

@@ -14,7 +14,6 @@ import { AdminBookingsController } from './admin-bookings.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Booking, BookingAddon, BookingWaitlist, RecurringBooking, BookingStatusHistory]),
     forwardRef(() => VenuesModule),
   ],
   controllers: [

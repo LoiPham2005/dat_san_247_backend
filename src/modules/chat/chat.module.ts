@@ -18,15 +18,6 @@ import { WsJwtGuard } from '../../common/guards/ws-jwt.guard';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([
-            Conversation,
-            ConversationParticipant,
-            Message,
-            MessageReceipt,
-            MessageReaction,
-            ChatSettings,
-            ChatTemplate,
-        ]),
         ConfigModule,
         JwtModule,
     ],

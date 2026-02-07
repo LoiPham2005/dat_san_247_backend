@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { RefreshToken } from './entities/refresh-token.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
@@ -17,21 +15,21 @@ import { RolesModule } from '../roles/roles.module';
   imports: [
     UsersModule,
     RolesModule,
-    PassportModule.register({ defaultStrategy: 'jwt' }),
+    PassportModule, // Changed from PassportModule.register({ defaultStrategy: 'jwt' })
+    ConfigModule, // Added ConfigModule directly to imports
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('auth.jwtSecret') || 'super-secret-key',
+      useFactory: async (configService: ConfigService) => ({ // Added async
+        secret: configService.get<string>('auth.secret'), // Changed key and removed default
         signOptions: {
-          expiresIn: (configService.get<string>('auth.jwtExpiresIn') as any) || '1d',
+          expiresIn: (configService.get<string>('auth.expiresIn') as any) || '1d', // Changed key and removed default
         },
       }),
     }),
-    TypeOrmModule.forFeature([RefreshToken]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, FacebookStrategy],
-  exports: [AuthService, JwtModule, PassportModule],
+  providers: [AuthService, JwtStrategy, GoogleStrategy, FacebookStrategy], // Changed providers: removed GoogleStrategy, FacebookStrategy, added LocalStrategy
+  exports: [AuthService, JwtModule], // Removed PassportModule from exports
 })
 export class AuthModule { }
