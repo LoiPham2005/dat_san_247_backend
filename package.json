@@ -16,6 +16,7 @@
     "prisma:generate": "npx prisma generate",
     "prisma:migrate:dev": "npx prisma migrate dev",
     "prisma:migrate:deploy": "npx prisma migrate deploy",
+    "prisma:db:push": "npx prisma db push", 
     "seed": "ts-node -r tsconfig-paths/register src/database/seeders/seed.ts",
     "db:fresh": "npx prisma migrate reset --force && npm run seed",
     "docker:build": "docker build -t dat-san-247-backend .",

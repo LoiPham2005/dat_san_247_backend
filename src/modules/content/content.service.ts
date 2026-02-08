@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, OnModuleInit, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ContentType, ContentStatus } from '../../common/constants/content.constant';
 import { StorageService } from '../../shared/storage/storage.service';
@@ -11,6 +11,8 @@ import * as path from 'path';
 
 @Injectable()
 export class ContentService implements OnModuleInit {
+    private readonly logger = new Logger(ContentService.name);
+
     constructor(
         private readonly prisma: PrismaService,
         private readonly storageService: StorageService,
@@ -42,9 +44,11 @@ export class ContentService implements OnModuleInit {
     private mapBanner(banner: any) {
         if (!banner) return null;
         const { contents, ...rest } = banner;
-        return {
+
+        const mappedBanner = {
             ...rest,
             contentId: banner.content_id,
+            imageUrl: contents?.thumbnail_url, // Added mapping for frontend convenience
             mobileImageUrl: banner.mobile_image_url,
             actionType: banner.action_type,
             actionUrl: banner.action_url,
@@ -57,6 +61,13 @@ export class ContentService implements OnModuleInit {
             displayOnPages: banner.display_on_pages,
             content: this.mapContent(contents)
         };
+
+        this.logger.debug(`Mapped Banner ID: ${banner.id}`);
+        this.logger.debug(`- Original Desktop Image (thumbnail_url): ${contents?.thumbnail_url}`);
+        this.logger.debug(`- Mapped ImageURL: ${mappedBanner.imageUrl}`);
+        this.logger.debug(`- Mobile Image: ${mappedBanner.mobileImageUrl}`);
+
+        return mappedBanner;
     }
 
     private mapBlogPost(post: any) {
@@ -134,12 +145,20 @@ export class ContentService implements OnModuleInit {
     }
 
     async findBanners() {
+        this.logger.log('Fetching all banners...');
         const banners = await this.prisma.banners.findMany({
             include: { contents: true },
             orderBy: {
                 contents: { display_order: 'asc' }
             }
         });
+
+        this.logger.log(`Found ${banners.length} banners.`);
+        banners.forEach((b, idx) => {
+            this.logger.debug(`[DB] Banner ${idx}: ID=${b.id}, ContentID=${b.content_id}`);
+            this.logger.debug(`[DB] Banner ${idx} Content:`, b.contents);
+        });
+
         return banners.map(b => this.mapBanner(b));
     }
 
@@ -153,15 +172,22 @@ export class ContentService implements OnModuleInit {
     }
 
     async createBanner(dto: CreateBannerDto, files: { image?: any, mobileImage?: any }, authorId: string) {
+        this.logger.log(`Creating Banner. Title: ${dto.title}`);
+        this.logger.log(`Files received: Image=${files.image ? 'Yes' : 'No'}, MobileImage=${files.mobileImage ? 'Yes' : 'No'}`);
+
         if (!files.image) {
+            this.logger.warn('Create Banner failed: No desktop image provided.');
             throw new BadRequestException('Banners require at least one desktop image');
         }
 
         // 1. Upload images
         const imageUrl = await this.storageService.uploadFile(files.image, 'banners');
+        this.logger.log(`Uploaded Desktop Image: ${imageUrl}`);
+
         let mobileImageUrl: string | null = null;
         if (files.mobileImage) {
             mobileImageUrl = await this.storageService.uploadFile(files.mobileImage, 'banners/mobile');
+            this.logger.log(`Uploaded Mobile Image: ${mobileImageUrl}`);
         }
 
         // 2. Transaction
@@ -199,8 +225,17 @@ export class ContentService implements OnModuleInit {
             return content;
         });
 
-        // Map result
-        return this.mapBanner({ ...result.banners, contents: result });
+        this.logger.log(`Banner Created Successfully. Content ID: ${result.id}, Banner ID: ${result.banners?.id}`);
+
+        // Map result - treating banners as single object based on type inference
+        const banner = result.banners;
+        if (!banner) {
+            this.logger.error('Banner creation failed: Content created but no banner relation found.');
+            throw new Error('Banner creation failed internally.');
+        }
+
+        // Cast to any to avoid strict type checks if inconsistent, but logic holds
+        return this.mapBanner({ ...banner, contents: result });
     }
 
     async updateBanner(id: string, dto: UpdateBannerDto, files: { image?: any, mobileImage?: any }) {
