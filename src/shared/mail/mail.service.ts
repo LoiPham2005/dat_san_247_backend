@@ -52,16 +52,22 @@ export class MailService {
     }
 
     async sendWithTemplate(to: string, template: any, variables: Record<string, any> = {}) {
-        const html = this.renderTemplate(template.htmlContent, variables);
-        const subject = this.renderTemplate(template.subject, variables);
+        const htmlContent = template.html_content || template.htmlContent;
+        const textContent = template.text_content || template.textContent;
+        const fromName = template.from_name || template.fromName;
+        const fromEmail = template.from_email || template.fromEmail;
+        const subject = template.subject;
+
+        const html = this.renderTemplate(htmlContent, variables);
+        const renderedSubject = this.renderTemplate(subject, variables);
 
         return this.sendMail(
             to,
-            subject,
+            renderedSubject,
             html,
-            template.textContent ? this.renderTemplate(template.textContent, variables) : undefined,
-            template.fromName,
-            template.fromEmail
+            textContent ? this.renderTemplate(textContent, variables) : undefined,
+            fromName,
+            fromEmail
         );
     }
 }

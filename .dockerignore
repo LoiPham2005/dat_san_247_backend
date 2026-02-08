@@ -41,8 +41,5 @@ test/
 .github/
 README.md
 RBAC*.md
-nest-cli.json
-tsconfig.build.json
-tsconfig.json
 eslint.config.mjs
 .prettierrc

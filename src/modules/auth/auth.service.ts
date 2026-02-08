@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
@@ -8,6 +8,8 @@ import { RolesService } from '../roles/roles.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MailService } from '../../shared/mail/mail.service';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 
 @Injectable()
 export class AuthService {
@@ -17,15 +19,96 @@ export class AuthService {
         private jwtService: JwtService,
         private configService: ConfigService,
         private prisma: PrismaService,
+        private mailService: MailService,
     ) { }
 
+    async forgotPassword(dto: ForgotPasswordDto) {
+        const user = await this.usersService.findByEmail(dto.email);
+        if (!user) {
+            // Don't reveal if user exists for security, but we can return success
+            return { message: 'Nếu email tồn tại, mã OTP đã được gửi' };
+        }
+
+        // Generate 6 digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+        await this.prisma.users.update({
+            where: { id: user.id },
+            data: {
+                reset_password_otp: otp,
+                reset_password_expires: expires,
+            },
+        });
+
+        // Send Email
+        try {
+            const template = await this.prisma.email_templates.findFirst({
+                where: { template_name: 'PASSWORD_RESET' }
+            });
+
+            if (template) {
+                await this.mailService.sendWithTemplate(user.email, template, {
+                    name: user.fullName,
+                    otp: otp,
+                });
+            } else {
+                // Fallback if template not seeded
+                await this.mailService.sendMail(
+                    user.email,
+                    'Mã khôi phục mật khẩu',
+                    `<p>Chào ${user.fullName}, mã OTP khôi phục mật khẩu của bạn là: <b>${otp}</b>. Mã này có hiệu lực trong 15 phút.</p>`
+                );
+            }
+        } catch (error) {
+            console.error('Failed to send reset email:', error);
+        }
+
+        return { message: 'Mã OTP đã được gửi tới email của bạn' };
+    }
+
+    async resetPassword(dto: ResetPasswordDto) {
+        const user = await this.prisma.users.findFirst({
+            where: {
+                reset_password_otp: dto.otp,
+                reset_password_expires: { gt: new Date() },
+            },
+        });
+
+        if (!user) {
+            throw new BadRequestException('Mã OTP không chính xác hoặc đã hết hạn');
+        }
+
+        const hashedPassword = await argon2.hash(dto.newPassword, { type: argon2.argon2id });
+
+        await this.prisma.users.update({
+            where: { id: user.id },
+            data: {
+                password: hashedPassword,
+                reset_password_otp: null,
+                reset_password_expires: null,
+            },
+        });
+
+        return { message: 'Đặt lại mật khẩu thành công' };
+    }
+
     async register(registerDto: RegisterDto) {
+        if (registerDto.password !== registerDto.confirmPassword) {
+            throw new BadRequestException('Mật khẩu xác nhận không khớp');
+        }
+
         const existingUser = await this.usersService.findByEmail(registerDto.email);
         if (existingUser) {
             throw new ConflictException('Email already exists');
         }
 
-        const hashedPassword = await argon2.hash(registerDto.password, { type: argon2.argon2id });
+        if (registerDto.phone) {
+            const existingPhone = await this.usersService.findByPhone(registerDto.phone);
+            if (existingPhone) {
+                throw new ConflictException('Số điện thoại này đã được sử dụng');
+            }
+        }
 
         // Find default role if not provided
         let role;
@@ -37,7 +120,6 @@ export class AuthService {
 
         const user = await this.usersService.create({
             ...registerDto,
-            password: hashedPassword,
             role,
         });
 

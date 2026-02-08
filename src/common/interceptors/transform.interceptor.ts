@@ -37,9 +37,13 @@ export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponse<T
 
         return next.handle().pipe(
             map((data) => {
-                // If data is already standardized (from service), return as is
-                if (data && typeof data === 'object' && 'success' in data) {
-                    return data;
+                const standardizedResponse = data && typeof data === 'object' && 'success' in data;
+
+                if (standardizedResponse) {
+                    return {
+                        ...data,
+                        path: data.path || request.url,
+                    };
                 }
 
                 return {

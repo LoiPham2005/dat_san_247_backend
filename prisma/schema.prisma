@@ -991,6 +991,7 @@ model invoices {
   customer_id    String               @db.Uuid
   amount         Decimal              @db.Decimal(15, 2)
   taxAmount      Decimal              @default(0) @db.Decimal(15, 2)
+  invoice_items  invoice_items[]
   status         invoices_status_enum @default(ISSUED)
   issued_at      DateTime             @default(now()) @db.Timestamp(6)
   pdf_url        String?
@@ -1003,6 +1004,26 @@ model invoices {
   @@index([status], map: "IDX_ac0f09364e3701d9ed35435288")
   @@index([invoice_number], map: "IDX_d8f8d3788694e1b3f96c42c36f")
   @@index([booking_id], map: "IDX_ed9c7aa7846704bbcb648377e8")
+}
+
+model invoice_items {
+  id           String                 @id(map: "PK_invoice_items") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime               @default(now()) @db.Timestamp(6)
+  updated_at   DateTime               @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?              @db.Timestamp(6)
+  invoice_id   String                 @db.Uuid
+  item_type    invoice_items_type_enum
+  reference_id String                 @db.Uuid
+  name         String                 @db.VarChar
+  quantity     Int                    @default(1)
+  unit_price   Decimal                @db.Decimal(15, 2)
+  subtotal     Decimal                @db.Decimal(15, 2)
+  tax_amount   Decimal                @default(0) @db.Decimal(15, 2)
+  total_amount Decimal                @db.Decimal(15, 2)
+  invoices     invoices               @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_invoice_items_invoice")
+
+  @@index([invoice_id])
+  @@index([reference_id])
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -2185,6 +2206,20 @@ model user_vouchers {
   @@index([promotion_id], map: "IDX_a93d470a758d25b5dd48e35a7a")
 }
 
+model membership_tiers {
+  id                  String           @id(map: "PK_membership_tiers") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime         @default(now()) @db.Timestamp(6)
+  updated_at          DateTime         @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?        @db.Timestamp(6)
+  name                String           @db.VarChar(100)
+  slug                String           @unique @db.VarChar(100)
+  description         String?
+  min_spending        Decimal          @default(0) @db.Decimal(15, 2)
+  discount_percentage Decimal          @default(0) @db.Decimal(5, 2)
+  is_active           Boolean          @default(true)
+  users               users[]
+}
+
 model users {
   id                                                             String                      @id(map: "PK_a3ffb1c0c8416b9fc6f907b7433") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at                                                     DateTime                    @default(now()) @db.Timestamp(6)
@@ -2205,6 +2240,8 @@ model users {
   email_verified_at                                              DateTime?                   @db.Timestamp(6)
   phone_verified_at                                              DateTime?                   @db.Timestamp(6)
   last_login_at                                                  DateTime?                   @db.Timestamp(6)
+  reset_password_otp                                             String?                     @db.VarChar
+  reset_password_expires                                         DateTime?                   @db.Timestamp(6)
   role_id                                                        String?                     @db.Uuid
   activity_logs                                                  activity_logs[]
   ai_assistance                                                  ai_assistance[]
@@ -2283,6 +2320,8 @@ model users {
   user_profiles                                                  user_profiles?
   user_subscriptions                                             user_subscriptions[]
   user_vouchers                                                  user_vouchers[]
+  membership_tier_id                                             String?                     @db.Uuid
+  membership_tier                                                membership_tiers?           @relation(fields: [membership_tier_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_users_membership_tier")
   roles                                                          roles?                      @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a2cecd1a3531c0b041e29ba46e1")
   venue_blacklist_venue_blacklist_banned_byTousers               venue_blacklist[]           @relation("venue_blacklist_banned_byTousers")
   venue_blacklist_venue_blacklist_user_idTousers                 venue_blacklist[]           @relation("venue_blacklist_user_idTousers")
@@ -2418,6 +2457,7 @@ model venue_services {
   price           Decimal          @db.Decimal(15, 2)
   unit            String           @default("unit") @db.VarChar
   is_available    Boolean          @default(true)
+  type            venue_services_type_enum @default(SERVICE)
   track_inventory Boolean          @default(false)
   stock_quantity  Int              @default(0)
   category        String?          @db.VarChar
@@ -3235,4 +3275,16 @@ enum venues_status_enum {
 enum wallets_owner_type_enum {
   USER
   TEAM
+}
+
+enum venue_services_type_enum {
+  PRODUCT
+  SERVICE
+}
+
+enum invoice_items_type_enum {
+  BOOKING
+  PRODUCT
+  SERVICE
+  ADDON
 }

@@ -109,6 +109,14 @@ export class UsersService {
         return this.mapUser(user);
     }
 
+    async findByPhone(phone: string) {
+        const user = await this.prisma.users.findUnique({
+            where: { phone },
+            include: { roles: true },
+        });
+        return this.mapUser(user || null);
+    }
+
     async create(data: any) {
         if (data.password) {
             data.password = await argon2.hash(data.password, { type: argon2.argon2id });

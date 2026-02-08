@@ -48,7 +48,6 @@ import { WinstonModule } from 'nest-winston';
 import { createWinstonFormat, createWinstonTransports } from './config/logger.config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { HttpLoggingInterceptor } from './common/interceptors/http-logging.interceptor';
-import { AppLoggerService } from './common/services/app-logger.service';
 import { LoggerModule } from './common/services/logger.module';
 
 import { PrismaModule } from './prisma/prisma.module';

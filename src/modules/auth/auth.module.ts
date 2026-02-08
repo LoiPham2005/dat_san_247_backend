@@ -20,10 +20,10 @@ import { RolesModule } from '../roles/roles.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({ // Added async
-        secret: configService.get<string>('auth.secret'), // Changed key and removed default
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('auth.jwtSecret') || 'super-secret-key', // Corrected syntax and added default
         signOptions: {
-          expiresIn: (configService.get<string>('auth.expiresIn') as any) || '1d', // Changed key and removed default
+          expiresIn: (configService.get<string>('auth.jwtExpiresIn') as any) || '1d',
         },
       }),
     }),
