@@ -39,11 +39,18 @@ export class UsersService {
         };
     }
 
-    async findAll(filter: UserFilterDto) {
-        const { page = 1, limit = 10, role, search, isActive } = filter;
+    async findAll(filter: UserFilterDto & { isDeleted?: string }) {
+        const { page = 1, limit = 10, role, search, isActive, isDeleted } = filter;
         const skip = (page - 1) * limit;
 
         const where: any = {};
+
+        // Handle deleted_at filter
+        if (isDeleted === 'true') {
+            where.deleted_at = { not: null };
+        } else {
+            where.deleted_at = null;
+        }
 
         if (role) {
             where.roles = { slug: role };
@@ -97,6 +104,8 @@ export class UsersService {
                 favorite_venues: true
             }
         });
+
+        // Return user even if deleted, so admin can view details before restoring
         if (!user) throw new NotFoundException('User not found');
         return this.mapUser(user);
     }
@@ -195,6 +204,18 @@ export class UsersService {
             include: { roles: true }
         });
         return this.mapUser(updated);
+    }
+
+    async restore(id: string) {
+        const user = await this.prisma.users.findUnique({ where: { id } });
+        if (!user) throw new NotFoundException('User not found');
+
+        const restored = await this.prisma.users.update({
+            where: { id },
+            data: { deleted_at: null },
+            include: { roles: true }
+        });
+        return this.mapUser(restored);
     }
 
     async softDelete(id: string) {

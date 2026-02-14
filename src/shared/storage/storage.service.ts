@@ -359,6 +359,20 @@ export class StorageService implements OnModuleInit {
                 }
             }
 
+            if (driver === 'local') {
+                const uploadPath = this.configService.get<string>('storage.local.path') || 'uploads';
+                const urlObj = new URL(url);
+                let pathname = urlObj.pathname;
+                if (pathname.startsWith('/')) pathname = pathname.substring(1);
+
+                // If pathname starts with uploadPath, strip it to avoid duplication in deleteFile
+                if (pathname.startsWith(uploadPath)) {
+                    let key = pathname.substring(uploadPath.length);
+                    if (key.startsWith('/')) key = key.substring(1);
+                    return key;
+                }
+            }
+
             // Fallback: try to guess or just return as is
             const urlObj = new URL(url);
             return urlObj.pathname.substring(1);

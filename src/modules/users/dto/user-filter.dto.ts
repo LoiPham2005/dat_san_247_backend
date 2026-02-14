@@ -17,4 +17,8 @@ export class UserFilterDto extends PaginationDto {
     @ApiPropertyOptional({ example: 'true' })
     @IsOptional()
     isActive?: string;
+
+    @ApiPropertyOptional({ example: 'true', description: 'Search for deleted users if true' })
+    @IsOptional()
+    isDeleted?: string;
 }

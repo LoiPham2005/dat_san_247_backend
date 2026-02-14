@@ -71,4 +71,11 @@ export class AdminUsersController {
     async remove(@Param('id') id: string) {
         return this.usersService.softDelete(id);
     }
+
+    @Post(':id/restore')
+    @ApiOperation({ summary: 'Khôi phục người dùng đã xóa' })
+    @ApiSuccessResponse()
+    async restore(@Param('id') id: string) {
+        return this.usersService.restore(id);
+    }
 }
