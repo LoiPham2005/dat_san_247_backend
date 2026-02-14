@@ -3287,4 +3287,7 @@ enum invoice_items_type_enum {
   PRODUCT
   SERVICE
   ADDON
+  MEMBERSHIP
+  VOUCHER
+  OTHER
 }

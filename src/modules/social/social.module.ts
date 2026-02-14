@@ -12,7 +12,8 @@ import { MatchFinding } from './entities/match-finding.entity';
 import { MatchParticipant } from './entities/match-participant.entity';
 import { MatchResult } from './entities/match-result.entity';
 import { Tournament } from './entities/tournament.entity';
-import { TournamentBracket, TournamentMatch } from './entities/tournament-bracket.entity';
+import { TournamentBracket } from './entities/tournament-bracket.entity';
+import { TournamentMatch } from './entities/tournament-match.entity';
 import { TournamentParticipant } from './entities/tournament-participant.entity';
 
 // Social entities

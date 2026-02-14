@@ -1,9 +1,10 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, OneToOne, Relation } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, OneToOne, Relation, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../database/entities/base.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { Transaction } from './transaction.entity';
 import { User } from '../../users/entities/user.entity';
 import { InvoiceStatus } from '../../../common/constants/payment-status.constant';
+import { InvoiceItem } from './invoice-item.entity';
 
 @Entity('invoices')
 export class Invoice extends BaseEntity {
@@ -42,6 +43,9 @@ export class Invoice extends BaseEntity {
 
     @Column({ name: 'pdf_url', type: 'text', nullable: true })
     pdfUrl: string;
+
+    @OneToMany(() => InvoiceItem, (item) => item.invoice)
+    items: Relation<InvoiceItem>[];
 
     @OneToOne(() => Booking, { nullable: true })
     @JoinColumn({ name: 'booking_id' })

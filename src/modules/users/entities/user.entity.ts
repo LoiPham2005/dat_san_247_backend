@@ -21,6 +21,7 @@ import { Role } from '../../roles/entities/role.entity';
 import { ChatSettings } from '../../chat/entities/chat-settings.entity';
 import { ConversationParticipant } from '../../chat/entities/participant.entity';
 import { OneToOne } from 'typeorm';
+import { MembershipTier } from './membership-tier.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -50,6 +51,13 @@ export class User extends BaseEntity {
     @ManyToOne(() => Role, (role) => role.users, { eager: true, nullable: true })
     @JoinColumn({ name: 'role_id' })
     role: Relation<Role>;
+
+    @Column({ name: 'membership_tier_id', type: 'uuid', nullable: true })
+    membershipTierId: string;
+
+    @ManyToOne(() => MembershipTier, (tier) => tier.users, { nullable: true })
+    @JoinColumn({ name: 'membership_tier_id' })
+    membershipTier: Relation<MembershipTier>;
 
     @Column({ name: 'avatar_url', nullable: true })
     avatarUrl: string;
