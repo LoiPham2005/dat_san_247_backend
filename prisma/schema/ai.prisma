@@ -15,6 +15,30 @@ model ai_assistance {
   @@index([type])
 }
 
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model ai_cache {
+  id           String     @id(map: "PK_30b792e08262273016a05f34517") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime   @default(now()) @db.Timestamp(6)
+  updated_at   DateTime   @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?  @db.Timestamp(6)
+  cache_key    String     @unique(map: "UQ_9f59baef086138cc08e67be58c3") @db.VarChar
+  model_id     String?    @db.Uuid
+  feature_code String?    @db.VarChar
+  input_data   Json
+  output_data  Json
+  hit_count    Int        @default(0)
+  last_hit_at  DateTime?  @db.Timestamp(6)
+  tokens_saved BigInt     @default(0)
+  cost_saved   Decimal    @default(0) @db.Decimal(10, 4)
+  expires_at   DateTime   @db.Timestamp(6)
+  ai_models    ai_models? @relation(fields: [model_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_88ea941e8ba614b919b802053d3")
+
+  @@index([expires_at], map: "IDX_312f8b7d101835c1e0423b4cf8")
+  @@index([model_id], map: "IDX_88ea941e8ba614b919b802053d")
+  @@index([feature_code], map: "IDX_912b211e63ffe3f1a3d7f29440")
+  @@index([cache_key], map: "IDX_9f59baef086138cc08e67be58c")
+}
+
 model ai_conversations {
   id                                                     String                          @id(map: "PK_ai_conversations") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at                                             DateTime                        @default(now()) @db.Timestamp(6)
@@ -166,6 +190,7 @@ model ai_models {
   cost_per_1k_out   Decimal                @default(0) @db.Decimal(10, 6)
   capabilities      Json?
   metadata          Json?
+  ai_cache          ai_cache[]
 }
 
 model ai_quotas {
