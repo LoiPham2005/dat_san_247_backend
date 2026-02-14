@@ -1,0 +1,120 @@
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model activity_logs {
+  id            String                           @id(map: "PK_f25287b6140c5ba18d38776a796") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime                         @default(now()) @db.Timestamp(6)
+  updated_at    DateTime                         @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime?                        @db.Timestamp(6)
+  user_id       String?                          @db.Uuid
+  activity_type activity_logs_activity_type_enum
+  entity_type   String?                          @db.VarChar
+  entity_id     String?                          @db.Uuid
+  description   String?
+  ip_address    String?                          @db.Inet
+  user_agent    String?
+  metadata      Json?
+  users         users?                           @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d54f841fa5478e4734590d44036")
+}
+
+model audit_logs {
+  id          String    @id(map: "PK_1bb179d048bbc581caa3b013439") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime? @db.Timestamp(6)
+  user_id     String?   @db.Uuid
+  action      String    @db.VarChar(100)
+  entity_name String    @db.VarChar(50)
+  entity_id   String?   @db.Uuid
+  oldValues   Json?
+  newValues   Json?
+  ip_address  String?   @db.VarChar
+  user_agent  String?   @db.VarChar
+  users       users?    @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "FK_bd2726fd31b35443f2245b93ba0")
+
+  @@index([user_id], map: "IDX_bd2726fd31b35443f2245b93ba")
+  @@index([action], map: "IDX_cee5459245f652b75eb2759b4c")
+}
+
+model files {
+  id                String              @id(map: "PK_6c16b9093a142e0e7613b04a3d9") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime            @default(now()) @db.Timestamp(6)
+  updated_at        DateTime            @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?           @db.Timestamp(6)
+  user_id           String?             @db.Uuid
+  category          files_category_enum
+  original_name     String              @db.VarChar
+  file_name         String              @db.VarChar
+  file_size         BigInt
+  mime_type         String              @db.VarChar
+  r2_key            String?
+  r2_bucket         String?             @db.VarChar
+  public_url        String
+  width             Int?
+  height            Int?
+  metadata          Json?
+  target_type       String?             @db.VarChar(50)
+  target_id         String?             @db.Uuid
+  display_order     Int                 @default(0)
+  ai_image_analysis ai_image_analysis?
+  banners           banners[]
+  contents          contents[]
+  court_images      court_images[]
+  users             users?              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a7435dbb7583938d5e7d1376041")
+  review_images     review_images[]
+  social_media      social_media[]
+  venue_images      venue_images[]
+
+  @@index([target_type], map: "IDX_2c67f7d3120f58f2fd21dfc363")
+  @@index([category], map: "IDX_2d8e9360c7d44045bb95e588fa")
+  @@index([target_id], map: "IDX_5681fba4a606b906224559ce30")
+  @@index([user_id], map: "IDX_a7435dbb7583938d5e7d137604")
+  @@index([r2_key], map: "IDX_e075d7bacc97b0c80b4cb6455b")
+}
+
+model settings {
+  id          String    @id(map: "PK_0669fe20e252eb692bf4d344975") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime? @db.Timestamp(6)
+  key         String    @unique(map: "UQ_c8639b7626fa94ba8265628f214") @db.VarChar
+  value       Json
+  description String?
+  isActive    Boolean   @default(true)
+}
+
+enum activity_logs_activity_type_enum {
+  LOGIN
+  LOGOUT
+  BOOKING_CREATED
+  BOOKING_CANCELLED
+  PAYMENT
+  REVIEW_POSTED
+  VENUE_UPDATED
+  USER_UPDATED
+  VENUE_APPROVED
+  VENUE_REJECTED
+  VIEW_VENUE
+  VIEW_COURT
+  SEARCH_QUERY
+  FAVORITE_TOGGLE
+  PROMOTION_CLICK
+  AI_CHAT_START
+}
+
+enum files_category_enum {
+  AVATAR
+  VENUE_IMAGE
+  COURT_IMAGE
+  REVIEW_IMAGE
+  DOCUMENT
+  CONTENT_IMAGE
+  BANNER_IMAGE
+  BLOG_IMAGE
+}

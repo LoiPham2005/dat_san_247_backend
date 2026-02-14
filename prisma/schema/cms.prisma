@@ -1,0 +1,495 @@
+model contents {
+  id                 String                    @id(map: "PK_cb0f885278d12384eb7a81818bf") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at         DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at         DateTime                  @default(now()) @db.Timestamp(6)
+  deleted_at         DateTime?                 @db.Timestamp(6)
+  type               String                    @db.VarChar(50)
+  title              String                    @db.VarChar(255)
+  slug               String?                   @unique(map: "UQ_9fd71efb7abb246a69847399d15") @db.VarChar(255)
+  description        String?                   @db.Text
+  content            String                    @db.Text
+  excerpt            String?                   @db.Text
+  thumbnail_file_id  String?                   @db.Uuid
+  thumbnail_url      String?                   @db.VarChar(255)
+  status             contents_status_enum      @default(DRAFT)
+  published_at       DateTime?                 @db.Timestamp(6)
+  scheduled_at       DateTime?                 @db.Timestamp(6)
+  expired_at         DateTime?                 @db.Timestamp(6)
+  valid_from         DateTime?                 @db.Timestamp(6)
+  valid_to           DateTime?                 @db.Timestamp(6)
+  seo_title          String?                   @db.VarChar(255)
+  seo_description    String?                   @db.Text
+  seo_keywords       Json?
+  display_order      Int                       @default(0)
+  author_id          String?                   @db.Uuid
+  author_type        String                    @default("ADMIN") @db.VarChar(20)
+  parent_id          String?                   @db.Uuid
+  is_featured        Boolean                   @default(false)
+  is_pinned          Boolean                   @default(false)
+  view_count         Int                       @default(0)
+  target_audience    contents_target_audience_enum @default(ALL)
+  target_user_ids    Json?
+  target_regions     Json?
+  metadata           Json?
+  tags               Json?
+  categories         Json?
+
+  author             users?                    @relation("contents_author", fields: [author_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_contents_author")
+  parent             contents?                 @relation("contentsTocontents", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_contents_parent")
+  children           contents[]                @relation("contentsTocontents")
+  thumbnail          files?                    @relation(fields: [thumbnail_file_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_contents_thumbnail")
+
+  banners            banners?
+  blog_posts         blog_posts?
+  faqs               faqs?
+  policies           policies?
+  email_templates    email_templates?
+  promotion_contents promotion_contents?
+
+  @@index([status], map: "IDX_contents_status")
+  @@index([slug], map: "IDX_contents_slug")
+  @@index([type], map: "IDX_contents_type")
+}
+
+model banners {
+  id                   String    @id(map: "PK_cb0f885278d12384eb7a81818c0") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime? @db.Timestamp(6)
+  content_id           String    @unique @db.Uuid
+  position             String    @db.VarChar(50)
+  type                 String    @db.VarChar(50)
+  mobile_file_id       String?   @db.Uuid
+  mobile_image_url     String?   @db.VarChar(255)
+  action_type          String    @default("NONE") @db.VarChar(20)
+  action_url           String?   @db.VarChar(255)
+  action_venue_id      String?   @db.VarChar(50)
+  action_promotion_id  String?   @db.VarChar(50)
+  auto_slide           Boolean   @default(true)
+  slide_duration       Int?
+  start_date           DateTime  @db.Timestamp(6)
+  end_date             DateTime? @db.Timestamp(6)
+  display_on_pages     Json?
+  impressions          Int       @default(0)
+  clicks               Int       @default(0)
+  ctr                  Decimal   @default(0) @db.Decimal(5, 2)
+
+  contents             contents  @relation(fields: [content_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_banners_content")
+  mobile_image         files?    @relation(fields: [mobile_file_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_banners_mobile_image")
+}
+
+model notifications {
+  id             String                     @id(map: "PK_cb0f885278d12384eb7a81818c1") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime                   @default(now()) @db.Timestamp(6)
+  updated_at     DateTime                   @default(now()) @db.Timestamp(6)
+  deleted_at     DateTime?                  @db.Timestamp(6)
+  user_id        String                     @db.Uuid
+  title          String                     @db.VarChar(255)
+  message        String                     @db.Text
+  type           notifications_type_enum    @default(SYSTEM)
+  channel        notifications_channel_enum @default(IN_APP)
+  is_read        Boolean                    @default(false)
+  read_at        DateTime?                  @db.Timestamp(6)
+  data           Json?
+  
+  users          users                      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_notifications_user")
+
+  @@index([user_id], map: "IDX_notifications_user_id")
+  @@index([is_read], map: "IDX_notifications_is_read")
+}
+
+model reviews {
+  id                 String              @id(map: "PK_cb0f885278d12384eb7a81818c3") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at         DateTime            @default(now()) @db.Timestamp(6)
+  updated_at         DateTime            @default(now()) @db.Timestamp(6)
+  deleted_at         DateTime?           @db.Timestamp(6)
+  booking_id         String?             @db.Uuid
+  venue_id           String?             @db.Uuid
+  court_id           String?             @db.Uuid
+  user_id            String              @db.Uuid
+  rating             Int
+  rating_cleanliness Int?
+  rating_facilities  Int?
+  rating_staff       Int?
+  comment            String?             @db.Text
+  response           String?             @db.Text
+  responded_by       String?             @db.Uuid
+  responded_at       DateTime?           @db.Timestamp(6)
+  is_visible         Boolean             @default(true)
+  is_anonymous       Boolean             @default(false)
+
+  bookings           bookings?           @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_reviews_booking")
+  venues             venues?             @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_reviews_venue")
+  courts             courts?             @relation(fields: [court_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_reviews_court")
+  users              users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_reviews_user")
+  ai_review_analysis ai_review_analysis?
+  review_images      review_images[]
+  social_likes       social_likes[]
+
+  @@index([venue_id], map: "IDX_reviews_venue_id")
+  @@index([court_id], map: "IDX_reviews_court_id")
+  @@index([user_id], map: "IDX_reviews_user_id")
+}
+
+model review_images {
+  id         String    @id(map: "PK_cb0f885278d12384eb7a81818c4") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  review_id  String    @db.Uuid
+  file_id    String    @db.Uuid
+  files      files     @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b365")
+  reviews    reviews   @relation(fields: [review_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b366")
+
+  @@index([review_id], map: "IDX_review_images_review_id")
+}
+
+model reports {
+  id                   String                  @id(map: "PK_cb0f885278d12384eb7a81818c5") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime                @default(now()) @db.Timestamp(6)
+  updated_at           DateTime                @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime?               @db.Timestamp(6)
+  reporter_id          String                  @db.Uuid
+  target_type          reports_target_type_enum
+  target_id            String                  @db.Uuid
+  reason               reports_reason_enum
+  description          String?
+  status               reports_status_enum     @default(PENDING)
+  reviewed_at          DateTime?               @db.Timestamp(6)
+  reviewed_by          String?                 @db.Uuid
+  resolution_note      String?
+  metadata             Json?
+  chat_conversations   chat_conversations?     @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_reports_convo")
+  posts                posts?                  @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_reports_post")
+  post_comments        post_comments?          @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_reports_comment")
+  chat_messages        chat_messages?          @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_reports_message")
+  teams                teams?                  @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_reports_team")
+  users_reports_reporter_idTousers users         @relation("reports_reporter_idTousers", fields: [reporter_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b367")
+  users_reports_reviewed_byTousers users?        @relation("reports_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b368")
+
+  @@index([target_id], map: "IDX_reports_target_id")
+}
+
+model support_tickets {
+  id                String                        @id(map: "PK_cb0f885278d12384eb7a81818c6") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime                      @default(now()) @db.Timestamp(6)
+  updated_at        DateTime                      @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?                     @db.Timestamp(6)
+  ticket_number     String                        @unique @db.VarChar(50)
+  customer_id       String                        @db.Uuid
+  assigned_to_id    String?                       @db.Uuid
+  assigned_at       DateTime?                     @db.Timestamp(6)
+  category          support_tickets_category_enum @default(OTHER)
+  priority          support_tickets_priority_enum @default(MEDIUM)
+  status            support_tickets_status_enum   @default(OPEN)
+  subject           String                        @db.VarChar(255)
+  description       String                        @db.Text
+  booking_id        String?                       @db.Uuid
+  venue_id          String?                       @db.Uuid
+  conversation_id   String?                       @unique @db.Uuid
+  resolution        String?                       @db.Text
+  resolved_at       DateTime?                     @db.Timestamp(6)
+  resolved_by       String?                       @db.Uuid
+  customer_rating   Int?
+  customer_feedback String?                       @db.Text
+  first_response_at DateTime?                     @db.Timestamp(6)
+  closed_at         DateTime?                     @db.Timestamp(6)
+  metadata          Json?
+
+  customer          users                         @relation("support_tickets_customerTousers", fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_support_tickets_customer")
+  assigned_to       users?                        @relation("support_tickets_assignedTousers", fields: [assigned_to_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_support_tickets_assigned_to")
+  conversation      chat_conversations?           @relation("support_tickets_conversationTochat_conversations", fields: [conversation_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_support_tickets_conversation")
+  booking           bookings?                     @relation("support_tickets_bookingTobookings", fields: [booking_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_support_tickets_booking")
+  venue             venues?                       @relation("support_tickets_venueTovenues", fields: [venue_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_support_tickets_venue")
+
+  @@index([status], map: "IDX_support_tickets_status")
+  @@index([ticket_number], map: "IDX_support_tickets_number")
+}
+
+model faqs {
+  id                String             @id(map: "PK_cb0f885278d12384eb7a81818c7") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime           @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?          @db.Timestamp(6)
+  content_id        String             @unique @db.Uuid
+  category          faqs_category_enum
+  question          String             @db.Text
+  answer            String             @db.Text
+  helpful_count     Int                @default(0)
+  not_helpful_count Int                @default(0)
+  related_faqs      Json?
+  related_articles  Json?
+  search_keywords   Json?
+  display_order     Int                @default(0)
+
+  contents          contents           @relation(fields: [content_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_faqs_content")
+
+  @@index([category], map: "IDX_faqs_category_cms")
+}
+
+model blog_posts {
+  id                String                   @id(map: "PK_cb0f885278d12384eb7a81818c8") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at        DateTime                 @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?                @db.Timestamp(6)
+  content_id        String                   @unique @db.Uuid
+  category          blog_posts_category_enum
+  author            String                   @db.VarChar(191)
+  author_avatar     String?                  @db.VarChar(255)
+  reading_time      Int                      @default(0)
+  table_of_contents Json?
+  canonical_url     String?                  @db.VarChar(255)
+  related_posts     Json?
+  likes             Int                      @default(0)
+  comments          Int                      @default(0)
+  bookmarks         Int                      @default(0)
+  last_edited_at    DateTime?                @db.Timestamp(6)
+  published_at      DateTime                 @default(now()) @db.Timestamp(6)
+
+  contents          contents                 @relation(fields: [content_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_blog_posts_content")
+
+  @@index([category], map: "IDX_blog_posts_category_cms")
+}
+
+model email_templates {
+  id            String                            @id(map: "PK_cb0f885278d12384eb7a81818c9") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime                          @default(now()) @db.Timestamp(6)
+  updated_at    DateTime                          @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime?                         @db.Timestamp(6)
+  content_id    String                            @unique @db.Uuid
+  templateType  email_templates_templatetype_enum
+  template_name String                            @db.VarChar(100)
+  subject       String                            @db.VarChar(255)
+  preheader     String?                           @db.VarChar(255)
+  html_content  String                            @db.Text
+  text_content  String?                           @db.Text
+  variables     Json?
+  sample_data   Json?
+  layout_id     String?                           @db.VarChar(50)
+  theme         Json?
+  from_name     String                            @db.VarChar(100)
+  from_email    String                            @db.VarChar(100)
+  reply_to      String?                           @db.VarChar(100)
+  version       Int                               @default(1)
+  is_default    Boolean                           @default(false)
+  last_used_at  DateTime?                         @db.Timestamp(6)
+
+  contents      contents                          @relation(fields: [content_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_email_templates_content")
+
+  @@index([templateType], map: "IDX_email_templates_type")
+  @@index([template_name], map: "IDX_email_templates_name")
+}
+
+model policies {
+  id                  String                   @id(map: "PK_cb0f885278d12384eb7a81818d0") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at          DateTime                 @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?                @db.Timestamp(6)
+  content_id          String                   @unique @db.Uuid
+  policyType          policies_policytype_enum
+  version             String                   @db.VarChar(20)
+  effective_date      DateTime                 @db.Timestamp(6)
+  previous_version_id String?                  @db.Uuid
+  requires_acceptance Boolean                  @default(false)
+  accepted_count      Int                      @default(0)
+  legal_reviewed      Boolean                  @default(false)
+  legal_reviewed_by   String?                  @db.VarChar(100)
+  legal_reviewed_at   DateTime?                @db.Timestamp(6)
+
+  contents            contents                 @relation(fields: [content_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_policies_content")
+
+  @@index([policyType], map: "IDX_policies_type")
+}
+
+model system_announcements {
+  id                        String                      @id(map: "PK_cb0f885278d12384eb7a81818d1") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                DateTime                    @default(now()) @db.Timestamp(6)
+  updated_at                DateTime                    @default(now()) @db.Timestamp(6)
+  deleted_at                DateTime?                   @db.Timestamp(6)
+  author_id                 String                      @db.Uuid
+  title                     String                      @db.VarChar
+  content                   String
+  priority                  Int                         @default(1)
+  target_roles              Json?
+  start_at                  DateTime?                   @db.Timestamp(6)
+  end_at                    DateTime?                   @db.Timestamp(6)
+  is_active                 Boolean                     @default(true)
+  users                     users                       @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b374")
+  system_announcement_reads system_announcement_reads[]
+}
+
+model system_announcement_reads {
+  id              String               @id(map: "PK_cb0f885278d12384eb7a81818d2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime             @default(now()) @db.Timestamp(6)
+  user_id         String               @db.Uuid
+  announcement_id String               @db.Uuid
+  users           users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b375")
+  announcements   system_announcements @relation(fields: [announcement_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b376")
+
+  @@unique([user_id, announcement_id], map: "UQ_8cb5cf3df16fc75663f85b5b377")
+}
+model promotion_contents {
+  id                   String    @id(map: "PK_cb0f885278d12384eb7a81818d3") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime? @db.Timestamp(6)
+  content_id           String    @unique @db.Uuid
+  promotion_type       String    @db.VarChar(50)
+  promotion_id         String?   @db.Uuid
+  min_membership_level String?   @db.VarChar(50)
+  total_revenue        Decimal   @default(0) @db.Decimal(15, 2)
+  total_bookings       Int       @default(0)
+  conversion_rate      Decimal   @default(0) @db.Decimal(5, 2)
+
+  contents             contents  @relation(fields: [content_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_promotion_contents_content")
+  promotions           promotions? @relation(fields: [promotion_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_promotion_contents_promotion")
+}
+
+model notification_settings {
+  id               String    @id(map: "PK_cb0f885278d12384eb7a81818c2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime  @default(now()) @db.Timestamp(6)
+  updated_at       DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime? @db.Timestamp(6)
+  user_id          String    @unique @db.Uuid
+  email_enabled    Boolean   @default(true)
+  push_enabled     Boolean   @default(true)
+  sms_enabled      Boolean   @default(false)
+  booking_updates  Boolean   @default(true)
+  promotions       Boolean   @default(true)
+  system_updates   Boolean   @default(true)
+  social_updates   Boolean   @default(true)
+  quiet_hours_start String?   @db.VarChar(5)
+  quiet_hours_end   String?   @db.VarChar(5)
+
+  users            users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_notification_settings_user")
+}
+
+enum contents_status_enum {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+  DELETED
+}
+
+enum contents_target_audience_enum {
+  ALL
+  CUSTOMER
+  OWNER
+  STAFF
+  NEW_USER
+  VIP
+  INACTIVE
+}
+
+enum notifications_channel_enum {
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
+}
+
+enum notifications_type_enum {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  REVIEW_RECEIVED
+  PROMOTION
+  SYSTEM
+  SOCIAL
+  TEAM
+  MATCH
+  FRIEND
+}
+
+enum reports_target_type_enum {
+  USER
+  POST
+  COMMENT
+  MESSAGE
+  TEAM
+}
+
+enum reports_reason_enum {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE
+  FAKE
+  OTHER
+}
+
+enum reports_status_enum {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum support_tickets_category_enum {
+  BOOKING_ISSUE
+  PAYMENT_ISSUE
+  VENUE_ISSUE
+  USER_ISSUE
+  TECHNICAL_ISSUE
+  REFUND_REQUEST
+  OTHER
+}
+
+enum support_tickets_priority_enum {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum support_tickets_status_enum {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REOPENED
+}
+
+enum faqs_category_enum {
+  BOOKING
+  PAYMENT
+  CANCELLATION
+  ACCOUNT
+  VENUE
+  GENERAL
+}
+
+enum blog_posts_category_enum {
+  NEWS
+  GUIDE
+  TIPS
+  PROMOTION
+  EVENT
+  INTERVIEW
+  REVIEW
+}
+
+enum email_templates_templatetype_enum {
+  WELCOME
+  BOOKING_CONFIRMATION
+  BOOKING_REMINDER
+  PAYMENT_RECEIPT
+  PASSWORD_RESET
+  REVIEW_REQUEST
+  PROMOTION
+  NEWSLETTER
+  MARKETING
+  TRANSACTIONAL
+  SYSTEM
+  CUSTOM
+}
+
+enum policies_policytype_enum {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  REFUND_POLICY
+  CANCELLATION_POLICY
+  COOKIE_POLICY
+  COMMUNITY_GUIDELINES
+}

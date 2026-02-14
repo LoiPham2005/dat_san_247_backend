@@ -12,14 +12,12 @@ export class SupportService {
         return {
             ...ticket,
             // Map relations
-            customer: ticket.users_support_tickets_customer_idTousers,
-            assignedTo: ticket.users_support_tickets_assigned_to_idTousers,
-            conversation: ticket.chat_conversations,
-            booking: ticket.bookings,
-            venue: ticket.venues,
-            // Map fields if necessary (snake_case -> camelCase is automatic?)
-            // Prisma returns snake_case for DB fields if not mapped in schema.
-            // Schema has properties 'customer_id', etc.
+            customer: ticket.customer,
+            assignedTo: ticket.assigned_to,
+            conversation: ticket.conversation,
+            booking: ticket.booking,
+            venue: ticket.venue,
+            // Map fields
             customerId: ticket.customer_id,
             assignedToId: ticket.assigned_to_id,
             bookingId: ticket.booking_id,
@@ -44,8 +42,8 @@ export class SupportService {
         const tickets = await this.prisma.support_tickets.findMany({
             where,
             include: {
-                users_support_tickets_customer_idTousers: true,
-                users_support_tickets_assigned_to_idTousers: true,
+                customer: true,
+                assigned_to: true,
             },
             orderBy: { created_at: 'desc' },
         });
@@ -57,11 +55,11 @@ export class SupportService {
         const ticket = await this.prisma.support_tickets.findUnique({
             where: { id },
             include: {
-                users_support_tickets_customer_idTousers: true,
-                users_support_tickets_assigned_to_idTousers: true,
-                chat_conversations: true,
-                bookings: true,
-                venues: true,
+                customer: true,
+                assigned_to: true,
+                conversation: true,
+                booking: true,
+                venue: true,
             },
         });
         if (!ticket) throw new NotFoundException('Ticket not found');

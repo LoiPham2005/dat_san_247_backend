@@ -1,0 +1,223 @@
+model tournaments {
+  id                      String                            @id(map: "PK_cb0f885278d12384eb7a81818bc") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at              DateTime                          @default(now()) @db.Timestamp(6)
+  updated_at              DateTime                          @default(now()) @db.Timestamp(6)
+  deleted_at              DateTime?                         @db.Timestamp(6)
+  organizer_id            String                            @db.Uuid
+  venue_id                String                            @db.Uuid
+  name                    String                            @db.VarChar
+  description             String?
+  sport_type              String                            @db.VarChar
+  format                  tournaments_format_enum           @default(SINGLE_ELIMINATION)
+  start_date              DateTime                          @db.Timestamp(6)
+  end_date                DateTime                          @db.Timestamp(6)
+  registration_deadline   DateTime                          @db.Timestamp(6)
+  max_participants        Int
+  current_participants    Int                               @default(0)
+  entry_fee               Decimal                           @default(0) @db.Decimal(10, 2)
+  prize_pool              Decimal                           @default(0) @db.Decimal(15, 2)
+  status                  tournaments_status_enum           @default(PLANNING)
+  rules                   String?
+  social_likes            social_likes[]
+  tournament_brackets     tournament_brackets[]
+  tournament_participants tournament_participants[]
+  users                   users                             @relation(fields: [organizer_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b35a")
+  venues                  venues                            @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d88176e38bb768c1c09d3a5f2e1")
+
+  @@index([organizer_id], map: "IDX_tournaments_organizer_id")
+}
+
+model tournament_participants {
+  id                String                               @id(map: "PK_ac0458cb8e9996c850cd6a49995") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime                             @default(now()) @db.Timestamp(6)
+  updated_at        DateTime                             @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?                            @db.Timestamp(6)
+  tournament_id     String                               @db.Uuid
+  participant_type  tournament_participants_type_enum    @default(INDIVIDUAL)
+  user_id           String?                              @db.Uuid
+  team_id           String?                              @db.Uuid
+  status            tournament_participants_status_enum @default(PENDING)
+  seed              Int?
+  final_rank        Int?
+  tournament_matches tournament_matches[]
+  tournaments       tournaments                          @relation(fields: [tournament_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_134bd3ae6af3823027bc2dc14e2")
+  users             users?                               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8da197d7419af7d5189af0e7cf7")
+
+  @@unique([tournament_id, user_id, team_id], map: "UQ_tournament_participants_id")
+}
+
+model tournament_brackets {
+  id                String                        @id(map: "PK_cc1ceb0c5f149ee16ef32e561e6") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime                      @default(now()) @db.Timestamp(6)
+  updated_at        DateTime                      @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?                     @db.Timestamp(6)
+  tournament_id     String                        @db.Uuid
+  name              String                        @db.VarChar
+  type              tournament_brackets_type_enum @default(SINGLE_ELIMINATION)
+  total_rounds      Int
+  isActive          Boolean                       @default(true)
+  tournament_matches tournament_matches[]
+  tournaments       tournaments                   @relation(fields: [tournament_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6e552bd5d7f921149c2da9e3c13")
+
+  @@index([tournament_id], map: "IDX_tournament_brackets_tournament_id")
+}
+
+model tournament_matches {
+  id                                            String                          @id(map: "PK_f11e646d8043eea991d2e65e015") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                                    DateTime                        @default(now()) @db.Timestamp(6)
+  updated_at                                    DateTime                        @default(now()) @db.Timestamp(6)
+  deleted_at                                    DateTime?                       @db.Timestamp(6)
+  bracket_id                                    String                          @db.Uuid
+  round_number                                  Int
+  match_order                                   Int
+  participant1_id                               String?                         @db.Uuid
+  participant2_id                               String?                         @db.Uuid
+  winner_id                                     String?                         @db.Uuid
+  score1                                        Int?
+  score2                                        Int?
+  status                                        tournament_matches_status_enum @default(PENDING)
+  start_at                                      DateTime?                       @db.Timestamp(6)
+  bracket_tournament_bracketsTobooking_waitlist tournament_brackets             @relation(fields: [bracket_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_58acc0adca530c0fe77d184b736")
+  participant1                                  tournament_participants?        @relation(fields: [participant1_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_a430584aaefa8337b0d0ead9907")
+}
+
+model match_findings {
+  id                String                           @id(map: "PK_bee6805982cc1e248e94ce94958") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime                         @default(now()) @db.Timestamp(6)
+  updated_at        DateTime                         @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?                        @db.Timestamp(6)
+  organizer_id      String                           @db.Uuid
+  organizer_type    match_findings_organizer_type_enum @default(USER)
+  team_id           String?                          @db.Uuid
+  venue_id          String?                          @db.Uuid
+  court_id          String?                          @db.Uuid
+  booking_id        String?                          @db.Uuid
+  sport_type        String                           @db.VarChar
+  challenge_type    match_findings_challenge_type_enum @default(FRIENDLY)
+  title             String                           @db.VarChar
+  description       String?
+  scheduled_at      DateTime                         @db.Timestamp(6)
+  duration_minutes  Int                              @default(60)
+  min_skill_level   Int                              @default(1)
+  max_skill_level   Int                              @default(10)
+  total_participants Int                             @default(1)
+  max_participants  Int                              @default(2)
+  status            match_findings_status_enum       @default(OPEN)
+  location_name     String?                          @db.VarChar
+  latitude          Decimal?                         @db.Decimal(10, 8)
+  longitude         Decimal?                         @db.Decimal(11, 8)
+  is_active         Boolean                          @default(true)
+  bookings          bookings?                        @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1fd354a72670736e4f16592237e")
+  courts            courts?                          @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1fd354a72670736e4f16592237f")
+  users             users                            @relation(fields: [organizer_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ae05fa203154ff54406560965d6")
+  teams             teams?                           @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ae678bf6060c4456c2360eb38c5")
+  venues            venues?                          @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ae678bf6060c4456c2360eb38c6")
+  match_participants match_participants[]
+  match_results     match_results[]
+  chat_conversations chat_conversations[] @relation("chat_conversations_match_finding_idTomatch_findings")
+
+  @@index([status], map: "IDX_match_findings_status")
+  @@index([scheduled_at], map: "IDX_match_findings_scheduled_at")
+}
+
+model match_participants {
+  id                String                           @id(map: "PK_ac0458cb8e9996c850cd6a49998") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime                         @default(now()) @db.Timestamp(6)
+  updated_at        DateTime                         @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?                        @db.Timestamp(6)
+  match_finding_id  String                           @db.Uuid
+  user_id           String                           @db.Uuid
+  status            match_participants_status_enum   @default(PENDING)
+  joined_at         DateTime                         @default(now()) @db.Timestamp(6)
+  match_findings    match_findings                   @relation(fields: [match_finding_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_134bd3ae6af3823027bc2dc14e3")
+  users             users                            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8da197d7419af7d5189af0e7cf8")
+
+  @@unique([match_finding_id, user_id], map: "UQ_db462b64db54418c3e9f457019f")
+}
+
+model match_results {
+  id               String          @id(map: "PK_cc1ceb0c5f149ee16ef32e561e5") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime        @default(now()) @db.Timestamp(6)
+  updated_at       DateTime        @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime?       @db.Timestamp(6)
+  match_finding_id String          @db.Uuid
+  booking_id       String?         @db.Uuid
+  winner_id        String?         @db.Uuid
+  score_details    Json?
+  confirmed_by     Json?
+  status           String          @default("PENDING") @db.VarChar
+  bookings         bookings?       @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6e552bd5d7f921149c2da9e3c12")
+  match_findings   match_findings  @relation(fields: [match_finding_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8da197d7419af7d5189af0e7cf9")
+  users            users?          @relation(fields: [winner_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b35d")
+
+  @@index([match_finding_id], map: "IDX_match_results_match_finding_id")
+}
+
+enum tournaments_format_enum {
+  SINGLE_ELIMINATION
+  DOUBLE_ELIMINATION
+  ROUND_ROBIN
+  GROUP_STAGE_KNOCKOUT
+}
+
+enum tournaments_status_enum {
+  PLANNING
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum tournament_participants_type_enum {
+  INDIVIDUAL
+  TEAM
+}
+
+enum tournament_participants_status_enum {
+  PENDING
+  CONFIRMED
+  WAITLISTED
+  ELIMINATED
+  WITHDRAWN
+}
+
+enum tournament_brackets_type_enum {
+  SINGLE_ELIMINATION
+  DOUBLE_ELIMINATION
+  ROUND_ROBIN
+}
+
+enum tournament_matches_status_enum {
+  PENDING
+  LIVE
+  FINISHED
+  CANCELLED
+}
+
+enum match_findings_organizer_type_enum {
+  USER
+  TEAM
+}
+
+enum match_findings_challenge_type_enum {
+  FRIENDLY
+  COMPETITIVE
+  TOURNAMENT
+}
+
+enum match_findings_status_enum {
+  OPEN
+  MATCHED
+  CONFIRMED
+  PLAYING
+  COMPLETED
+  CANCELLED
+}
+
+enum match_participants_status_enum {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}

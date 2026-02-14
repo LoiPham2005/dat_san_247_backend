@@ -1,0 +1,451 @@
+model posts {
+  id              String            @id(map: "PK_2829da14392ef868ef46ed14999") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime          @default(now()) @db.Timestamp(6)
+  updated_at      DateTime          @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime?         @db.Timestamp(6)
+  user_id         String            @db.Uuid
+  venue_id        String?           @db.Uuid
+  booking_id      String?           @db.Uuid
+  type            posts_type_enum   @default(STATUS)
+  content         String?
+  privacy         posts_privacy_enum @default(PUBLIC)
+  location_name   String?           @db.VarChar
+  latitude        Decimal?          @db.Decimal(10, 8)
+  longitude       Decimal?          @db.Decimal(11, 8)
+  likes_count     Int               @default(0)
+  comments_count  Int               @default(0)
+  shares_count    Int               @default(0)
+  is_active       Boolean           @default(true)
+  post_comments   post_comments[]
+  bookings        bookings?         @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1fd354a72670736e4f16592237d")
+  users           users             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ae05fa203154ff54406560965d5")
+  venues          venues?           @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ae678bf6060c4456c2360eb38c4")
+  reports         reports[]
+  social_likes    social_likes[]
+  social_media    social_media[]
+  user_behaviors  user_behaviors[]
+
+  @@index([user_id], map: "IDX_ae05fa203154ff54406560965d")
+}
+
+model post_comments {
+  id             String          @id(map: "PK_3f0d4ccba8868c2ee6404285871") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime        @default(now()) @db.Timestamp(6)
+  updated_at     DateTime        @default(now()) @db.Timestamp(6)
+  deleted_at     DateTime?       @db.Timestamp(6)
+  post_id        String          @db.Uuid
+  user_id        String          @db.Uuid
+  parent_id      String?         @db.Uuid
+  content        String
+  likes_count    Int             @default(0)
+  replies_count  Int             @default(0)
+  is_active      Boolean         @default(true)
+  post_comments  post_comments?  @relation("post_commentsTopost_comments", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0859c288594244df3c5c9a4167e")
+  other_comments post_comments[] @relation("post_commentsTopost_comments")
+  posts          posts           @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_177ec709b4334c449179d71b312")
+  users          users           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_480398687f87c53d1620a6727c9")
+  reports        reports[]
+  social_likes   social_likes[]
+
+  @@index([post_id], map: "IDX_177ec709b4334c449179d71b31")
+  @@index([user_id], map: "IDX_480398687f87c53d1620a6727c")
+}
+
+model social_likes {
+  id          String                       @id(map: "PK_d804825d197607a3c3196901842") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime                     @default(now()) @db.Timestamp(6)
+  user_id     String                       @db.Uuid
+  target_type social_likes_target_type_enum
+  target_id   String                       @db.Uuid
+  post_comments post_comments? @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_post_comments_likes")
+  posts         posts?         @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_posts_likes")
+  reviews       reviews?       @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_reviews_likes")
+  tournaments   tournaments?   @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_tournaments_likes")
+  users       users                        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_68798cb3d7a8d874d1a0455fa87")
+
+  @@unique([user_id, target_type, target_id], map: "UQ_30b265ba4ce372b1ca3bceb1db5")
+  @@index([target_id], map: "IDX_74472714a6014e7a8848243be7")
+  @@index([user_id], map: "IDX_68798cb3d7a8d874d1a0455fa8")
+}
+
+model social_media {
+  id            String    @id(map: "PK_90e382064a1af101613d583f002") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime  @default(now()) @db.Timestamp(6)
+  updated_at    DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime? @db.Timestamp(6)
+  post_id       String    @db.Uuid
+  file_id       String    @db.Uuid
+  display_order Int       @default(0)
+  type          String    @default("image") @db.VarChar(20)
+  posts         posts     @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_30726f3240968282a8e586710a9")
+  files         files     @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_90e382064a1af101613d583f001")
+
+  @@index([post_id], map: "IDX_social_media_post_id")
+  @@index([file_id], map: "IDX_social_media_file_id")
+}
+
+model friendships {
+  id                                      String                   @id(map: "PK_8e31b7ae33e7b0673270de4146c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                              DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at                              DateTime                 @default(now()) @db.Timestamp(6)
+  deleted_at                              DateTime?                @db.Timestamp(6)
+  user_id                                 String                   @db.Uuid
+  friend_id                               String                   @db.Uuid
+  status                                  friendships_status_enum  @default(PENDING)
+  action_user_id                          String                   @db.Uuid
+  requester_id                            String                   @db.Uuid
+  users_friendships_requester_idTousers    users                    @relation("friendships_requester_idTousers", fields: [requester_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_26cecd1a3531c0b041e29ba46e2")
+  users_friendships_friend_idTousers       users                    @relation("friendships_friend_idTousers", fields: [friend_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8e21b7ae33e7b0673270de4146e")
+  users_friendships_user_idTousers         users                    @relation("friendships_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e3ab3269f6915ae8caf181af034")
+
+  @@unique([user_id, friend_id], map: "UQ_a533f47a738b30ffb28687de5ba")
+  @@index([user_id], map: "IDX_friendships_user_id")
+  @@index([friend_id], map: "IDX_friendships_friend_id")
+}
+
+model user_followers {
+  id                                    String    @id(map: "PK_e3ab3269f6915ae8caf181af036") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                            DateTime  @default(now()) @db.Timestamp(6)
+  user_id                               String    @db.Uuid
+  follower_id                           String    @db.Uuid
+  users_user_followers_user_idTousers     users     @relation("user_followers_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_7c32d439b56f87c2fb21dfc3639")
+  users_user_followers_follower_idTousers users     @relation("user_followers_follower_idTousers", fields: [follower_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_89285e4f67f013d21d8d9905b1e")
+
+  @@unique([user_id, follower_id], map: "UQ_30b265ba4ce372b1ca3bceb1db6")
+  @@index([user_id], map: "IDX_7c32d439b56f87c2fb21dfc363")
+  @@index([follower_id], map: "IDX_89285e4f67f013d21d8d9905b1")
+}
+
+model user_blocks {
+  id                                String    @id(map: "PK_7c32d439b56f87c2fb21dfc3632") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                        DateTime  @default(now()) @db.Timestamp(6)
+  user_id                           String    @db.Uuid
+  blocked_user_id                   String    @db.Uuid
+  reason                            String?   @db.VarChar
+  users_user_blocks_user_idTousers   users     @relation("user_blocks_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5681fba4a606b906224559ce309")
+  users_user_blocks_blocked_user_idTousers users     @relation("user_blocks_blocked_user_idTousers", fields: [blocked_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e075d7bacc97b0c80b4cb6455b9")
+
+  @@unique([user_id, blocked_user_id], map: "UQ_c53838c0ce07efc3aba09b4aef1")
+}
+
+model teams {
+  id                 String               @id(map: "PK_cb0f885278d12384eb7a81818bd") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at         DateTime             @default(now()) @db.Timestamp(6)
+  updated_at         DateTime             @default(now()) @db.Timestamp(6)
+  deleted_at         DateTime?            @db.Timestamp(6)
+  owner_id           String               @db.Uuid
+  name               String               @db.VarChar
+  slug               String               @unique(map: "UQ_9fd71efb7abb246a69847399d13") @db.VarChar
+  description        String?              @db.VarChar
+  avatar_url         String?              @db.VarChar
+  cover_url          String?              @db.VarChar
+  sport_type         String               @db.VarChar
+  level              Int                  @default(1)
+  experience_points  Int                  @default(0)
+  rating             Decimal              @default(0) @db.Decimal(3, 2)
+  total_members      Int                  @default(1)
+  max_members        Int                  @default(50)
+  total_matches      Int                  @default(0)
+  total_wins         Int                  @default(0)
+  privacy            teams_privacy_enum   @default(PUBLIC)
+  is_active          Boolean              @default(true)
+  chat_conversations chat_conversations[]
+  match_findings     match_findings[]
+  payout_requests    payout_requests[]
+  reports            reports[]
+  team_invitations   team_invitations[]
+  team_join_requests team_join_requests[]
+  team_members       team_members[]
+  users              users                @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b35b")
+
+  @@index([owner_id], map: "IDX_teams_owner_id")
+}
+
+model team_members {
+  id         String                  @id(map: "PK_ac0458cb8e9996c850cd6a49996") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime                @default(now()) @db.Timestamp(6)
+  updated_at DateTime                @default(now()) @db.Timestamp(6)
+  deleted_at DateTime?               @db.Timestamp(6)
+  team_id    String                  @db.Uuid
+  user_id    String                  @db.Uuid
+  role       team_members_role_enum  @default(MEMBER)
+  status     team_members_status_enum @default(ACTIVE)
+  joined_at  DateTime                @default(now()) @db.Timestamp(6)
+  teams      teams                   @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_134bd3ae6af3823027bc2dc14e0")
+  users      users                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8da197d7419af7d5189af0e7cf1")
+
+  @@unique([team_id, user_id], map: "UQ_db462b64db54418c3e9f457019c")
+}
+
+model team_invitations {
+  id                                           String    @id(map: "PK_cc1ceb0c5f149ee16ef32e561e8") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                                   DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                                   DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at                                   DateTime? @db.Timestamp(6)
+  team_id                                      String    @db.Uuid
+  invited_user_id                              String    @db.Uuid
+  invited_by                                   String    @db.Uuid
+  role                                         String    @default("MEMBER") @db.VarChar
+  status                                       String    @default("PENDING") @db.VarChar
+  expires_at                                   DateTime? @db.Timestamp(6)
+  teams                                        teams     @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6e552bd5d7f921149c2da9e3c15")
+  users_team_invitations_invited_user_idTousers users     @relation("team_invitations_invited_user_idTousers", fields: [invited_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8da197d7419af7d5189af0e7cf3")
+  users_team_invitations_invited_byTousers      users     @relation("team_invitations_invited_byTousers", fields: [invited_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8da197d7419af7d5189af0e7cf4")
+
+  @@index([team_id], map: "IDX_team_invitations_team_id")
+}
+
+model team_join_requests {
+  id                                           String    @id(map: "PK_cc1ceb0c5f149ee16ef32e561e7") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                                   DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                                   DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at                                   DateTime? @db.Timestamp(6)
+  team_id                                      String    @db.Uuid
+  user_id                                      String    @db.Uuid
+  message                                      String?
+  status                                       String    @default("PENDING") @db.VarChar
+  reviewed_at                                  DateTime? @db.Timestamp(6)
+  reviewed_by                                  String?   @db.Uuid
+  teams                                        teams     @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6e552bd5d7f921149c2da9e3c14")
+  users_team_join_requests_user_idTousers      users     @relation("team_join_requests_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8da197d7419af7d5189af0e7cf5")
+  users_team_join_requests_reviewed_byTousers   users?    @relation("team_join_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_8da197d7419af7d5189af0e7cf6")
+
+  @@index([team_id], map: "IDX_team_join_requests_team_id")
+}
+
+model chat_conversations {
+  id                   String                       @id(map: "PK_f8792bc4cc21b79bf0b74070da8") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime                     @default(now()) @db.Timestamp(6)
+  updated_at           DateTime                     @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime?                    @db.Timestamp(6)
+  type                 chat_conversations_type_enum @default(DIRECT)
+  name                 String?                      @db.VarChar(255)
+  avatar_url           String?                      @db.Text
+  description          String?                      @db.Text
+  venue_id             String?                      @db.Uuid
+  is_team              Boolean                      @default(false)
+  team_id              String?                      @db.Uuid
+  match_finding_id     String?                      @db.Uuid
+  max_members          Int                          @default(50)
+  is_muted             Boolean                      @default(false)
+  is_archived          Boolean                      @default(false)
+  allow_members_invite Boolean                      @default(true)
+  last_message_id      String?                      @db.Uuid
+  last_message_at      DateTime?                    @db.Timestamp(6)
+  total_messages       Int                          @default(0)
+  total_members        Int                          @default(0)
+  created_by           String?                      @db.Uuid
+  metadata             Json?
+
+  users                users?              @relation("chat_conversations_created_byTousers", fields: [created_by], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_chat_conversations_created_by")
+  teams                teams?              @relation(fields: [team_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_chat_conversations_team")
+  venues               venues?             @relation(fields: [venue_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_chat_conversations_venue")
+  match_findings       match_findings?     @relation("chat_conversations_match_finding_idTomatch_findings", fields: [match_finding_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_chat_conversations_match_finding")
+  chat_members         chat_members[]
+  chat_messages        chat_messages[]
+  reports              reports[]
+  support_tickets      support_tickets?    @relation("support_tickets_conversationTochat_conversations")
+
+  @@index([type], map: "IDX_chat_conversations_type")
+}
+
+model chat_members {
+  id              String                 @id(map: "PK_589851c586ac15a59462092c0ce") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime               @default(now()) @db.Timestamp(6)
+  updated_at      DateTime               @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime?              @db.Timestamp(6)
+  conversation_id String                 @db.Uuid
+  user_id         String                 @db.Uuid
+  role            chat_members_role_enum @default(MEMBER)
+  joined_at       DateTime               @default(now()) @db.Timestamp(6)
+  last_read_at    DateTime?              @db.Timestamp(6)
+  last_read_message_id String?           @db.Uuid
+  unread_count    Int                    @default(0)
+
+  chat_conversations chat_conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f274364cc4e753ce257fa0e0603")
+  users           users                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_480398687f87c53d1620a6727ca")
+
+  @@unique([conversation_id, user_id], map: "UQ_chat_members_conversation_user")
+}
+
+model chat_messages {
+  id                   String                  @id(map: "PK_e369c3fe5167c4fb372451aa871") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime                @default(now()) @db.Timestamp(6)
+  updated_at           DateTime                @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime?               @db.Timestamp(6)
+  conversation_id      String                  @db.Uuid
+  sender_id            String                  @db.Uuid
+  type                 chat_messages_type_enum @default(TEXT)
+  content              String?                 @db.Text
+  media_urls           Json?
+  booking_id           String?                 @db.Uuid
+  venue_id             String?                 @db.Uuid
+  location             Json?
+  reply_to_message_id  String?                 @db.Uuid
+  is_edited            Boolean                 @default(false)
+  edited_at            DateTime?               @db.Timestamp(6)
+  is_deleted           Boolean                 @default(false)
+  deleted_for_everyone Boolean                 @default(false)
+  metadata             Json?
+
+  chat_conversations   chat_conversations      @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_chat_messages_conversation")
+  users                users                   @relation(fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_chat_messages_sender")
+  reply_to_message     chat_messages?          @relation("chat_messagesTochat_messages", fields: [reply_to_message_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_chat_messages_reply_to")
+  other_messages       chat_messages[]         @relation("chat_messagesTochat_messages")
+  chat_message_reactions chat_message_reactions[]
+  chat_message_receipts chat_message_receipts[]
+  reports              reports[]
+
+  @@index([conversation_id], map: "IDX_chat_messages_conversation_id")
+}
+
+model chat_message_reactions {
+  id            String        @id(map: "PK_3d94aba7e9ed55365f68b5e77fb") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime      @default(now()) @db.Timestamp(6)
+  message_id    String        @db.Uuid
+  user_id       String        @db.Uuid
+  emoji         String        @db.VarChar(10)
+  chat_messages chat_messages @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c755e3741cd46fc5ae3ef06592d")
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_chat_message_reactions_user")
+
+  @@unique([message_id, user_id, emoji], map: "UQ_chat_message_reactions_unique")
+}
+
+model chat_message_receipts {
+  id            String                          @id(map: "PK_3cdef3bcc3a9d5c7a1a47dede37") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime                        @default(now()) @db.Timestamp(6)
+  message_id    String                          @db.Uuid
+  user_id       String                          @db.Uuid
+  status        chat_message_receipts_status_enum @default(SENT)
+  read_at       DateTime?                       @db.Timestamp(6)
+  chat_messages chat_messages                   @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5637e9000a376395a07682cf625")
+  users         users                           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fbcd17ae4cc11d0bd874a3b10da")
+
+  @@index([message_id], map: "IDX_chat_message_receipts_message_id")
+  @@index([user_id], map: "IDX_chat_message_receipts_user_id")
+}
+
+model chat_settings {
+  id                     String    @id(map: "PK_575371debf4dc474f06a33604f3") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at             DateTime  @default(now()) @db.Timestamp(6)
+  updated_at             DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at             DateTime? @db.Timestamp(6)
+  user_id                String    @unique(map: "UQ_8e068c8e712b8672da59dcc7c3d") @db.Uuid
+  mute_all               Boolean   @default(false)
+  show_read_receipts     Boolean   @default(true)
+  show_last_seen         Boolean   @default(true)
+  allow_direct_messages  Boolean   @default(true)
+  blocked_users          Json?
+  users                  users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_97f14942a8ad0b52ae74b5dafbg")
+
+  @@index([user_id], map: "IDX_97f14942a8ad0b52ae74b5dafc")
+}
+
+model chat_templates {
+  id          String                       @id(map: "PK_68c0e1413451321f47ae4c41990") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime                     @default(now()) @db.Timestamp(6)
+  updated_at  DateTime                     @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime?                    @db.Timestamp(6)
+  user_id     String                       @db.Uuid
+  title       String                       @db.VarChar
+  content     String
+  category    chat_templates_category_enum @default(OTHER)
+  is_public   Boolean                      @default(false)
+  users       users                        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_606a66665170e0728f02605e4ad")
+
+  @@index([user_id], map: "IDX_606a66665170e0728f02605e4b")
+}
+
+enum posts_type_enum {
+  STATUS
+  PHOTO
+  VIDEO
+  MATCH_RESULT
+  CHECK_IN
+  ACHIEVEMENT
+}
+
+enum posts_privacy_enum {
+  PUBLIC
+  FRIENDS
+  TEAM
+  PRIVATE
+}
+
+enum social_likes_target_type_enum {
+  POST
+  COMMENT
+  MATCH_RESULT
+  TOURNAMENT
+  REVIEW
+}
+
+enum friendships_status_enum {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
+
+enum teams_privacy_enum {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+}
+
+enum team_members_role_enum {
+  OWNER
+  CAPTAIN
+  VICE_CAPTAIN
+  MEMBER
+}
+
+enum team_members_status_enum {
+  ACTIVE
+  INACTIVE
+  BANNED
+}
+
+enum chat_conversations_type_enum {
+  DIRECT
+  GROUP
+  TEAM
+  VENUE_SUPPORT
+  CUSTOMER_SUPPORT
+}
+
+enum chat_members_role_enum {
+  OWNER
+  ADMIN
+  CAPTAIN
+  VICE_CAPTAIN
+  MEMBER
+}
+
+enum chat_messages_type_enum {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+  AUDIO
+  LOCATION
+  BOOKING
+  VENUE
+  SYSTEM
+}
+
+enum chat_message_receipts_status_enum {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum chat_templates_category_enum {
+  GREETING
+  PRICING
+  AVAILABILITY
+  LOCATION
+  RULES
+  OTHER
+}

@@ -1,0 +1,200 @@
+model bookings {
+  id                     String                   @id(map: "PK_bee6805982cc1e248e94ce94957") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at             DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at             DateTime                 @default(now()) @db.Timestamp(6)
+  deleted_at             DateTime?                @db.Timestamp(6)
+  recurring_booking_id   String?                  @db.Uuid
+  rescheduled_from_id    String?                  @db.Uuid
+  booking_code           String                   @unique(map: "UQ_796e0227e4beff186bdd72ac53b") @db.VarChar
+  check_in_code          String?                  @unique(map: "UQ_b7178816413d9383e2d5bc64e23") @db.VarChar
+  customer_id            String                   @db.Uuid
+  court_id               String                   @db.Uuid
+  venue_id               String                   @db.Uuid
+  booking_date           DateTime                 @db.Date
+  start_time             DateTime                 @db.Time(6)
+  end_time               DateTime                 @db.Time(6)
+  status                 bookings_status_enum     @default(PENDING)
+  total_hours            Decimal                  @db.Decimal(4, 2)
+  price_per_hour         Decimal                  @db.Decimal(10, 2)
+  total_amount           Decimal                  @db.Decimal(10, 2)
+  sub_total              Decimal                  @default(0) @db.Decimal(10, 2)
+  vat_amount             Decimal                  @default(0) @db.Decimal(10, 2)
+  vat_rate               Decimal                  @default(0) @db.Decimal(5, 2)
+  cancellation_deadline  DateTime?                @db.Timestamp(6)
+  commission_amount      Decimal                  @default(0) @db.Decimal(10, 2)
+  platform_fee           Decimal                  @default(0) @db.Decimal(10, 2)
+  deposit_amount         Decimal                  @default(0) @db.Decimal(10, 2)
+  discount_amount        Decimal                  @default(0) @db.Decimal(10, 2)
+  promotion_code         String?                  @db.VarChar
+  refund_amount          Decimal                  @default(0) @db.Decimal(10, 2)
+  cancellation_fee       Decimal                  @default(0) @db.Decimal(10, 2)
+  note                   String?
+  metadata               Json?
+  fraudAnalysis          Json?
+  checked_in_at          DateTime?                @db.Timestamp(6)
+  checked_in_by          String?                  @db.VarChar
+  cancelled_at           DateTime?                @db.Timestamp(6)
+  cancelled_by           String?                  @db.VarChar
+  cancellation_reason    String?
+  ai_fraud_detections    ai_fraud_detections[]
+  booking_addons         booking_addons[]
+  booking_status_history booking_status_history[]
+  courts                 courts                   @relation(fields: [court_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2bd7e9c03db9f51a4765974abb8")
+  bookings               bookings?                @relation("bookingsTobookings", fields: [rescheduled_from_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_622bcd7db875ff4341e36697bd7")
+  other_bookings         bookings[]               @relation("bookingsTobookings")
+  recurring_bookings     recurring_bookings?      @relation(fields: [recurring_booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_76694b38b50057bec3fb59ebdb6")
+  users                  users                    @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8e21b7ae33e7b0673270de4146f")
+  venues                 venues                   @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9285e4f67f013d21d8d9905b1e8")
+  invoices               invoices?
+  match_findings         match_findings[]
+  match_results          match_results[]
+  payments               payments[]
+  posts                  posts[]
+  promotion_usage        promotion_usage[]
+  reviews                reviews[]
+  support_tickets        support_tickets[]        @relation("support_tickets_bookingTobookings")
+  transactions           transactions[]
+
+  @@index([booking_date], map: "IDX_bookings_booking_date")
+  @@index([court_id], map: "IDX_bookings_court_id")
+  @@index([status], map: "IDX_bookings_status")
+  @@index([booking_code], map: "IDX_bookings_booking_code")
+  @@index([customer_id], map: "IDX_bookings_customer_id")
+  @@index([venue_id], map: "IDX_bookings_venue_id")
+  @@index([check_in_code], map: "IDX_bookings_check_in_code")
+}
+
+model booking_addons {
+  id             String         @id(map: "PK_c05d2cec34cc495018cbe6be855") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime       @default(now()) @db.Timestamp(6)
+  updated_at     DateTime       @default(now()) @db.Timestamp(6)
+  deleted_at     DateTime?      @db.Timestamp(6)
+  booking_id     String         @db.Uuid
+  service_id     String         @db.Uuid
+  quantity       Int            @default(1)
+  pricePerUnit   Decimal        @db.Decimal(15, 2)
+  totalPrice     Decimal        @db.Decimal(15, 2)
+  venue_services venue_services @relation(fields: [service_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_0b4ec998ba8e62da8673df0f544")
+  bookings       bookings       @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d8a83c1d8844dc9ed046cd5214f")
+
+  @@index([service_id], map: "IDX_0b4ec998ba8e62da8673df0f54")
+  @@index([booking_id], map: "IDX_d8a83c1d8844dc9ed046cd5214f")
+}
+
+model booking_status_history {
+  id         String                             @id(map: "PK_589851c586ac15a59462092c0cd") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime                           @default(now()) @db.Timestamp(6)
+  updated_at DateTime                           @default(now()) @db.Timestamp(6)
+  deleted_at DateTime?                          @db.Timestamp(6)
+  booking_id String                             @db.Uuid
+  status     booking_status_history_status_enum
+  changed_by String?                            @db.Uuid
+  note       String?
+  users      users?                             @relation(fields: [changed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_17e35271a4468981690333ae72c")
+  bookings   bookings                           @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f274364cc4e753ce257fa0e0602")
+
+  @@index([booking_id], map: "IDX_f274364cc4e753ce257fa0e060")
+}
+
+model booking_waitlist {
+  id           String                       @id(map: "PK_e369c3fe5167c4fb372451aa870") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime                     @default(now()) @db.Timestamp(6)
+  updated_at   DateTime                     @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?                    @db.Timestamp(6)
+  user_id      String                       @db.Uuid
+  court_id     String                       @db.Uuid
+  booking_date DateTime                     @db.Date
+  start_time   DateTime                     @db.Time(6)
+  end_time     DateTime                     @db.Time(6)
+  priority     Int                          @default(1)
+  is_notified  Boolean                      @default(false)
+  status       booking_waitlist_status_enum @default(WAITING)
+  courts       courts                       @relation(fields: [court_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_110125273acfee62f60de5fafbf")
+  users        users                        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ba0ff437a7654b523c3203009a9")
+
+  @@index([court_id], map: "IDX_booking_waitlist_court_id")
+  @@index([user_id], map: "IDX_booking_waitlist_user_id")
+}
+
+model recurring_bookings {
+  id                  String                             @id(map: "PK_2002148c2a9c90455a4281b370d") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime                           @default(now()) @db.Timestamp(6)
+  updated_at          DateTime                           @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?                          @db.Timestamp(6)
+  user_id             String                             @db.Uuid
+  venue_id            String                             @db.Uuid
+  court_id            String                             @db.Uuid
+  repeatType          recurring_bookings_repeattype_enum @default(WEEKLY)
+  days_of_week        Json?
+  start_time          DateTime                           @db.Time(6)
+  end_time            DateTime                           @db.Time(6)
+  start_date          DateTime                           @db.Date
+  end_date            DateTime?                          @db.Date
+  is_active           Boolean                            @default(true)
+  last_generated_date DateTime?                          @db.Date
+  bookings            bookings[]
+  courts              courts                             @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_573718a9853629611b24aa9fca9")
+  users               users                              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_69a8202b934fefca0335bb74048")
+  venues              venues                             @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_dba2a28587e6586e119d46665e2")
+
+  @@index([user_id], map: "IDX_69a8202b934fefca0335bb7404")
+  @@index([venue_id], map: "IDX_dba2a28587e6586e119d46665e")
+}
+
+model refund_policies {
+  id              String         @id(map: "PK_e8ec43bcc719c6925e970073a16") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime       @default(now()) @db.Timestamp(6)
+  updated_at      DateTime       @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime?      @db.Timestamp(6)
+  organization_id String?        @db.Uuid
+  venue_id        String?        @db.Uuid
+  name            String         @db.VarChar
+  description     String?
+  is_active       Boolean        @default(true)
+  venues          venues?        @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_26daee1fc53718836740e79cdc1")
+  organizations   organizations? @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_aa9694aa5bc7f6a2210067a4494")
+  refund_rules    refund_rules[]
+}
+
+model refund_rules {
+  id                  String          @id(map: "PK_9fd82ec3fbe60652128b4135ba2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime        @default(now()) @db.Timestamp(6)
+  updated_at          DateTime        @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?       @db.Timestamp(6)
+  policy_id           String          @db.Uuid
+  cancel_before_hours Int
+  refund_percentage   Decimal         @db.Decimal(5, 2)
+  refund_policies     refund_policies @relation(fields: [policy_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dade55f6831f363b21210150777")
+}
+
+enum bookings_status_enum {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum booking_status_history_status_enum {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum booking_waitlist_status_enum {
+  WAITING
+  CONVERTED
+  EXPIRED
+  CANCELLED
+}
+
+enum recurring_bookings_repeattype_enum {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}

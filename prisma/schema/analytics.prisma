@@ -1,0 +1,44 @@
+model user_behaviors {
+  id          String                         @id(map: "PK_user_behaviors") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime                       @default(now()) @db.Timestamp(6)
+  updated_at  DateTime                       @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime?                      @db.Timestamp(6)
+  user_id     String?                        @db.Uuid
+  action_type user_behaviors_action_type_enum
+  venue_id    String?                        @db.Uuid
+  court_id    String?                        @db.Uuid
+  sport_type  String?                        @db.VarChar
+  metadata    Json?
+  post_id     String?                        @db.Uuid
+  session_id  String?                        @db.VarChar
+  ip_address  String?                        @db.VarChar
+  user_agent  String?
+  user        users?                         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_behaviors_user")
+  venue       venues?                        @relation(fields: [venue_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_user_behaviors_venue")
+  court       courts?                        @relation(fields: [court_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_user_behaviors_court")
+  post        posts?                         @relation(fields: [post_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_user_behaviors_post")
+
+  @@index([user_id])
+  @@index([action_type])
+  @@index([venue_id])
+  @@index([session_id])
+}
+
+enum user_behaviors_action_type_enum {
+  VIEW_VENUE
+  SEARCH
+  BOOK
+  FAVORITE
+  UNFAVORITE
+  REVIEW
+  SHARE
+  CLICK_PROMOTION
+  FILTER_CHANGE
+  SORT_CHANGE
+  VIEW_COURT
+  ADD_TO_CART
+  REMOVE_FROM_CART
+  CHECKOUT_START
+  PAYMENT_COMPLETE
+  CANCEL_BOOKING
+}

@@ -1,0 +1,452 @@
+model ai_assistance {
+  id            String                  @id(map: "PK_ai_assistance") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime                @default(now()) @db.Timestamp(6)
+  updated_at    DateTime                @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime?               @db.Timestamp(6)
+  user_id       String                  @db.Uuid
+  type          ai_assistance_type_enum
+  query         String
+  response      String
+  metadata      Json?
+  performance   Json?
+  users         users                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_assistance_user")
+
+  @@index([user_id])
+  @@index([type])
+}
+
+model ai_conversations {
+  id                                                     String                          @id(map: "PK_ai_conversations") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                                             DateTime                        @default(now()) @db.Timestamp(6)
+  updated_at                                             DateTime                        @default(now()) @db.Timestamp(6)
+  deleted_at                                             DateTime?                       @db.Timestamp(6)
+  user_id                                                String                          @db.Uuid
+  title                                                  String?                         @db.VarChar(255)
+  status                                                 ai_conversations_status_enum    @default(ACTIVE)
+  priority                                               Int                             @default(1)
+  sentiment                                              ai_conversations_sentiment_enum @default(NEUTRAL)
+  context                                                Json?
+  last_message_at                                        DateTime?                       @db.Timestamp(6)
+  escalated_at                                           DateTime?                       @db.Timestamp(6)
+  escalated_to_agent_id                                  String?                         @db.Uuid
+  metadata                                               Json?
+  users_ai_conversations_user_idTousers                  users                           @relation("ai_conversations_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_conversations_user")
+  users_ai_conversations_escalated_to_agent_idTousers    users?                          @relation("ai_conversations_escalated_to_agent_idTousers", fields: [escalated_to_agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ai_conversations_agent")
+  ai_messages                                            ai_messages[]
+
+  @@index([user_id])
+  @@index([status])
+}
+
+model ai_messages {
+  id               String                       @id(map: "PK_ai_messages") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime                     @default(now()) @db.Timestamp(6)
+  updated_at       DateTime                     @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime?                    @db.Timestamp(6)
+  conversation_id  String                       @db.Uuid
+  user_id          String                       @db.Uuid
+  role             String                       @db.VarChar(50)
+  sender_type      ai_messages_sender_type_enum @default(USER)
+  content          String
+  tokens           Int?
+  model            String?                      @db.VarChar(100)
+  finish_reason    String?                      @db.VarChar(50)
+  latency_ms       Int?
+  metadata         Json?
+  ai_conversations ai_conversations             @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_messages_convo")
+  users            users                        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_messages_user")
+
+  @@index([conversation_id])
+  @@index([user_id])
+}
+
+model ai_feedback {
+  id           String    @id(map: "PK_ai_feedback") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  updated_at   DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime? @db.Timestamp(6)
+  user_id      String    @db.Uuid
+  target_type  String    @db.VarChar(50)
+  target_id    String    @db.Uuid
+  rating       Int
+  comment      String?
+  labels       Json?
+  metadata     Json?
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_feedback_user")
+
+  @@index([user_id])
+  @@index([target_type, target_id])
+}
+
+model ai_fraud_detections {
+  id                                               String                               @id(map: "PK_ai_fraud_detections") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                                       DateTime                             @default(now()) @db.Timestamp(6)
+  updated_at                                       DateTime                             @default(now()) @db.Timestamp(6)
+  deleted_at                                       DateTime?                            @db.Timestamp(6)
+  user_id                                          String                               @db.Uuid
+  entity_type                                      String                               @db.VarChar(50)
+  entity_id                                        String                               @db.Uuid
+  risk_score                                       Decimal                              @db.Decimal(5, 2)
+  risk_level                                       ai_fraud_detections_risk_level_enum  @default(LOW)
+  reasons                                          Json
+  detection_rule                                   String?                              @db.VarChar(100)
+  action_taken                                     ai_fraud_detections_action_taken_enum @default(NONE)
+  reviewed_at                                      DateTime?                            @db.Timestamp(6)
+  reviewed_by                                      String?                              @db.Uuid
+  review_note                                      String?
+  metadata                                         Json?
+  bookings                                         bookings                             @relation(fields: [entity_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_fraud_booking")
+  users_ai_fraud_detections_user_idTousers         users                                @relation("ai_fraud_detections_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_fraud_user")
+  users_ai_fraud_detections_reviewed_byTousers     users?                               @relation("ai_fraud_detections_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ai_fraud_reviewer")
+
+  @@index([user_id])
+  @@index([entity_type, entity_id])
+}
+
+model ai_image_analysis {
+  id                String                                   @id(map: "PK_ai_image_analysis") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime                                 @default(now()) @db.Timestamp(6)
+  updated_at        DateTime                                 @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?                                @db.Timestamp(6)
+  file_id           String                                   @unique @db.Uuid
+  user_id           String                                   @db.Uuid
+  objects           Json?
+  labels            Json?
+  moderation_labels Json?
+  moderation_status ai_image_analysis_moderation_status_enum @default(PENDING)
+  description       String?
+  text_extracted    String?
+  quality_score     Decimal?                                 @db.Decimal(5, 2)
+  human_decision    ai_image_analysis_human_decision_enum    @default(PENDING)
+  metadata          Json?
+  files             files                                    @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_image_file")
+  users             users                                    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_image_user")
+
+  @@index([file_id])
+  @@index([user_id])
+}
+
+model ai_interactions {
+  id          String                      @id(map: "PK_ai_interactions") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime                    @default(now()) @db.Timestamp(6)
+  updated_at  DateTime                    @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime?                   @db.Timestamp(6)
+  user_id     String                      @db.Uuid
+  type        ai_interactions_type_enum
+  provider    String                      @db.VarChar(50)
+  model       String                      @db.VarChar(100)
+  prompt      String
+  response    String
+  tokens_in   Int                         @default(0)
+  tokens_out  Int                         @default(0)
+  latency_ms  Int                         @default(0)
+  cost        Decimal                     @default(0) @db.Decimal(10, 6)
+  status      ai_interactions_status_enum @default(COMPLETED)
+  error       String?
+  metadata    Json?
+  users       users                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_interactions_user")
+
+  @@index([user_id])
+  @@index([type])
+}
+
+model ai_models {
+  id                String                 @id(map: "PK_ai_models") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime               @default(now()) @db.Timestamp(6)
+  updated_at        DateTime               @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?              @db.Timestamp(6)
+  name              String                 @unique @db.VarChar(100)
+  provider          ai_models_provider_enum
+  model_id          String                 @db.VarChar(100)
+  type              ai_models_type_enum
+  status            ai_models_status_enum  @default(ACTIVE)
+  context_window    Int?
+  max_output_tokens Int?
+  cost_per_1k_in    Decimal                @default(0) @db.Decimal(10, 6)
+  cost_per_1k_out   Decimal                @default(0) @db.Decimal(10, 6)
+  capabilities      Json?
+  metadata          Json?
+}
+
+model ai_quotas {
+  id              String                @id(map: "PK_ai_quotas") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime              @default(now()) @db.Timestamp(6)
+  updated_at      DateTime              @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime?             @db.Timestamp(6)
+  user_id         String                @db.Uuid
+  feature         String                @db.VarChar(50)
+  limit           Int
+  used            Int                   @default(0)
+  period          ai_quotas_period_enum @default(DAILY)
+  reset_at        DateTime              @db.Timestamp(6)
+  users           users                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_quotas_user")
+
+  @@unique([user_id, feature, period])
+  @@index([user_id])
+}
+
+model ai_recommendations {
+  id                  String                                @id(map: "PK_ai_recommendations") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime                              @default(now()) @db.Timestamp(6)
+  updated_at          DateTime                              @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?                             @db.Timestamp(6)
+  user_id             String                                @db.Uuid
+  recommendation_type ai_recommendations_recommendation_type_enum
+  target_id           String                                @db.Uuid
+  score               Decimal                               @db.Decimal(5, 2)
+  reasoning           String?
+  algorithm           ai_recommendations_algorithm_enum     @default(HYBRID)
+  is_clicked          Boolean                               @default(false)
+  is_converted        Boolean                               @default(false)
+  metadata            Json?
+  promotions          promotions?                            @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_rec_promo")
+  venues              venues?                                @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_rec_venue")
+  courts              courts?                                @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_rec_court")
+  users               users                                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_recommendation_user")
+
+  @@index([user_id])
+  @@index([recommendation_type])
+}
+
+model ai_review_analysis {
+  id           String                            @id(map: "PK_ai_review_analysis") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime                          @default(now()) @db.Timestamp(6)
+  updated_at   DateTime                          @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?                         @db.Timestamp(6)
+  review_id    String                            @unique @db.Uuid
+  sentiment    ai_review_analysis_sentiment_enum @default(NEUTRAL)
+  score        Decimal                           @db.Decimal(5, 2)
+  key_phrases  Json?
+  topics       Json?
+  languages    Json?
+  entities     Json?
+  summary      String?
+  metadata     Json?
+  reviews      reviews                           @relation(fields: [review_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_review_analysis_review")
+
+  @@index([review_id])
+}
+
+model ai_search_rankings {
+  id         String    @id(map: "PK_ai_search_rankings") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  venue_id   String    @db.Uuid
+  score      Decimal   @db.Decimal(10, 6)
+  factors    Json?
+  metadata   Json?
+  venues     venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_rank_venue")
+
+  @@index([venue_id])
+}
+
+model ai_search_queries {
+  id             String    @id(map: "PK_ai_search_queries") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime  @default(now()) @db.Timestamp(6)
+  updated_at     DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at     DateTime? @db.Timestamp(6)
+  user_id        String?   @db.Uuid
+  query_raw      String
+  query_expanded String?
+  filters_parsed Json?
+  intent         String?   @db.VarChar(100)
+  results_count  Int       @default(0)
+  latency_ms     Int?
+  metadata       Json?
+  users          users?    @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_ai_search_user")
+
+  @@index([user_id])
+  @@index([intent])
+}
+
+model ai_smart_notifications {
+  id           String                                     @id(map: "PK_ai_smart_notifications") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime                                   @default(now()) @db.Timestamp(6)
+  updated_at   DateTime                                   @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?                                  @db.Timestamp(6)
+  user_id      String                                     @db.Uuid
+  trigger_type ai_smart_notifications_trigger_type_enum
+  title        String                                     @db.VarChar(255)
+  content      String
+  personalized Boolean                                    @default(true)
+  is_sent      Boolean                                    @default(false)
+  sent_at      DateTime?                                  @db.Timestamp(6)
+  is_clicked   Boolean                                    @default(false)
+  metadata     Json?
+  users        users                                      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_smart_notif_user")
+
+  @@index([user_id])
+  @@index([trigger_type])
+}
+
+model user_preferences_ai {
+  id                    String    @id(map: "PK_user_preferences_ai") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at            DateTime  @default(now()) @db.Timestamp(6)
+  updated_at            DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at            DateTime? @db.Timestamp(6)
+  user_id               String    @unique @db.Uuid
+  personalization_level Int       @default(5)
+  preferred_sports      Json?
+  preferred_venues      Json?
+  preferred_times       Json?
+  budget_range          Json?
+  communication_style   String?   @db.VarChar(50)
+  ai_assistant_enabled  Boolean   @default(true)
+  smart_notifications   Boolean   @default(true)
+  metadata              Json?
+  users                 users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_pref_user")
+
+  @@index([user_id])
+}
+
+enum ai_assistance_type_enum {
+  RECOMMENDATION
+  PREDICTION
+  ANALYSIS
+  FRAUD_DETECTION
+  PRICING_SUGGESTION
+}
+
+enum ai_conversations_sentiment_enum {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  VERY_NEGATIVE
+}
+
+enum ai_conversations_status_enum {
+  ACTIVE
+  RESOLVED
+  ESCALATED
+  CLOSED
+}
+
+enum ai_fraud_detections_action_taken_enum {
+  NONE
+  FLAG
+  BLOCK
+  MANUAL_REVIEW
+}
+
+enum ai_fraud_detections_risk_level_enum {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ai_image_analysis_human_decision_enum {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+enum ai_image_analysis_moderation_status_enum {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+enum ai_interactions_status_enum {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  TIMEOUT
+}
+
+enum ai_interactions_type_enum {
+  CHAT
+  COMPLETION
+  VISION_ANALYSIS
+  EMBEDDING
+  CLASSIFICATION
+  PREDICTION
+  RECOMMENDATION
+  MODERATION
+  CUSTOM
+}
+
+enum ai_messages_sender_type_enum {
+  USER
+  AI
+  HUMAN_AGENT
+}
+
+enum ai_models_provider_enum {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  AWS
+  AZURE
+  COHERE
+  HUGGINGFACE
+  CUSTOM
+  SELF_HOSTED
+}
+
+enum ai_models_status_enum {
+  ACTIVE
+  INACTIVE
+  DEPRECATED
+  TESTING
+}
+
+enum ai_models_type_enum {
+  LLM
+  VISION
+  EMBEDDING
+  CLASSIFICATION
+  REGRESSION
+  RECOMMENDATION
+  FORECASTING
+  ANOMALY
+  NLP
+  CUSTOM
+}
+
+enum ai_quotas_period_enum {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum ai_recommendations_algorithm_enum {
+  COLLABORATIVE_FILTERING
+  CONTENT_BASED
+  HYBRID
+  POPULARITY_BASED
+  LOCATION_BASED
+  TIME_BASED
+  DEEP_LEARNING
+}
+
+enum ai_recommendations_recommendation_type_enum {
+  VENUE
+  COURT
+  TIME_SLOT
+  PROMOTION
+  SIMILAR_USER
+  TEAM
+  MATCH_OPPONENT
+}
+
+enum ai_review_analysis_sentiment_enum {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  VERY_NEGATIVE
+}
+
+enum ai_smart_notifications_trigger_type_enum {
+  PREDICTED_CANCELLATION
+  PRICE_DROP
+  AVAILABILITY_ALERT
+  WEATHER_ALERT
+  PERSONALIZED_OFFER
+}
