@@ -33,6 +33,10 @@ async function bootstrap() {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'], // Default, but Winston will override if injected properly via app.useLogger
     });
 
+    // Cloudflare & Proxy Support
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.set('trust proxy', true);
+
     // Use Winston for system logs
     const { WINSTON_MODULE_NEST_PROVIDER } = await import('nest-winston');
     app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));

@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, MinLength, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -10,4 +10,9 @@ export class LoginDto {
     @IsNotEmpty()
     @MinLength(6)
     password: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    'cf-turnstile-response'?: string;
 }

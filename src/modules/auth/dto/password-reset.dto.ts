@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ForgotPasswordDto {
@@ -6,6 +6,11 @@ export class ForgotPasswordDto {
     @IsEmail()
     @IsNotEmpty()
     email: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    'cf-turnstile-response'?: string;
 }
 
 export class ResetPasswordDto {

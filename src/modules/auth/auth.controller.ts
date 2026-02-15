@@ -3,6 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
+import { TurnstileGuard, CheckTurnstile } from '../../shared/cloudflare/turnstile.guard';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Request } from 'express';
@@ -15,6 +16,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
   @Post('forgot-password')
+  @UseGuards(TurnstileGuard)
+  @CheckTurnstile()
   @ApiOperation({ summary: 'Send OTP for password reset' })
   @ApiResponse({ status: 200, description: 'OTP sent successfully' })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -29,6 +32,8 @@ export class AuthController {
   }
 
   @Post('register')
+  @UseGuards(TurnstileGuard)
+  @CheckTurnstile()
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   async register(@Body() registerDto: RegisterDto) {
@@ -36,6 +41,8 @@ export class AuthController {
   }
 
   @Post('login')
+  @UseGuards(TurnstileGuard)
+  @CheckTurnstile()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'Login successful' })

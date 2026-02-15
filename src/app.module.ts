@@ -42,6 +42,7 @@ import { StorageModule } from './shared/storage/storage.module';
 import { MailModule } from './shared/mail/mail.module';
 import { SmsModule } from './shared/sms/sms.module';
 import { FcmModule } from './shared/fcm/fcm.module';
+import { TurnstileModule } from './shared/cloudflare/turnstile.module';
 
 import { AppController } from './app.controller';
 import { WinstonModule } from 'nest-winston';
@@ -116,6 +117,7 @@ import { PrismaModule } from './prisma/prisma.module';
         // QueueModule,
         FcmModule,
         LoggerModule,
+        TurnstileModule,
 
         // 6. Logging (Winston)
         WinstonModule.forRootAsync({
