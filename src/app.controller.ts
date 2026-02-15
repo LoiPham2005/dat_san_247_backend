@@ -35,4 +35,10 @@ export class AppController {
             memory: process.memoryUsage(),
         };
     }
+
+    @Get('favicon.ico')
+    @ApiOperation({ summary: 'Favicon' })
+    handleFavicon() {
+        return; // Returns 200 OK with empty body. Or we can set status to 204.
+    }
 }
