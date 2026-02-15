@@ -1,7 +1,3 @@
-// ============================================================
-// Payment Module
-// ============================================================
-
 model invoices {
   id             String               @id(map: "PK_668cef7c22a427fd822cc1be3ce") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at     DateTime             @default(now()) @db.Timestamp(6)
@@ -49,44 +45,47 @@ model invoice_items {
 }
 
 model payments {
-  id               String                       @id(map: "PK_69a15349ca5e00f8e36ec17a8f5") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id               String                       @id(map: "PK_197ab7af18c93fbb0c9b28b4a59") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at       DateTime                     @default(now()) @db.Timestamp(6)
   updated_at       DateTime                     @default(now()) @db.Timestamp(6)
   deleted_at       DateTime?                    @db.Timestamp(6)
   booking_id       String                       @db.Uuid
+  transaction_id   String?                      @unique(map: "UQ_3c324ca49dabde7ffc0ef64675d") @db.VarChar
+  amount           Decimal                      @db.Decimal(10, 2)
   payment_method   payments_payment_method_enum
-  amount           Decimal                      @db.Decimal(15, 2)
-  currency         String                       @default("VND") @db.VarChar
   status           payments_status_enum         @default(PENDING)
-  transaction_id   String?                      @db.VarChar
-  payment_gateway  String?                      @db.VarChar
-  gateway_response Json?
   paid_at          DateTime?                    @db.Timestamp(6)
-  refunded_at      DateTime?                    @db.Timestamp(6)
+  gateway_response Json?
   bookings         bookings                     @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a2cecd1a3531c0b041e29ba46e5")
+
+  @@index([status], map: "IDX_32b41cdb985a296213e9a928b5")
+  @@index([transaction_id], map: "IDX_3c324ca49dabde7ffc0ef64675")
+  @@index([booking_id], map: "IDX_e86edf76dc2424f123b9023a2b")
 }
 
 model payout_requests {
-  id                                    String                       @id(map: "PK_ceb5185b63f070e23d65509b0a8") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at                            DateTime                     @default(now()) @db.Timestamp(6)
-  updated_at                            DateTime                     @default(now()) @db.Timestamp(6)
-  deleted_at                            DateTime?                    @db.Timestamp(6)
-  user_id                               String?                      @db.Uuid
-  team_id                               String?                      @db.Uuid
-  amount                                Decimal                      @db.Decimal(15, 2)
-  currency                              String                       @default("VND") @db.VarChar
-  status                                payout_requests_status_enum @default(PENDING)
-  bank_name                             String                       @db.VarChar
-  account_number                        String                       @db.VarChar
-  account_holder                        String                       @db.VarChar
-  processed_at                          DateTime?                    @db.Timestamp(6)
-  processed_by                          String?                      @db.Uuid
-  transaction_id                        String?                      @db.VarChar
-  note                                  String?
-  rejection_reason                      String?
-  users_payout_requests_processed_byTousers users?                   @relation("payout_requests_processed_byTousers", fields: [processed_by], references: [id], onUpdate: NoAction, map: "FK_56702c8b9e89190347707b75553")
-  teams                                 teams?                       @relation(fields: [team_id], references: [id], onUpdate: NoAction, map: "FK_a23c65019f79f674d1b2ab7626h")
-  users_payout_requests_user_idTousers  users?                       @relation("payout_requests_user_idTousers", fields: [user_id], references: [id], onUpdate: NoAction, map: "FK_a3ffb1c0c8416b9fc6f907b7430")
+  id                                        String                      @id(map: "PK_3a6acb302f56ad7dadda35c86b8") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                                DateTime                    @default(now()) @db.Timestamp(6)
+  updated_at                                DateTime                    @default(now()) @db.Timestamp(6)
+  deleted_at                                DateTime?                   @db.Timestamp(6)
+  user_id                                   String                      @db.Uuid
+  team_id                                   String?                     @db.Uuid
+  amount                                    Decimal                     @db.Decimal(15, 2)
+  currency                                  String                      @default("VND") @db.VarChar
+  status                                    payout_requests_status_enum @default(PENDING)
+  bankDetails                               Json
+  admin_note                                String?
+  rejection_reason                          String?
+  proof_image_url                           String?
+  processed_at                              DateTime?                   @db.Timestamp(6)
+  processed_by                              String?                     @db.Uuid
+  teams                                     teams?                      @relation(fields: [team_id], references: [id], onUpdate: NoAction, map: "FK_a23c65019f79f674d1b2ab7626h")
+  users_payout_requests_processed_byTousers users?                      @relation("payout_requests_processed_byTousers", fields: [processed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_56702c8b9e89190347707b75553")
+  users_payout_requests_user_idTousers      users                       @relation("payout_requests_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a3ffb1c0c8416b9fc6f907b7430")
+
+  @@index([team_id], map: "IDX_18579b56a70f869043619ef09d")
+  @@index([status], map: "IDX_b37667129241edaa0b214cf439")
+  @@index([user_id], map: "IDX_e4bcc5d168043756413c5145a3")
 }
 
 model subscription_plans {
@@ -109,7 +108,7 @@ model transactions {
   created_at           DateTime                 @default(now()) @db.Timestamp(6)
   updated_at           DateTime                 @default(now()) @db.Timestamp(6)
   deleted_at           DateTime?                @db.Timestamp(6)
-  user_id              String?                  @db.Uuid
+  user_id              String                   @db.Uuid
   wallet_id            String?                  @db.Uuid
   payment_provider     String?                  @db.VarChar
   type                 transactions_type_enum
@@ -122,7 +121,7 @@ model transactions {
   invoices             invoices?
   transaction_disputes transaction_disputes[]
   bookings             bookings?                @relation(fields: [reference_id], references: [id], onUpdate: NoAction, map: "FK_365b158cbdb7b7bc18bca4004af")
-  users                users?                   @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_e9acc6efa76de013e8c1553ed2b")
+  users                users                    @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_e9acc6efa76de013e8c1553ed2b")
 
   @@index([wallet_id], map: "IDX_0b171330be0cb621f8d73b87a9")
   @@index([type], map: "IDX_2d5fa024a84dceb158b2b95f34")
@@ -191,10 +190,6 @@ model wallets {
   @@index([owner_id], map: "IDX_1ba9a6e15c4a588af6233304ab")
 }
 
-// ============================================================
-// Payment Enums
-// ============================================================
-
 enum invoices_status_enum {
   DRAFT
   ISSUED
@@ -208,9 +203,6 @@ enum invoice_items_type_enum {
   PRODUCT
   SERVICE
   ADDON
-  MEMBERSHIP
-  VOUCHER
-  OTHER
 }
 
 enum payments_payment_method_enum {

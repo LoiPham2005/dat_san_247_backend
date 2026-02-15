@@ -1,7 +1,3 @@
-// ============================================================
-// Content Module
-// ============================================================
-
 model banners {
   id                  String    @id(map: "PK_e9b186b959296fcb940790d31c3") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at          DateTime  @default(now()) @db.Timestamp(6)
@@ -159,10 +155,6 @@ model policies {
   legal_reviewed_at   DateTime?                @db.Timestamp(6)
   contents            contents                 @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_69a15349ca5e00f8e36ec17a8f2")
 }
-
-// ============================================================
-// Content Enums
-// ============================================================
 
 enum contents_status_enum {
   DRAFT

@@ -1,7 +1,3 @@
-// ============================================================
-// System Module
-// ============================================================
-
 model activity_logs {
   id            String                           @id(map: "PK_f25287b6140c5ba18d38776a796") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at    DateTime                         @default(now()) @db.Timestamp(6)
@@ -199,10 +195,6 @@ model system_announcements {
   @@index([start_date], map: "IDX_2c4fd5791188f90182d508d80d")
   @@index([end_date], map: "IDX_eaae77b65b5bade8d5e320114e")
 }
-
-// ============================================================
-// System Enums
-// ============================================================
 
 enum activity_logs_activity_type_enum {
   LOGIN

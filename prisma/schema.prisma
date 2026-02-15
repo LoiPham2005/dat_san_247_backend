@@ -991,10 +991,10 @@ model invoices {
   customer_id    String               @db.Uuid
   amount         Decimal              @db.Decimal(15, 2)
   taxAmount      Decimal              @default(0) @db.Decimal(15, 2)
-  invoice_items  invoice_items[]
   status         invoices_status_enum @default(ISSUED)
   issued_at      DateTime             @default(now()) @db.Timestamp(6)
   pdf_url        String?
+  invoice_items  invoice_items[]
   users          users                @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_65e3145f317bd655481d3f96c74")
   transactions   transactions         @relation(fields: [transaction_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6abcea98097ae84c138c1db301b")
   bookings       bookings?            @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ed9c7aa7846704bbcb648377e8f")
@@ -1007,20 +1007,20 @@ model invoices {
 }
 
 model invoice_items {
-  id           String                 @id(map: "PK_invoice_items") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at   DateTime               @default(now()) @db.Timestamp(6)
-  updated_at   DateTime               @default(now()) @db.Timestamp(6)
-  deleted_at   DateTime?              @db.Timestamp(6)
-  invoice_id   String                 @db.Uuid
+  id           String                  @id(map: "PK_invoice_items") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime                @default(now()) @db.Timestamp(6)
+  updated_at   DateTime                @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?               @db.Timestamp(6)
+  invoice_id   String                  @db.Uuid
   item_type    invoice_items_type_enum
-  reference_id String                 @db.Uuid
-  name         String                 @db.VarChar
-  quantity     Int                    @default(1)
-  unit_price   Decimal                @db.Decimal(15, 2)
-  subtotal     Decimal                @db.Decimal(15, 2)
-  tax_amount   Decimal                @default(0) @db.Decimal(15, 2)
-  total_amount Decimal                @db.Decimal(15, 2)
-  invoices     invoices               @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_invoice_items_invoice")
+  reference_id String                  @db.Uuid
+  name         String                  @db.VarChar
+  quantity     Int                     @default(1)
+  unit_price   Decimal                 @db.Decimal(15, 2)
+  subtotal     Decimal                 @db.Decimal(15, 2)
+  tax_amount   Decimal                 @default(0) @db.Decimal(15, 2)
+  total_amount Decimal                 @db.Decimal(15, 2)
+  invoices     invoices                @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_invoice_items_invoice")
 
   @@index([invoice_id])
   @@index([reference_id])
@@ -1324,20 +1324,20 @@ model posts {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model pricing_rules {
-  id         String                        @id(map: "PK_fda27bb8db4630894decda61ff6") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime                      @default(now()) @db.Timestamp(6)
-  updated_at DateTime                      @default(now()) @db.Timestamp(6)
-  deleted_at DateTime?                     @db.Timestamp(6)
-  court_id   String                        @db.Uuid
+  id          String                        @id(map: "PK_fda27bb8db4630894decda61ff6") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime                      @default(now()) @db.Timestamp(6)
+  updated_at  DateTime                      @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime?                     @db.Timestamp(6)
+  court_id    String                        @db.Uuid
   day_of_week pricing_rules_dayofweek_enum? @map("dayOfWeek")
-  start_time DateTime                      @db.Time(6)
-  end_time   DateTime                      @db.Time(6)
-  price      Decimal                       @db.Decimal(10, 2)
-  start_date DateTime?                     @db.Date
-  end_date   DateTime?                     @db.Date
-  priority   Int                           @default(1)
-  is_active  Boolean                       @default(true)
-  courts     courts                        @relation(fields: [court_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d653351ef20db50f1894c41e6e6")
+  start_time  DateTime                      @db.Time(6)
+  end_time    DateTime                      @db.Time(6)
+  price       Decimal                       @db.Decimal(10, 2)
+  start_date  DateTime?                     @db.Date
+  end_date    DateTime?                     @db.Date
+  priority    Int                           @default(1)
+  is_active   Boolean                       @default(true)
+  courts      courts                        @relation(fields: [court_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d653351ef20db50f1894c41e6e6")
 }
 
 model promotion_contents {
@@ -2207,16 +2207,16 @@ model user_vouchers {
 }
 
 model membership_tiers {
-  id                  String           @id(map: "PK_membership_tiers") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at          DateTime         @default(now()) @db.Timestamp(6)
-  updated_at          DateTime         @default(now()) @db.Timestamp(6)
-  deleted_at          DateTime?        @db.Timestamp(6)
-  name                String           @db.VarChar(100)
-  slug                String           @unique @db.VarChar(100)
+  id                  String    @id(map: "PK_membership_tiers") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at          DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime? @db.Timestamp(6)
+  name                String    @db.VarChar(100)
+  slug                String    @unique @db.VarChar(100)
   description         String?
-  min_spending        Decimal          @default(0) @db.Decimal(15, 2)
-  discount_percentage Decimal          @default(0) @db.Decimal(5, 2)
-  is_active           Boolean          @default(true)
+  min_spending        Decimal   @default(0) @db.Decimal(15, 2)
+  discount_percentage Decimal   @default(0) @db.Decimal(5, 2)
+  is_active           Boolean   @default(true)
   users               users[]
 }
 
@@ -2240,9 +2240,10 @@ model users {
   email_verified_at                                              DateTime?                   @db.Timestamp(6)
   phone_verified_at                                              DateTime?                   @db.Timestamp(6)
   last_login_at                                                  DateTime?                   @db.Timestamp(6)
-  reset_password_otp                                             String?                     @db.VarChar
-  reset_password_expires                                         DateTime?                   @db.Timestamp(6)
   role_id                                                        String?                     @db.Uuid
+  membership_tier_id                                             String?                     @db.Uuid
+  reset_password_expires                                         DateTime?                   @db.Timestamp(6)
+  reset_password_otp                                             String?                     @db.VarChar
   activity_logs                                                  activity_logs[]
   ai_assistance                                                  ai_assistance[]
   ai_conversations_ai_conversations_user_idTousers               ai_conversations[]          @relation("ai_conversations_user_idTousers")
@@ -2320,9 +2321,8 @@ model users {
   user_profiles                                                  user_profiles?
   user_subscriptions                                             user_subscriptions[]
   user_vouchers                                                  user_vouchers[]
-  membership_tier_id                                             String?                     @db.Uuid
-  membership_tier                                                membership_tiers?           @relation(fields: [membership_tier_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_users_membership_tier")
   roles                                                          roles?                      @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a2cecd1a3531c0b041e29ba46e1")
+  membership_tier                                                membership_tiers?           @relation(fields: [membership_tier_id], references: [id], onUpdate: NoAction, map: "FK_users_membership_tier")
   venue_blacklist_venue_blacklist_banned_byTousers               venue_blacklist[]           @relation("venue_blacklist_banned_byTousers")
   venue_blacklist_venue_blacklist_user_idTousers                 venue_blacklist[]           @relation("venue_blacklist_user_idTousers")
   venue_memberships                                              venue_memberships[]
@@ -2397,7 +2397,7 @@ model venue_operating_hours {
   updated_at   DateTime                             @default(now()) @db.Timestamp(6)
   deleted_at   DateTime?                            @db.Timestamp(6)
   venue_id     String                               @db.Uuid
-  day_of_week    venue_operating_hours_dayofweek_enum @map("dayOfWeek")
+  day_of_week  venue_operating_hours_dayofweek_enum @map("dayOfWeek")
   opening_time DateTime                             @db.Time(6)
   closing_time DateTime                             @db.Time(6)
   is_closed    Boolean                              @default(false)
@@ -2447,22 +2447,22 @@ model venue_schedule_exceptions {
 }
 
 model venue_services {
-  id              String           @id(map: "PK_e08e1c489bda9dff4eed304ba67") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at      DateTime         @default(now()) @db.Timestamp(6)
-  updated_at      DateTime         @default(now()) @db.Timestamp(6)
-  deleted_at      DateTime?        @db.Timestamp(6)
-  venue_id        String           @db.Uuid
-  name            String           @db.VarChar
+  id              String                   @id(map: "PK_e08e1c489bda9dff4eed304ba67") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at      DateTime                 @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime?                @db.Timestamp(6)
+  venue_id        String                   @db.Uuid
+  name            String                   @db.VarChar
   description     String?
-  price           Decimal          @db.Decimal(15, 2)
-  unit            String           @default("unit") @db.VarChar
-  is_available    Boolean          @default(true)
+  price           Decimal                  @db.Decimal(15, 2)
+  unit            String                   @default("unit") @db.VarChar
+  is_available    Boolean                  @default(true)
+  track_inventory Boolean                  @default(false)
+  stock_quantity  Int                      @default(0)
+  category        String?                  @db.VarChar
   type            venue_services_type_enum @default(SERVICE)
-  track_inventory Boolean          @default(false)
-  stock_quantity  Int              @default(0)
-  category        String?          @db.VarChar
   booking_addons  booking_addons[]
-  venues          venues           @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8f134ab34b9a2685a785abf3d0f")
+  venues          venues                   @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8f134ab34b9a2685a785abf3d0f")
 
   @@index([venue_id], map: "IDX_8f134ab34b9a2685a785abf3d0")
 }
