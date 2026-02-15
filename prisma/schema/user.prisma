@@ -2,96 +2,13 @@
 // User Module
 // ============================================================
 
-model membership_tiers {
-  id                  String           @id(map: "PK_membership_tiers") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at          DateTime         @default(now()) @db.Timestamp(6)
-  updated_at          DateTime         @default(now()) @db.Timestamp(6)
-  deleted_at          DateTime?        @db.Timestamp(6)
-  name                String           @db.VarChar
-  level               Int
-  description         String?
-  min_spending        Decimal          @default(0) @db.Decimal(15, 2)
-  discount_percentage Decimal          @default(0) @db.Decimal(5, 2)
-  is_active           Boolean          @default(true)
-  users               users[]
-}
-
-model notification_settings {
-  id                   String    @id(map: "PK_d131abd7996c475ef768d4559ba") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at           DateTime  @default(now()) @db.Timestamp(6)
-  updated_at           DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at           DateTime? @db.Timestamp(6)
-  user_id              String    @unique(map: "UQ_91a7ffebe8b406c4470845d4781") @db.Uuid
-  enable_push          Boolean   @default(true)
-  enable_email         Boolean   @default(true)
-  enable_sms           Boolean   @default(false)
-  booking_reminders    Boolean   @default(true)
-  promotional_messages Boolean   @default(true)
-  social_activity      Boolean   @default(true)
-  community_alerts     Boolean   @default(true)
-  users                users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_91a7ffebe8b406c4470845d4781")
-
-  @@index([user_id], map: "IDX_91a7ffebe8b406c4470845d478")
-}
-
-model notifications {
-  id         String                     @id(map: "PK_6a72c3c0f683f6462415e653c3a") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime                   @default(now()) @db.Timestamp(6)
-  updated_at DateTime                   @default(now()) @db.Timestamp(6)
-  deleted_at DateTime?                  @db.Timestamp(6)
-  user_id    String                     @db.Uuid
-  type       notifications_type_enum
-  channel    notifications_channel_enum
-  title      String                     @db.VarChar
-  message    String
-  data       Json?
-  is_read    Boolean                    @default(false)
-  read_at    DateTime?                  @db.Timestamp(6)
-  users      users                      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9a8a82462cab47c73d25f492613")
-
-  @@index([user_id], map: "IDX_9a8a82462cab47c73d25f49261")
-  @@index([is_read], map: "IDX_f12148ce379462ebbb4d06cc13")
-}
-
-model permissions {
-  id               String             @id(map: "PK_920331560282b8bd21bb02290df") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at       DateTime           @default(now()) @db.Timestamp(6)
-  updated_at       DateTime           @default(now()) @db.Timestamp(6)
-  deleted_at       DateTime?          @db.Timestamp(6)
-  name             String             @unique(map: "UQ_43d2c676d379a562baedb413b93") @db.VarChar
-  action           String             @db.VarChar
-  subject          String             @db.VarChar
-  description      String?
-  role_permissions role_permissions[]
-}
-
-model refresh_tokens {
-  id         String    @id(map: "PK_7d8bee0204106019488c4c50ffa") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  updated_at DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at DateTime? @db.Timestamp(6)
-  user_id    String    @db.Uuid
-  token      String    @unique(map: "UQ_3ddc983c5f7bcf132fd8732c3f4") @db.VarChar
-  expires_at DateTime  @db.Timestamp(6)
-  is_revoked Boolean   @default(false)
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3ddc983c5f7bcf132fd8732c3f4")
-}
-
-model role_permissions {
-  role_id       String      @db.Uuid
-  permission_id String      @db.Uuid
-  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1bec494129322e164ecaed5d1e2")
-  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c2a38637fe5cc2e6454ca0d9263")
-
-  @@id([role_id, permission_id], map: "PK_feddad7d5768277e60c40e01cdca")
-}
-
 model roles {
-  id               String             @id(map: "PK_c14b443d431077f89344a3fd262") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id               String             @id(map: "PK_c1433d71a4838793a49dcad46ab") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at       DateTime           @default(now()) @db.Timestamp(6)
   updated_at       DateTime           @default(now()) @db.Timestamp(6)
   deleted_at       DateTime?          @db.Timestamp(6)
-  name             String             @unique(map: "UQ_de8536da4945fe980f4a61900d1") @db.VarChar
+  name             String             @unique(map: "UQ_648e3f5447f725579d7d4ffdfb7") @db.VarChar(100)
+  slug             String             @unique(map: "UQ_881f72bac969d9a00a1a29e1079") @db.VarChar(100)
   description      String?
   is_system        Boolean            @default(false)
   is_active        Boolean            @default(true)
@@ -99,145 +16,27 @@ model roles {
   users            users[]
 }
 
-model user_achievements {
-  id               String    @id(map: "PK_3d94aba7e9ed55365f68b5e77fa") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at       DateTime  @default(now()) @db.Timestamp(6)
-  updated_at       DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at       DateTime? @db.Timestamp(6)
-  user_id          String    @db.Uuid
-  achievement_type String    @db.VarChar
-  achieved_at      DateTime  @default(now()) @db.Timestamp(6)
-  metadata         Json?
-  users            users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fee0f5b46155b623902fdac1146")
+model role_permissions {
+  role_id       String      @db.Uuid
+  permission_id String      @db.Uuid
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_17022daf3f885f7d35423e9971e")
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, map: "FK_178199805b901ccd220ab7740ec")
 
-  @@unique([user_id, achievement_type], map: "UQ_fee0f5b46155b623902fdac1146")
+  @@id([role_id, permission_id], map: "PK_25d24010f53bb80b78e412c9656")
+  @@index([permission_id], map: "IDX_17022daf3f885f7d35423e9971")
+  @@index([role_id], map: "IDX_178199805b901ccd220ab7740e")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model user_behaviors {
-  id          String                          @id(map: "PK_c345f97744cae055a1777e02c4c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at  DateTime                        @default(now()) @db.Timestamp(6)
-  updated_at  DateTime                        @default(now()) @db.Timestamp(6)
-  deleted_at  DateTime?                       @db.Timestamp(6)
-  user_id     String?                         @db.Uuid
-  session_id  String?                         @db.VarChar
-  action_type user_behaviors_action_type_enum
-  entity_type String?                         @db.VarChar
-  entity_id   String?                         @db.Uuid
-  venue_id    String?                         @db.Uuid
-  court_id    String?                         @db.Uuid
-  metadata    Json?
-  users       users?                          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9dc2815b94a502c999a5dcf98c3")
-  venues      venues?                         @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e9b90dd84859fa08f74b984a8e2")
-  courts      courts?                         @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f3b90dd84859fa08f74b984a8e3")
-
-  @@index([session_id], map: "IDX_1ff142bde33c36cc6c680e626f")
-  @@index([user_id], map: "IDX_9dc2815b94a502c999a5dcf98c")
-  @@index([action_type], map: "IDX_d98de4d066c4bc68d2a71f1db1")
-  @@index([venue_id], map: "IDX_e9b90dd84859fa08f74b984a8e")
-}
-
-model user_devices {
-  id             String    @id(map: "PK_c9e7e648903a9e537347aba4371") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at     DateTime  @default(now()) @db.Timestamp(6)
-  updated_at     DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at     DateTime? @db.Timestamp(6)
-  user_id        String    @db.Uuid
-  device_token   String    @db.VarChar
-  device_type    String    @db.VarChar(50)
-  os_version     String?   @db.VarChar(50)
-  app_version    String?   @db.VarChar(50)
-  last_active_at DateTime  @default(now()) @db.Timestamp(6)
-  is_active      Boolean   @default(true)
-  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_28bd79e1b3f7c1168f0904ce241")
-
-  @@index([user_id], map: "IDX_28bd79e1b3f7c1168f0904ce24")
-}
-
-model user_points {
-  id                     String    @id(map: "PK_b91f00258263b9d728c7b320674") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at             DateTime  @default(now()) @db.Timestamp(6)
-  updated_at             DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at             DateTime? @db.Timestamp(6)
-  user_id                String    @unique(map: "REL_b63a87a96091c755b78a75eecb") @db.Uuid
-  total_points           Int       @default(0)
-  available_points       Int       @default(0)
-  spent_points           Int       @default(0)
-  expired_points         Int       @default(0)
-  lifetime_points        Int       @default(0)
-  last_transaction_at    DateTime? @db.Timestamp(6)
-  points_to_next_tier    Int?
-  potential_points_boost Decimal?  @db.Decimal(5, 2)
-  users                  users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b63a87a96091c755b78a75eecbc")
-
-  @@index([user_id], map: "IDX_b63a87a96091c755b78a75eecb")
-}
-
-model user_preferences_ai {
-  id                    String    @id(map: "PK_4266df2629612094b7584b7f974") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at            DateTime  @default(now()) @db.Timestamp(6)
-  updated_at            DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at            DateTime? @db.Timestamp(6)
-  user_id               String    @unique(map: "REL_cee5459245f652b75eb2759b4c") @db.Uuid
-  preferred_sport_types Json?
-  preferred_time_slots  Json?
-  preferred_price_range Json?
-  preferred_regions     Json?
-  skill_levels          Json?
-  notification_frequency String    @default("NORMAL") @db.VarChar
-  ai_personality        String    @default("FRIENDLY") @db.VarChar
-  data_sharing_enabled  Boolean   @default(true)
-  users                 users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cee5459245f652b75eb2759b4c2")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model user_profiles {
-  id                 String    @id(map: "PK_1ec6662219f4605723f1e41b6cb") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at         DateTime  @default(now()) @db.Timestamp(6)
-  updated_at         DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at         DateTime? @db.Timestamp(6)
-  user_id            String    @unique(map: "REL_6ca9503d77ae39b4b5a6cc3ba8") @db.Uuid
-  bio                String?
-  hobbies            Json?
-  achievements       Json?
-  skill_score        Int       @default(0)
-  is_verified        Boolean   @default(false)
-  verification_date  DateTime? @db.Timestamp(6)
-  total_followers    Int       @default(0)
-  total_following    Int       @default(0)
-  total_posts        Int       @default(0)
-  is_profile_public  Boolean   @default(true)
-  show_email         Boolean   @default(false)
-  show_phone         Boolean   @default(false)
-  preferred_language String    @default("vi") @db.VarChar
-  timezone           String    @default("Asia/Ho_Chi_Minh") @db.VarChar
-  users              users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6ca9503d77ae39b4b5a6cc3ba82")
-
-  @@index([skill_score], map: "IDX_291785d7eac9a6f6e4c88fb1d6")
-  @@index([is_verified], map: "IDX_44530b0e0f8f72d42efaad1c03")
-  @@index([user_id], map: "IDX_6ca9503d77ae39b4b5a6cc3ba8")
-}
-
-model user_subscriptions {
-  id                 String                         @id(map: "PK_9e928b0954e51705ab44988812c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at         DateTime                       @default(now()) @db.Timestamp(6)
-  updated_at         DateTime                       @default(now()) @db.Timestamp(6)
-  deleted_at         DateTime?                      @db.Timestamp(6)
-  user_id            String                         @db.Uuid
-  plan_id            String                         @db.Uuid
-  status             user_subscriptions_status_enum @default(PENDING)
-  start_date         DateTime                       @db.Timestamp(6)
-  end_date           DateTime                       @db.Timestamp(6)
-  cancel_at_period_end Boolean                      @default(false)
-  canceled_at        DateTime?                      @db.Timestamp(6)
-  payment_method_id  String?                        @db.VarChar
-  subscription_plans subscription_plans             @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_fe0520c7b2c1c57924460864911")
-  users                users                          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0641da02314913e28f6131310e5")
-
-  @@index([user_id], map: "IDX_0641da02314913e28f6131310e")
-  @@index([status], map: "IDX_5970e6723936d28477041ebf85")
-  @@index([end_date], map: "IDX_f03121e46d2dbaf2d2a8462a77")
-  @@index([plan_id], map: "IDX_fe0520c7b2c1c5792446086491")
+model permissions {
+  id               String             @id(map: "PK_920331560282b8bd21bb02290df") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime           @default(now()) @db.Timestamp(6)
+  updated_at       DateTime           @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime?          @db.Timestamp(6)
+  slug             String             @unique(map: "UQ_d090ad82a0e97ce764c06c7b312") @db.VarChar(100)
+  resource         String             @db.VarChar(100)
+  action           String             @db.VarChar(50)
+  description      String?
+  role_permissions role_permissions[]
 }
 
 model users {
@@ -263,7 +62,6 @@ model users {
   reset_password_otp                                             String?                     @db.VarChar
   reset_password_expires                                         DateTime?                   @db.Timestamp(6)
   role_id                                                        String?                     @db.Uuid
-  membership_tier_id                                             String?                     @db.Uuid
   activity_logs                                                  activity_logs[]
   ai_assistance                                                  ai_assistance[]
   ai_conversations_ai_conversations_user_idTousers               ai_conversations[]          @relation("ai_conversations_user_idTousers")
@@ -341,59 +139,224 @@ model users {
   user_profiles                                                  user_profiles?
   user_subscriptions                                             user_subscriptions[]
   user_vouchers                                                  user_vouchers[]
-  venue_blacklist                                                venue_blacklist[]
+  membership_tier_id                                             String?                     @db.Uuid
+  membership_tier                                                membership_tiers?           @relation(fields: [membership_tier_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_users_membership_tier")
+  roles                                                          roles?                      @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a2cecd1a3531c0b041e29ba46e1")
+  venue_blacklist_venue_blacklist_banned_byTousers               venue_blacklist[]           @relation("venue_blacklist_banned_byTousers")
+  venue_blacklist_venue_blacklist_user_idTousers                 venue_blacklist[]           @relation("venue_blacklist_user_idTousers")
   venue_memberships                                              venue_memberships[]
   venue_staff                                                    venue_staff[]
   venue_verifications                                            venue_verifications[]
-  roles                                                          roles?                      @relation(fields: [role_id], references: [id], onUpdate: NoAction, map: "FK_fe0520c7b2c1c57924460864912")
-  membership_tier                                                membership_tiers?           @relation(fields: [membership_tier_id], references: [id], onUpdate: NoAction, map: "FK_fe0520c7b2c1c57924460864913")
+  venues                                                         venues[]
+}
 
-  @@index([email], map: "IDX_97672ac88f789774dd47f7c8be")
-  @@index([username], map: "IDX_fe0bb3f6520ee0469504521e71")
+model user_profiles {
+  id                 String    @id(map: "PK_1ec6662219f4605723f1e41b6cb") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at         DateTime  @default(now()) @db.Timestamp(6)
+  updated_at         DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at         DateTime? @db.Timestamp(6)
+  user_id            String    @unique(map: "UQ_6ca9503d77ae39b4b5a6cc3ba88") @db.Uuid
+  bio                String?
+  cover_url          String?
+  is_verified        Boolean   @default(false)
+  referral_code      String?   @unique(map: "UQ_892ec8bf9cfd5d33d5009085c56") @db.VarChar
+  referred_by        String?   @db.Uuid
+  favorite_sports    Json?
+  skill_levels       Json?
+  latitude           Decimal?  @db.Decimal(10, 8)
+  longitude          Decimal?  @db.Decimal(11, 8)
+  rank_score         Int       @default(1000)
+  skill_score        Int       @default(1)
+  level              Int       @default(1)
+  experience_points  Int       @default(0)
+  reliability_score  Int       @default(100)
+  total_matches      Int       @default(0)
+  total_wins         Int       @default(0)
+  total_bookings     Int       @default(0)
+  total_teams        Int       @default(0)
+  total_friends      Int       @default(0)
+  total_followers    Int       @default(0)
+  total_following    Int       @default(0)
+  total_posts        Int       @default(0)
+  is_profile_public  Boolean   @default(true)
+  show_email         Boolean   @default(false)
+  show_phone         Boolean   @default(false)
+  preferred_language String    @default("vi") @db.VarChar
+  timezone           String    @default("Asia/Ho_Chi_Minh") @db.VarChar
+  users              users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6ca9503d77ae39b4b5a6cc3ba88")
+
+  @@index([skill_score], map: "IDX_291785d7eac9a6f6e4c88fb1d6")
+  @@index([is_verified], map: "IDX_44530b0e0f8f72d42efaad1c03")
+  @@index([user_id], map: "IDX_6ca9503d77ae39b4b5a6cc3ba8")
+}
+
+model user_devices {
+  id             String    @id(map: "PK_c9e7e648903a9e537347aba4371") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime  @default(now()) @db.Timestamp(6)
+  updated_at     DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at     DateTime? @db.Timestamp(6)
+  user_id        String    @db.Uuid
+  fcm_token      String
+  device_type    String?   @db.VarChar
+  device_model   String?   @db.VarChar
+  os_version     String?   @db.VarChar
+  app_version    String?   @db.VarChar
+  is_active      Boolean   @default(true)
+  last_active_at DateTime  @default(now()) @db.Timestamp(6)
+  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_28bd79e1b3f7c1168f0904ce241")
+
+  @@index([user_id], map: "IDX_28bd79e1b3f7c1168f0904ce24")
+}
+
+model notification_settings {
+  id                   String    @id(map: "PK_d131abd7996c475ef768d4559ba") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime? @db.Timestamp(6)
+  user_id              String    @unique(map: "UQ_91a7ffebe8b406c4470845d4781") @db.Uuid
+  enable_push          Boolean   @default(true)
+  enable_email         Boolean   @default(true)
+  enable_sms           Boolean   @default(false)
+  booking_reminders    Boolean   @default(true)
+  promotional_messages Boolean   @default(true)
+  social_activity      Boolean   @default(true)
+  community_alerts     Boolean   @default(true)
+  users                users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_91a7ffebe8b406c4470845d4781")
+
+  @@index([user_id], map: "IDX_91a7ffebe8b406c4470845d478")
+}
+
+model refresh_tokens {
+  id         String    @id(map: "PK_7d8bee0204106019488c4c50ffa") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  user_id    String    @db.Uuid
+  token      String    @unique(map: "UQ_4542dd2f38a61354a040ba9fd57")
+  expires_at DateTime  @db.Timestamp(6)
+  is_revoked Boolean   @default(false)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3ddc983c5f7bcf132fd8732c3f4")
+}
+
+model user_achievements {
+  id               String    @id(map: "PK_3d94aba7e9ed55365f68b5e77fa") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime  @default(now()) @db.Timestamp(6)
+  updated_at       DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime? @db.Timestamp(6)
+  user_id          String    @db.Uuid
+  achievement_type String    @db.VarChar(100)
+  name             String    @db.VarChar(255)
+  description      String?
+  icon_url         String?
+  earned_at        DateTime  @default(now()) @db.Timestamp(6)
+  users            users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c755e3741cd46fc5ae3ef06592c")
+
+  @@unique([user_id, achievement_type], map: "UQ_fee0f5b46155b623902fdac1146")
+}
+
+model user_behaviors {
+  id          String                          @id(map: "PK_c345f97744cae055a1777e02c4c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime                        @default(now()) @db.Timestamp(6)
+  updated_at  DateTime                        @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime?                       @db.Timestamp(6)
+  user_id     String?                         @db.Uuid
+  action_type user_behaviors_action_type_enum
+  venue_id    String?                         @db.Uuid
+  court_id    String?                         @db.Uuid
+  sport_type  String?                         @db.VarChar
+  metadata    Json?
+  session_id  String?                         @db.VarChar
+  ip_address  String?                         @db.VarChar
+  user_agent  String?
+  users       users?                          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9dc2815b94a502c999a5dcf98c7")
+  courts      courts?                         @relation(fields: [court_id], references: [id], onUpdate: NoAction, map: "FK_e1af7262b66d3df158287d51daa")
+  venues      venues?                         @relation(fields: [venue_id], references: [id], onUpdate: NoAction, map: "FK_e9b90dd84859fa08f74b984a8eb")
+
+  @@index([session_id], map: "IDX_1ff142bde33c36cc6c680e626f")
+  @@index([user_id], map: "IDX_9dc2815b94a502c999a5dcf98c")
+  @@index([action_type], map: "IDX_d98de4d066c4bc68d2a71f1db1")
+  @@index([venue_id], map: "IDX_e9b90dd84859fa08f74b984a8e")
+}
+
+model user_blocks {
+  id                                       String    @id(map: "PK_0bae5f5cab7574a84889462187c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                               DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                               DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at                               DateTime? @db.Timestamp(6)
+  user_id                                  String    @db.Uuid
+  blocked_user_id                          String    @db.Uuid
+  reason                                   String?
+  users_user_blocks_user_idTousers         users     @relation("user_blocks_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d4abdbd0c82d04db5b237f22658")
+  users_user_blocks_blocked_user_idTousers users     @relation("user_blocks_blocked_user_idTousers", fields: [blocked_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fdb57b48a77dcae7569297fded7")
+
+  @@unique([user_id, blocked_user_id], map: "UQ_7291e45d0a4d6b8dbfd9b08b7b3")
+}
+
+model user_followers {
+  id                                      String    @id(map: "PK_ee6ca6c8db6c5e06db7727f08d8") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                              DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                              DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at                              DateTime? @db.Timestamp(6)
+  user_id                                 String    @db.Uuid
+  follower_id                             String    @db.Uuid
+  users_user_followers_user_idTousers     users     @relation("user_followers_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a59d62cda8101214445e295cdc8")
+  users_user_followers_follower_idTousers users     @relation("user_followers_follower_idTousers", fields: [follower_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_da722d93356ae3119d6be40d988")
+
+  @@unique([user_id, follower_id], map: "UQ_d7b47e785d7dbc74b2f22f30045")
+}
+
+model user_points {
+  id                     String    @id(map: "PK_b91f00258263b9d728c7b320674") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at             DateTime  @default(now()) @db.Timestamp(6)
+  updated_at             DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at             DateTime? @db.Timestamp(6)
+  user_id                String    @unique(map: "UQ_b63a87a96091c755b78a75eecbc") @db.Uuid
+  total_points           Int       @default(0)
+  lifetime_earned_points Int       @default(0)
+  tier                   String    @default("BRONZE") @db.VarChar
+  users                  users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b63a87a96091c755b78a75eecbc")
+
+  @@index([user_id], map: "IDX_b63a87a96091c755b78a75eecb")
+}
+
+model point_transactions {
+  id           String                       @id(map: "PK_ceb5185b63f070e23d65509b0a7") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime                     @default(now()) @db.Timestamp(6)
+  updated_at   DateTime                     @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?                    @db.Timestamp(6)
+  user_id      String                       @db.Uuid
+  points       Int
+  type         point_transactions_type_enum
+  description  String?
+  reference_id String?                      @db.VarChar
+  users        users                        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_56702c8b9e89190347707b75552")
+
+  @@index([user_id], map: "IDX_56702c8b9e89190347707b7555")
+}
+
+model membership_tiers {
+  id                  String           @id(map: "PK_membership_tiers") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime         @default(now()) @db.Timestamp(6)
+  updated_at          DateTime         @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?        @db.Timestamp(6)
+  name                String           @db.VarChar(100)
+  slug                String           @unique @db.VarChar(100)
+  description         String?
+  min_spending        Decimal          @default(0) @db.Decimal(15, 2)
+  discount_percentage Decimal          @default(0) @db.Decimal(5, 2)
+  is_active           Boolean          @default(true)
+  users               users[]
 }
 
 // ============================================================
 // User Enums
 // ============================================================
 
-enum notifications_channel_enum {
-  PUSH
-  EMAIL
-  SMS
-  IN_APP
-}
-
-enum notifications_type_enum {
-  BOOKING_CONFIRMATION
-  BOOKING_REMINDER
-  PAYMENT_SUCCESS
-  PAYMENT_FAILED
-  PROMOTION
-  SYSTEM_ANNOUNCEMENT
-  SOCIAL_ACTIVITY
-  SOCIAL_FRIEND_REQUEST
-  SOCIAL_MESSAGE
-  SUPPORT_TICKET_UPDATE
-}
-
-enum user_behaviors_action_type_enum {
-  VIEW_VENUE
-  VIEW_COURT
-  SEARCH
-  CLICK_BANNER
-  FAVORITE_TOGGLE
-  SHARE
-  BOOKING_START
-  BOOKING_CANCEL
-  REVIEW_POST
-  AI_CHAT
-}
-
-enum user_subscriptions_status_enum {
-  ACTIVE
-  EXPIRED
-  CANCELLED
+enum users_kyc_status_enum {
+  UNVERIFIED
   PENDING
+  VERIFIED
+  REJECTED
 }
 
 enum users_gender_enum {
@@ -402,9 +365,28 @@ enum users_gender_enum {
   OTHER
 }
 
-enum users_kyc_status_enum {
-  UNVERIFIED
-  PENDING
-  VERIFIED
-  REJECTED
+enum user_behaviors_action_type_enum {
+  VIEW_VENUE
+  SEARCH
+  BOOK
+  FAVORITE
+  UNFAVORITE
+  REVIEW
+  SHARE
+  CLICK_PROMOTION
+  FILTER_CHANGE
+  SORT_CHANGE
+  VIEW_COURT
+  ADD_TO_CART
+  REMOVE_FROM_CART
+  CHECKOUT_START
+  PAYMENT_COMPLETE
+  CANCEL_BOOKING
+}
+
+enum point_transactions_type_enum {
+  EARN
+  REDEEM
+  EXPIRE
+  REFUND
 }

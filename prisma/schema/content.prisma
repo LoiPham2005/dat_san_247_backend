@@ -2,22 +2,53 @@
 // Content Module
 // ============================================================
 
-model blog_posts {
-  id              String    @id(map: "PK_5bf5782109cfe8fe15085919807") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at      DateTime  @default(now()) @db.Timestamp(6)
-  updated_at      DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at      DateTime? @db.Timestamp(6)
-  content_id      String    @unique(map: "REL_5bf5782109cfe8fe1508591980") @db.Uuid
-  featured_image  String?   @db.VarChar
-  read_time       Int?
-  view_count      Int       @default(0)
-  share_count     Int       @default(0)
-  is_commentable  Boolean   @default(true)
-  allow_reactions Boolean   @default(true)
-  contents        contents  @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5bf5782109cfe8fe15085919807")
+model banners {
+  id                  String    @id(map: "PK_e9b186b959296fcb940790d31c3") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at          DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime? @db.Timestamp(6)
+  content_id          String    @unique(map: "REL_5d9b6291c71e9906b152831796") @db.Uuid
+  position            String    @db.VarChar(50)
+  type                String    @db.VarChar(50)
+  mobile_file_id      String?   @db.Uuid
+  mobile_image_url    String?   @db.VarChar
+  action_type         String    @default("NONE") @db.VarChar
+  action_url          String?   @db.VarChar
+  action_venue_id     String?   @db.VarChar
+  action_promotion_id String?   @db.VarChar
+  auto_slide          Boolean   @default(true)
+  slide_duration      Int?
+  start_date          DateTime  @db.Timestamp(6)
+  end_date            DateTime? @db.Timestamp(6)
+  display_on_pages    Json?
+  impressions         Int       @default(0)
+  clicks              Int       @default(0)
+  ctr                 Decimal   @default(0) @db.Decimal(5, 2)
+  contents            contents  @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5d9b6291c71e9906b1528317969")
+  files               files?    @relation(fields: [mobile_file_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_cc75e5855a914f98b2548c3d3cd")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model blog_posts {
+  id                String                   @id(map: "PK_dd2add25eac93daefc93da9d387") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at        DateTime                 @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?                @db.Timestamp(6)
+  content_id        String                   @unique(map: "REL_1d8b6fdbdc3b535c7371e36ce8") @db.Uuid
+  category          blog_posts_category_enum
+  author            String                   @db.VarChar
+  author_avatar     String?                  @db.VarChar
+  reading_time      Int                      @default(0)
+  table_of_contents Json?
+  canonical_url     String?                  @db.VarChar
+  related_posts     String?
+  likes             Int                      @default(0)
+  comments          Int                      @default(0)
+  bookmarks         Int                      @default(0)
+  last_edited_at    DateTime?                @db.Timestamp(6)
+  published_at      DateTime                 @default(now()) @db.Timestamp(6)
+  contents          contents                 @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1d8b6fdbdc3b535c7371e36ce89")
+}
+
 model contents {
   id                 String                        @id(map: "PK_b7c504072e537532d7080c54fac") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at         DateTime                      @default(now()) @db.Timestamp(6)
@@ -117,23 +148,16 @@ model policies {
   updated_at          DateTime                 @default(now()) @db.Timestamp(6)
   deleted_at          DateTime?                @db.Timestamp(6)
   content_id          String                   @unique(map: "REL_69a15349ca5e00f8e36ec17a8f") @db.Uuid
-  type                String                   @db.VarChar(50)
-  version             String                   @db.VarChar(20)
+  policyType          policies_policytype_enum
+  version             String                   @db.VarChar
   effective_date      DateTime                 @db.Timestamp(6)
-  is_mandatory        Boolean                  @default(true)
+  previous_version_id String?                  @db.VarChar
+  requires_acceptance Boolean                  @default(false)
+  accepted_count      Int                      @default(0)
+  legal_reviewed      Boolean                  @default(false)
+  legal_reviewed_by   String?                  @db.VarChar
   legal_reviewed_at   DateTime?                @db.Timestamp(6)
   contents            contents                 @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_69a15349ca5e00f8e36ec17a8f2")
-}
-
-model promotion_contents {
-  id            String   @id(map: "PK_promotion_contents") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at    DateTime @default(now()) @db.Timestamp(6)
-  promotion_id  String   @db.Uuid
-  content_id    String   @unique(map: "REL_5bf5782109cfe8fe1508591980d") @db.Uuid
-  promotions    promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5bf5782109cfe8fe1508591980c")
-  contents      contents   @relation(fields: [content_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5bf5782109cfe8fe1508591980d")
-
-  @@id([promotion_id, content_id])
 }
 
 // ============================================================
@@ -142,30 +166,61 @@ model promotion_contents {
 
 enum contents_status_enum {
   DRAFT
+  SCHEDULED
   PUBLISHED
   ARCHIVED
-  SCHEDULED
+  DELETED
 }
 
 enum contents_target_audience_enum {
   ALL
-  USERS
-  VENUES
-  GUESTS
+  CUSTOMER
+  OWNER
+  STAFF
+  NEW_USER
+  VIP
+  INACTIVE
 }
 
 enum email_templates_templatetype_enum {
-  TRANSACTIONAL
+  WELCOME
+  BOOKING_CONFIRMATION
+  BOOKING_REMINDER
+  PAYMENT_RECEIPT
+  PASSWORD_RESET
+  REVIEW_REQUEST
+  PROMOTION
+  NEWSLETTER
   MARKETING
+  TRANSACTIONAL
   SYSTEM
-  NOTIFICATION
+  CUSTOM
 }
 
 enum faqs_category_enum {
-  GENERAL
   BOOKING
   PAYMENT
+  CANCELLATION
   ACCOUNT
-  TECHNICAL
-  OTHER
+  VENUE
+  GENERAL
+}
+
+enum blog_posts_category_enum {
+  NEWS
+  GUIDE
+  TIPS
+  PROMOTION
+  EVENT
+  INTERVIEW
+  REVIEW
+}
+
+enum policies_policytype_enum {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  REFUND_POLICY
+  CANCELLATION_POLICY
+  COOKIE_POLICY
+  COMMUNITY_GUIDELINES
 }

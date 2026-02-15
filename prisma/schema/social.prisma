@@ -3,193 +3,155 @@
 // ============================================================
 
 model friendships {
-  id                                    String                  @id(map: "PK_08af97d0be72942681757f07bc8") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at                            DateTime                @default(now()) @db.Timestamp(6)
-  updated_at                            DateTime                @default(now()) @db.Timestamp(6)
-  deleted_at                            DateTime?               @db.Timestamp(6)
-  user_id                               String                  @db.Uuid
-  friend_id                             String                  @db.Uuid
-  status                                friendships_status_enum @default(PENDING)
-  requester_id                          String                  @db.Uuid
-  requested_at                          DateTime                @default(now()) @db.Timestamp(6)
-  accepted_at                           DateTime?               @db.Timestamp(6)
-  users_friendships_requester_idTousers users                   @relation("friendships_requester_idTousers", fields: [requester_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_4cf3c68ed4a5a9fde8d4c2b7319")
-  users_friendships_friend_idTousers    users                   @relation("friendships_friend_idTousers", fields: [friend_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_972c6bdd4bc18dda48b8aa4714c")
-  users_friendships_user_idTousers      users                   @relation("friendships_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c73eec6c7e7d5d1f2b3ce8b9002")
+  id                                 String                   @id(map: "PK_091cad75e1b23902fdac1146feh") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                         DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at                         DateTime                 @default(now()) @db.Timestamp(6)
+  deleted_at                         DateTime?                @db.Timestamp(6)
+  user_id                            String                   @db.Uuid
+  friend_id                          String                   @db.Uuid
+  requester_id                       String                   @db.Uuid
+  status                             friendships_status_enum @default(PENDING)
+  action_id                          String?                  @db.Uuid
+  users_friendships_requester_idTousers users                @relation("friendships_requester_idTousers", fields: [requester_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_06c564c515d8cdb40b6f3bfbbb6")
+  users_friendships_friend_idTousers    users                @relation("friendships_friend_idTousers", fields: [friend_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1a3c65019f79f674d1b2ab7626d")
+  users_friendships_user_idTousers      users                @relation("friendships_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bd2726fd31b35443f2245b93ba2")
 
-  @@unique([user_id, friend_id], map: "UQ_a8e4ede8e2df44f3f21f557d379")
+  @@unique([user_id, friend_id], map: "UQ_ea18a0f6e0143f06474aa8cef1g")
 }
 
 model match_findings {
-  id                 String                     @id(map: "PK_f5cd50f5ac2cebcf295c7524e82") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at         DateTime                   @default(now()) @db.Timestamp(6)
-  updated_at         DateTime                   @default(now()) @db.Timestamp(6)
-  deleted_at         DateTime?                  @db.Timestamp(6)
-  user_id            String                     @db.Uuid
-  sport_type         String                     @db.VarChar
-  venue_id           String?                    @db.Uuid
-  court_id           String?                    @db.Uuid
-  preferred_date     DateTime                   @db.Date
-  preferred_time_start DateTime?                @db.Time(6)
-  preferred_time_end   DateTime?                @db.Time(6)
-  team_size            Int?
-  entry_fee            Decimal                  @default(0) @db.Decimal(10, 2)
-  skill_level          String?                  @db.VarChar(50)
-  min_skill_level      Int                      @default(1)
-  max_skill_level      Int                      @default(100)
-  max_distance         Int?
-  description          String?
-  status               match_findings_status_enum @default(OPEN)
-  organizer_team_id    String?                    @db.Uuid
-  venues               venues?                    @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1dde8f92bd05b3b3242160bde05")
-  users                users                      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_30b1aec4e7718cf2262a71e4678")
-  teams                teams?                     @relation(fields: [organizer_team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_841dc86babb3e430a59fe5b15e9")
-  courts               courts?                    @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d1e9f6bd893c3a6e19da007b9a8")
-  match_participants   match_participants[]
-  match_results        match_results[]
-
-  @@index([venue_id], map: "IDX_1dde8f92bd05b3b3242160bde0")
-  @@index([status], map: "IDX_ae6c4ab719ed54673f07a9b183")
-  @@index([sport_type], map: "IDX_e2cbf236e923516779bfff13fb")
+  id                 String                             @id(map: "PK_c1d8b6fdbdc3b535c7371e36ce8") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at         DateTime                           @default(now()) @db.Timestamp(6)
+  updated_at         DateTime                           @default(now()) @db.Timestamp(6)
+  deleted_at         DateTime?                          @db.Timestamp(6)
+  organizer_id       String                             @db.Uuid
+  organizer_type     match_findings_organizer_type_enum @default(USER)
+  venue_id           String?                            @db.Uuid
+  court_id           String?                            @db.Uuid
+  booking_id         String?                            @db.Uuid
+  sport_type         String                             @db.VarChar
+  skill_level        String?                            @db.VarChar(50)
+  match_date         DateTime                           @db.Date
+  start_time         DateTime                           @db.Time(6)
+  end_time           DateTime                           @db.Time(6)
+  min_players        Int                                @default(2)
+  max_players        Int                                @default(10)
+  current_players    Int                                @default(1)
+  description        String?
+  challenge_type     match_findings_challenge_type_enum @default(FRIENDLY)
+  split_type         String                             @default("FAIR") @db.VarChar
+  amount_per_person  Decimal?                           @db.Decimal(10, 2)
+  status             match_findings_status_enum         @default(OPEN)
+  team_id            String?                            @db.Uuid
+  chat_conversations chat_conversations[]
+  bookings           bookings?                          @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_403c65019f79f674d1b2ab7626f")
+  courts             courts?                            @relation(fields: [court_id], references: [id], onUpdate: NoAction, map: "FK_683c918634ad172b538db1a3541")
+  users              users                              @relation(fields: [organizer_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_89462187c0bae5f5cab7574a849")
+  teams              teams?                             @relation(fields: [team_id], references: [id], onUpdate: NoAction, map: "FK_a23c65019f79f674d1b2ab7626j")
+  venues             venues?                            @relation(fields: [venue_id], references: [id], onUpdate: NoAction, map: "FK_cb0f885278d12384eb7a81818c0")
+  match_participants match_participants[]
+  match_results      match_results[]
 }
 
 model match_participants {
-  id                String                        @id(map: "PK_0f10d84d9f1548154d4e59849d2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at        DateTime                      @default(now()) @db.Timestamp(6)
-  updated_at        DateTime                      @default(now()) @db.Timestamp(6)
-  deleted_at        DateTime?                     @db.Timestamp(6)
-  match_finding_id  String                        @db.Uuid
-  user_id           String                        @db.Uuid
-  status            match_participants_status_enum @default(PENDING)
-  joined_at         DateTime                      @default(now()) @db.Timestamp(6)
-  is_organizer      Boolean                       @default(false)
-  match_findings    match_findings                @relation(fields: [match_finding_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5320589b1d5e2bbc24ebb72dfc6")
-  users             users                         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bb0b53928a62088ac805487bb22")
-
-  @@unique([match_finding_id, user_id], map: "UQ_0f10d84d9f1548154d4e59849d2")
-  @@index([match_finding_id], map: "IDX_5320589b1d5e2bbc24ebb72dfc")
-  @@index([user_id], map: "IDX_bb0b53928a62088ac805487bb2")
+  id              String                          @id(map: "PK_091cad75e1b23902fdac1146fei") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime                        @default(now()) @db.Timestamp(6)
+  updated_at      DateTime                        @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime?                       @db.Timestamp(6)
+  match_id        String                          @db.Uuid
+  user_id         String                          @db.Uuid
+  status          match_participants_status_enum @default(PENDING)
+  team_side       String?                         @db.VarChar(10)
+  joined_at       DateTime                        @default(now()) @db.Timestamp(6)
+  match_findings  match_findings                  @relation(fields: [match_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_06c564c515d8cdb40b6f3bfbbb7")
+  users           users                           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1a3c65019f79f674d1b2ab7626e")
 }
 
 model match_results {
-  id                                   String               @id(map: "PK_788799fb3b8324d976620b485f2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at                           DateTime             @default(now()) @db.Timestamp(6)
-  updated_at                           DateTime             @default(now()) @db.Timestamp(6)
-  deleted_at                           DateTime?            @db.Timestamp(6)
-  match_finding_id                     String               @db.Uuid
-  booking_id                           String?              @db.Uuid
-  team_a_id                            String?              @db.Uuid
-  team_b_id                            String?              @db.Uuid
-  team_a_score                         Int                  @default(0)
-  team_b_score                         Int                  @default(0)
-  winner_team_id                       String?              @db.Uuid
-  mvp_user_id                          String?              @db.Uuid
-  status                               match_results_status_enum @default(PENDING)
-  metadata                             Json?
-  bookings                             bookings?            @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_851aadfac73798b5fe411938ea7")
-  match_findings                       match_findings       @relation(fields: [match_finding_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a20ea5393787f62b910347a2ad6")
-  users                                users?               @relation(fields: [mvp_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d0984a27d9926c7f08fb0fb5d59")
-  teams_match_results_team_b_idToteams teams?               @relation("match_results_team_b_idToteams", fields: [team_b_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_daa433ae6674c7a3bc08059aee1")
-  teams_match_results_team_a_idToteams teams?               @relation("match_results_team_a_idToteams", fields: [team_a_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e8a0b9cbe7aacf1f77d02c06409")
+  id                                   String         @id(map: "PK_dd2add25eac93daefc93da9d388") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                           DateTime       @default(now()) @db.Timestamp(6)
+  updated_at                           DateTime       @default(now()) @db.Timestamp(6)
+  deleted_at                           DateTime?      @db.Timestamp(6)
+  match_id                             String?        @db.Uuid
+  booking_id                           String?        @db.Uuid
+  team_a_score                         Int            @default(0)
+  team_b_score                         Int            @default(0)
+  winner_id                            String?        @db.Uuid
+  winner_type                          String?        @db.VarChar(10)
+  team_a_id                            String?        @db.Uuid
+  team_b_id                            String?        @db.Uuid
+  bookings                             bookings?      @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_851aadfac73798b5fe411938ea7")
+  match_findings                       match_findings? @relation(fields: [match_id], references: [id], onUpdate: NoAction, map: "FK_1d8b6fdbdc3b535c7371e36ce90")
+  teams_match_results_team_b_idToteams teams?         @relation("match_results_team_b_idToteams", fields: [team_b_id], references: [id], onUpdate: NoAction, map: "FK_a23c65019f79f674d1b2ab7626l")
+  teams_match_results_team_a_idToteams teams?         @relation("match_results_team_a_idToteams", fields: [team_a_id], references: [id], onUpdate: NoAction, map: "FK_cb0f885278d12384eb7a81818c1")
+  users                                users?         @relation(fields: [winner_id], references: [id], onUpdate: NoAction, map: "FK_e4acc84aaefa8337b0d0ead9910")
   posts                                posts[]
-
-  @@index([match_finding_id], map: "IDX_a20ea5393787f62b910347a2ad")
 }
 
 model post_comments {
-  id             String    @id(map: "PK_2e99e04b4a1b31de6f833c18ced") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at     DateTime  @default(now()) @db.Timestamp(6)
-  updated_at     DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at     DateTime? @db.Timestamp(6)
-  post_id        String    @db.Uuid
-  user_id        String    @db.Uuid
-  content        String
-  likes_count    Int       @default(0)
-  replies_count  Int       @default(0)
-  parent_id      String?   @db.Uuid
-  posts          posts     @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e8ffd07822f03f90f637b13cd59")
-  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f00c80d5a1020449c9c3c18cca1")
-  post_comments  post_comments? @relation("post_commentsTopost_comments", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f00c80d5a1020449c9c3c18cca2")
-  other_post_comments post_comments[] @relation("post_commentsTopost_comments")
+  id            String    @id(map: "PK_e08e1c489bda9dff4eed304ba68") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime  @default(now()) @db.Timestamp(6)
+  updated_at    DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime? @db.Timestamp(6)
+  post_id       String    @db.Uuid
+  user_id       String    @db.Uuid
+  content       String
+  likes_count   Int       @default(0)
+  posts         posts     @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0bbada75e1b23902fdac1146fef")
+  users         users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6879854746f3684a0d9276dcc4b")
 }
 
 model posts {
-  id             String    @id(map: "PK_2829ac61eff60fcec60d7274b9e") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at     DateTime  @default(now()) @db.Timestamp(6)
-  updated_at     DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at     DateTime? @db.Timestamp(6)
-  user_id        String    @db.Uuid
-  venue_id       String?   @db.Uuid
-  booking_id     String?   @db.Uuid
-  match_result_id String?   @db.Uuid
-  content        String?
-  slug           String?   @unique(map: "UQ_54ddf9075260407dcfdd7248574") @db.VarChar
-  title          String?   @db.VarChar
-  media_urls     Json?
-  total_likes    Int       @default(0)
-  total_comments Int       @default(0)
-  total_shares   Int       @default(0)
-  is_reported    Boolean   @default(false)
-  is_hidden      Boolean   @default(false)
-  post_comments  post_comments[]
-  bookings       bookings? @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_251eb4a9c53ca1e38cb8bffe2bc")
-  match_results  match_results? @relation(fields: [match_result_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_906127c93a84fc1ee5d352a934d")
-  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c4f9a7bd77b489e711277ee5981")
-  venues         venues?   @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e84c773559e914f32f3311a2cfc")
-  social_likes   social_likes[]
-
-  @@index([slug], map: "IDX_54ddf9075260407dcfdd724857")
-  @@index([user_id], map: "IDX_c4f9a7bd77b489e711277ee598")
-}
-
-model reports {
-  id                               String                   @id(map: "PK_d9013193989303580053c0b5ef6") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at                       DateTime                 @default(now()) @db.Timestamp(6)
-  updated_at                       DateTime                 @default(now()) @db.Timestamp(6)
-  deleted_at                       DateTime?                @db.Timestamp(6)
-  reporter_id                       String                   @db.Uuid
-  target_id                        String                   @db.Uuid
-  target_type                      reports_target_type_enum
-  reason                           reports_reason_enum
-  description                      String?
-  status                           reports_status_enum      @default(PENDING)
-  action                           String?                  @db.VarChar
-  reviewed_by                      String?                  @db.Uuid
-  reviewed_at                      DateTime?                @db.Timestamp(6)
-  users_reports_reporter_idTousers users                    @relation("reports_reporter_idTousers", fields: [reporter_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9459b9bf907a3807ef7143d2ea6")
-  users_reports_reviewed_byTousers users?                   @relation("reports_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e8fa0bffcaebc921b1e8e42a82f")
-
-  @@index([target_type], map: "IDX_014f581289c87a1735f4011f59")
-  @@index([target_id], map: "IDX_8401422324e7fa80304ed708e0")
-  @@index([reporter_id], map: "IDX_9459b9bf907a3807ef7143d2ea")
-  @@index([status], map: "IDX_dab4d78b3be05c1ca4a626f57f")
+  id              String             @id(map: "PK_cb0f885278d12384eb7a81818c2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime           @default(now()) @db.Timestamp(6)
+  updated_at      DateTime           @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime?          @db.Timestamp(6)
+  user_id         String             @db.Uuid
+  type            posts_type_enum    @default(STATUS)
+  content         String?
+  media_urls      Json?
+  privacy         posts_privacy_enum @default(PUBLIC)
+  likes_count     Int                @default(0)
+  comments_count  Int                @default(0)
+  shares_count    Int                @default(0)
+  location        String?            @db.VarChar
+  venue_id        String?            @db.Uuid
+  booking_id      String?            @db.Uuid
+  match_result_id String?            @db.Uuid
+  team_id         String?            @db.Uuid
+  post_comments   post_comments[]
+  bookings        bookings?          @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_251eb4a9c53ca1e38cb8bffe2bc")
+  match_results   match_results?     @relation(fields: [match_result_id], references: [id], onUpdate: NoAction, map: "FK_a2cecd1a3531c0b041e29ba46e6")
+  teams           teams?             @relation(fields: [team_id], references: [id], onUpdate: NoAction, map: "FK_2f40b36f3917816f01d901e64bf")
+  users           users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a3ffb1c0c8416b9fc6f907b7435")
+  venues          venues?            @relation(fields: [venue_id], references: [id], onUpdate: NoAction, map: "FK_cb0f885278d12384eb7a81818c3")
 }
 
 model social_likes {
-  id         String    @id(map: "PK_bc078cc639e4e6f4770fc93006c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  updated_at DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at DateTime? @db.Timestamp(6)
-  user_id    String    @db.Uuid
-  post_id    String    @db.Uuid
-  emoji      String?   @db.VarChar(10)
-  posts      posts     @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_567a216c0282b8bd21bb02290da")
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_78a1f6bd893c3a6e19da007b9a5")
+  id          String                        @id(map: "PK_8402e5df5a30a229380e83e4f7f") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime                      @default(now()) @db.Timestamp(6)
+  updated_at  DateTime                      @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime?                     @db.Timestamp(6)
+  user_id     String                        @db.Uuid
+  target_type social_likes_target_type_enum
+  target_id   String                        @db.Uuid
+  users       users                         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0b80ce493f939a9e23017f75836")
 
-  @@unique([user_id, post_id], map: "UQ_bc078cc639e4e6f4770fc93006c")
+  @@unique([user_id, target_type, target_id], map: "UQ_8937a630f1fbe3b21ddfca93070")
+  @@index([user_id], map: "IDX_0b80ce493f939a9e23017f7583")
+  @@index([target_id], map: "IDX_1bec494129322e164ecaed5d1e")
+  @@index([target_type], map: "IDX_c2a38637fe5cc2e6454ca0d926")
 }
 
 model social_media {
-  id           String    @id(map: "PK_54ac0fd97432069e7c9ab567f8b") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at   DateTime  @default(now()) @db.Timestamp(6)
-  updated_at   DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at   DateTime? @db.Timestamp(6)
-  owner_id      String    @db.Uuid
-  owner_type    String    @db.VarChar(50)
-  platform     String    @db.VarChar(50)
-  url          String    @db.VarChar
-  is_verified  Boolean   @default(false)
-  files        files?    @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_66a1179057542f940738e0c4bf1")
+  id         String    @id(map: "PK_54ac0fd97432069e7c9ab567f8b") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  owner_type String    @db.VarChar
+  owner_id   String    @db.Uuid
+  file_id    String    @db.Uuid
+  files      files     @relation(fields: [file_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_cfce95f72975cceeb710a4baeea")
 
   @@index([owner_id], map: "IDX_66a1179057542f940738e0c4bf")
   @@index([owner_type], map: "IDX_ebb85a45926cff2bf6a5f3b584")
@@ -201,16 +163,15 @@ model team_invitations {
   updated_at                                    DateTime  @default(now()) @db.Timestamp(6)
   deleted_at                                    DateTime? @db.Timestamp(6)
   team_id                                       String    @db.Uuid
-  invited_user_id                               String?   @db.Uuid
+  invited_user_id                               String    @db.Uuid
   invited_by                                    String    @db.Uuid
-  email                                         String?   @db.VarChar
-  phone                                         String?   @db.VarChar
-  role                                          String    @default("MEMBER") @db.VarChar
-  status                                        team_invitations_status_enum @default(PENDING)
-  expired_at                                    DateTime  @db.Timestamp(6)
-  token                                         String?   @unique(map: "UQ_a63f2648dfc01a18b5fd05fa366") @db.VarChar
+  message                                       String?
+  status                                        String    @default("PENDING") @db.VarChar(20)
+  expires_at                                    DateTime? @db.Timestamp(6)
+  responded_at                                  DateTime? @db.Timestamp(6)
+  token                                         String?   @unique(map: "UQ_team_invitations_token") @db.VarChar
+  users_team_invitations_invited_user_idTousers users     @relation("team_invitations_invited_user_idTousers", fields: [invited_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_20074b16ec7f687510ed9b89eef")
   teams                                         teams     @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_47d9ff0726cf20571e29480a99b")
-  users_team_invitations_invited_user_idTousers users?     @relation("team_invitations_invited_user_idTousers", fields: [invited_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b35c")
   users_team_invitations_invited_byTousers      users     @relation("team_invitations_invited_byTousers", fields: [invited_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_92d21809e16a56887210bb4dbc5")
 
   @@unique([team_id, invited_user_id], map: "UQ_a63f2648dfc01a18b5fd05fa366")
@@ -224,35 +185,40 @@ model team_join_requests {
   team_id                                     String    @db.Uuid
   user_id                                     String    @db.Uuid
   message                                     String?
-  status                                      team_join_requests_status_enum @default(PENDING)
+  status                                      String    @default("PENDING") @db.VarChar(20)
   reviewed_by                                 String?   @db.Uuid
   reviewed_at                                 DateTime? @db.Timestamp(6)
-  teams                                       teams     @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_7d576a1dc563494e7456d612788")
-  users_team_join_requests_user_idTousers     users     @relation("team_join_requests_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bc0b53928a62088ac805487bb23")
+  teams                                       teams     @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_55848c4b1b1c0cd3289de824cd6")
+  users_team_join_requests_user_idTousers     users     @relation("team_join_requests_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a05ffe8fd00b3ffa27ea80d9f4d")
   users_team_join_requests_reviewed_byTousers users?    @relation("team_join_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e974dbc725fa2bf9ce7b1d5d305")
 
   @@unique([team_id, user_id], map: "UQ_13d37050f07fc6ddab619106a24")
 }
 
 model team_members {
-  id         String                   @id(map: "PK_ca3eae89dcf20c9fd95bf7460aa") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime                 @default(now()) @db.Timestamp(6)
-  updated_at DateTime                 @default(now()) @db.Timestamp(6)
-  deleted_at DateTime?                @db.Timestamp(6)
-  team_id    String                   @db.Uuid
-  user_id    String                   @db.Uuid
-  role       team_members_role_enum   @default(MEMBER)
-  status     team_members_status_enum @default(ACTIVE)
-  joined_at  DateTime                 @default(now()) @db.Timestamp(6)
-  teams      teams                    @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fdad7d5768277e60c40e01cdce0")
-  users      users                    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c2bf4967c8c2a6b845dadfbf3d")
+  id             String                   @id(map: "PK_ca3eae89dcf20c9fd95bf7460aa") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at     DateTime                 @default(now()) @db.Timestamp(6)
+  deleted_at     DateTime?                @db.Timestamp(6)
+  team_id        String                   @db.Uuid
+  user_id        String                   @db.Uuid
+  role           team_members_role_enum   @default(MEMBER)
+  position       String?                  @db.VarChar(100)
+  jersey_number  Int?
+  status         team_members_status_enum @default(ACTIVE)
+  matches_played Int                      @default(0)
+  goals_scored   Int                      @default(0)
+  metadata       Json?
+  joined_at      DateTime                 @default(now()) @db.Timestamp(6)
+  left_at        DateTime?                @db.Timestamp(6)
+  users          users                    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c2bf4967c8c2a6b845dadfbf3d4")
+  teams          teams                    @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fdad7d5768277e60c40e01cdcea")
 
   @@unique([team_id, user_id], map: "UQ_1d3c06a8217a8785e2af0ec4ab8")
   @@index([user_id], map: "IDX_c2bf4967c8c2a6b845dadfbf3d")
   @@index([team_id], map: "IDX_fdad7d5768277e60c40e01cdce")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model teams {
   id                                           String                    @id(map: "PK_7e5523774a38b08a6236d322403") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at                                   DateTime                  @default(now()) @db.Timestamp(6)
@@ -305,15 +271,14 @@ model tournament_brackets {
   deleted_at         DateTime?                     @db.Timestamp(6)
   tournament_id      String                        @db.Uuid
   name               String                        @db.VarChar
-  type               String                        @db.VarChar(50)
-  total_rounds       Int
+  type               tournament_brackets_type_enum @default(SINGLE_ELIMINATION)
+  order              Int                           @default(1)
+  tournaments        tournaments                   @relation(fields: [tournament_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_af1945e85b4b92cdffa9cb94bf4")
   tournament_matches tournament_matches[]
-  tournaments        tournaments                   @relation(fields: [tournament_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_af1945e85b4b92cdffa9cb94bf1")
 
   @@index([tournament_id], map: "IDX_af1945e85b4b92cdffa9cb94bf")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model tournament_matches {
   id                                                                                   String                         @id(map: "PK_b128bcced13707fbc4ac1519216") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at                                                                           DateTime                       @default(now()) @db.Timestamp(6)
@@ -339,23 +304,24 @@ model tournament_matches {
   @@index([bracket_id], map: "IDX_408b5cfdf011e0f8e7a1333357")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model tournament_participants {
   id                                                                              String                              @id(map: "PK_89ff15f4f125bcab7f5531dd501") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at                                                                      DateTime                            @default(now()) @db.Timestamp(6)
   updated_at                                                                      DateTime                            @default(now()) @db.Timestamp(6)
   deleted_at                                                                      DateTime?                           @db.Timestamp(6)
   tournament_id                                                                   String                              @db.Uuid
+  type                                                                            tournament_participants_type_enum   @default(INDIVIDUAL)
   user_id                                                                         String?                             @db.Uuid
   team_id                                                                         String?                             @db.Uuid
   status                                                                          tournament_participants_status_enum @default(PENDING)
   fee_paid                                                                        Boolean                             @default(false)
-  payment_transaction_id                                                           String?                             @db.VarChar
+  payment_transaction_id                                                          String?                             @db.VarChar
   seed_number                                                                     Int?
+  final_rank                                                                      Int?
   tournament_matches_tournament_matches_participant_b_idTotournament_participants tournament_matches[]                @relation("tournament_matches_participant_b_idTotournament_participants")
   tournament_matches_tournament_matches_participant_a_idTotournament_participants tournament_matches[]                @relation("tournament_matches_participant_a_idTotournament_participants")
   tournament_matches_tournament_matches_winner_idTotournament_participants        tournament_matches[]                @relation("tournament_matches_winner_idTotournament_participants")
-  teams                                                                           teams?                              @relation(fields: [team_id], references: [id], onUpdate: NoAction, map: "FK_1c2b2ef01a0785059c3d3e5425f")
+  teams                                                                           teams?                              @relation(fields: [team_id], references: [id], onUpdate: NoAction, map: "FK_196fb069f2d51297db84ba79b60")
   users                                                                           users?                              @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "FK_8836b1441db3023bcbc52718ca7")
   tournaments                                                                     tournaments                         @relation(fields: [tournament_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_90bb0f064cef8d2ae4aaad10687")
 
@@ -363,7 +329,6 @@ model tournament_participants {
   @@index([tournament_id], map: "IDX_90bb0f064cef8d2ae4aaad1068")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model tournaments {
   id                      String                    @id(map: "PK_6d5d129da7a80cf99e8ad4833a9") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at              DateTime                  @default(now()) @db.Timestamp(6)
@@ -372,14 +337,14 @@ model tournaments {
   name                    String                    @db.VarChar
   description             String?
   sport_type              String                    @db.VarChar
+  format                  tournaments_format_enum   @default(SINGLE_ELIMINATION)
+  start_date              DateTime                  @db.Date
+  end_date                DateTime                  @db.Date
   venue_id                String                    @db.Uuid
-  start_date              DateTime                  @db.Timestamp(6)
-  end_date                DateTime                  @db.Timestamp(6)
-  registration_deadline   DateTime                  @db.Timestamp(6)
-  max_participants        Int
-  current_participants    Int                       @default(0)
-  entry_fee               Decimal                   @db.Decimal(10, 2)
-  prize_pool              Decimal                   @db.Decimal(15, 2)
+  max_teams               Int                       @default(16)
+  entry_fee               Decimal                   @default(0) @db.Decimal(15, 2)
+  prize_structure         Json?
+  registration_deadline   DateTime?                 @db.Timestamp(6)
   rules                   String?
   status                  tournaments_status_enum   @default(PLANNING)
   created_by              String                    @db.Uuid
@@ -392,33 +357,6 @@ model tournaments {
   @@index([venue_id], map: "IDX_998fba19916f4f6e4bf33fadf7")
 }
 
-model user_blocks {
-  id                                       String    @id(map: "PK_0bae5f5cab7574a84889462187c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at                               DateTime  @default(now()) @db.Timestamp(6)
-  updated_at                               DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at                               DateTime? @db.Timestamp(6)
-  user_id                                  String    @db.Uuid
-  blocked_user_id                          String    @db.Uuid
-  reason                                   String?
-  users_user_blocks_user_idTousers         users     @relation("user_blocks_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d4abdbd0c82d04db5b237f22658")
-  users_user_blocks_blocked_user_idTousers users     @relation("user_blocks_blocked_user_idTousers", fields: [blocked_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fdb57b48a77dcae7569297fded7")
-
-  @@unique([user_id, blocked_user_id], map: "UQ_7291e45d0a4d6b8dbfd9b08b7b3")
-}
-
-model user_followers {
-  id                                      String    @id(map: "PK_ee6ca6c8db6c5e06db7727f08d8") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at                              DateTime  @default(now()) @db.Timestamp(6)
-  updated_at                              DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at                              DateTime? @db.Timestamp(6)
-  user_id                                 String    @db.Uuid
-  follower_id                             String    @db.Uuid
-  users_user_followers_user_idTousers     users     @relation("user_followers_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a59d62cda8101214445e295cdc8")
-  users_user_followers_follower_idTousers users     @relation("user_followers_follower_idTousers", fields: [follower_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_da722d93356ae3119d6be40d988")
-
-  @@unique([user_id, follower_id], map: "UQ_d7b47e785d7dbc74b2f22f30045")
-}
-
 // ============================================================
 // Social Enums
 // ============================================================
@@ -426,15 +364,28 @@ model user_followers {
 enum friendships_status_enum {
   PENDING
   ACCEPTED
-  BLOCKED
   REJECTED
+  BLOCKED
+}
+
+enum match_findings_challenge_type_enum {
+  FRIENDLY
+  COMPETITIVE
+  TOURNAMENT
+}
+
+enum match_findings_organizer_type_enum {
+  USER
+  TEAM
 }
 
 enum match_findings_status_enum {
   OPEN
-  FULL
-  CANCELLED
+  MATCHED
+  CONFIRMED
+  PLAYING
   COMPLETED
+  CANCELLED
 }
 
 enum match_participants_status_enum {
@@ -444,48 +395,28 @@ enum match_participants_status_enum {
   CANCELLED
 }
 
-enum match_results_status_enum {
-  PENDING
-  CONFIRMED
-  DISPUTED
+enum posts_privacy_enum {
+  PUBLIC
+  FRIENDS
+  TEAM
+  PRIVATE
 }
 
-enum reports_reason_enum {
-  SPAM
-  INAPPROPRIATE
-  HARASSMENT
-  FRAUD
-  OTHER
+enum posts_type_enum {
+  STATUS
+  PHOTO
+  VIDEO
+  MATCH_RESULT
+  CHECK_IN
+  ACHIEVEMENT
 }
 
-enum reports_status_enum {
-  PENDING
-  INVESTIGATING
-  RESOLVED
-  DISMISSED
-}
-
-enum reports_target_type_enum {
-  USER
-  VENUE
+enum social_likes_target_type_enum {
   POST
   COMMENT
-  MESSAGE
-  TEAM
-}
-
-enum team_invitations_status_enum {
-  PENDING
-  ACCEPTED
-  REJECTED
-  EXPIRED
-}
-
-enum team_join_requests_status_enum {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
+  MATCH_RESULT
+  TOURNAMENT
+  REVIEW
 }
 
 enum team_members_role_enum {
@@ -507,18 +438,37 @@ enum teams_privacy_enum {
   INVITE_ONLY
 }
 
+enum tournament_brackets_type_enum {
+  SINGLE_ELIMINATION
+  DOUBLE_ELIMINATION
+  ROUND_ROBIN
+}
+
 enum tournament_matches_status_enum {
   PENDING
-  IN_PROGRESS
-  COMPLETED
+  LIVE
+  FINISHED
   CANCELLED
 }
 
 enum tournament_participants_status_enum {
   PENDING
   CONFIRMED
-  WAITLIST
+  WAITLISTED
+  ELIMINATED
   WITHDRAWN
+}
+
+enum tournament_participants_type_enum {
+  INDIVIDUAL
+  TEAM
+}
+
+enum tournaments_format_enum {
+  SINGLE_ELIMINATION
+  DOUBLE_ELIMINATION
+  ROUND_ROBIN
+  GROUP_STAGE_KNOCKOUT
 }
 
 enum tournaments_status_enum {

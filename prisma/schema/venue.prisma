@@ -2,248 +2,6 @@
 // Venue Module
 // ============================================================
 
-model favorite_venues {
-  id         String    @id(map: "PK_084f425ef089f0da04e86a62b37") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  updated_at DateTime  @default(now()) @db.Timestamp(6)
-  user_id    String    @db.Uuid
-  venue_id   String    @db.Uuid
-  venues     venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1bec494129322e164ecaed5d1e8")
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e3ab3269f6915ae8caf181af035")
-
-  @@unique([user_id, venue_id], map: "UQ_20b265ba4ce372b1ca3bceb1db5")
-}
-
-model refund_policies {
-  id              String         @id(map: "PK_e8ec43bcc719c6925e970073a16") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at      DateTime       @default(now()) @db.Timestamp(6)
-  updated_at      DateTime       @default(now()) @db.Timestamp(6)
-  deleted_at      DateTime?      @db.Timestamp(6)
-  venue_id        String         @db.Uuid
-  name            String         @db.VarChar
-  description     String?
-  is_active       Boolean        @default(true)
-  venues          venues         @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e8ec43bcc719c6925e970073a16")
-  refund_rules    refund_rules[]
-}
-
-model refund_rules {
-  id                  String          @id(map: "PK_9fd82ec3fbe60652128b4135ba2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at          DateTime        @default(now()) @db.Timestamp(6)
-  updated_at          DateTime        @default(now()) @db.Timestamp(6)
-  deleted_at          DateTime?       @db.Timestamp(6)
-  policy_id           String          @db.Uuid
-  cancel_before_hours Int
-  refund_percentage   Decimal         @db.Decimal(5, 2)
-  refund_policies     refund_policies @relation(fields: [policy_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dade55f6831f363b21210150777")
-}
-
-model review_images {
-  id            String    @id(map: "PK_dfb8fbc1b0534f20de489a64358") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at    DateTime  @default(now()) @db.Timestamp(6)
-  updated_at    DateTime  @default(now()) @db.Timestamp(6)
-  review_id     String    @db.Uuid
-  file_id       String    @db.Uuid
-  display_order Int       @default(0)
-  files         files     @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d831e106bbe0c0edcc8dd589091")
-  reviews       reviews   @relation(fields: [review_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dfb8fbc1b0534f20de489a64358")
-
-  @@index([file_id], map: "IDX_d831e106bbe0c0edcc8dd58909")
-}
-
-model reviews {
-  id                 String              @id(map: "PK_231ae565c273ee700b283f15c1d") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at         DateTime            @default(now()) @db.Timestamp(6)
-  updated_at         DateTime            @default(now()) @db.Timestamp(6)
-  deleted_at         DateTime?           @db.Timestamp(6)
-  user_id            String              @db.Uuid
-  venue_id           String              @db.Uuid
-  court_id           String?             @db.Uuid
-  booking_id         String              @unique(map: "UQ_bbd6ac6e3e6a8f8c6e0e8692d63") @db.Uuid
-  rating             Int
-  rating_cleanliness Int?
-  rating_facilities  Int?
-  rating_staff       Int?
-  comment            String?
-  reply_comment      String?
-  replied_at         DateTime?           @db.Timestamp(6)
-  is_anonymous       Boolean             @default(false)
-  is_hidden          Boolean             @default(false)
-  ai_review_analysis ai_review_analysis[]
-  review_images      review_images[]
-  bookings           bookings            @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bbd6ac6e3e6a8f8c6e0e8692d63")
-  users              users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_728447781a30bc3fcfe5c2f1cd1")
-  venues             venues              @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_892f659696877d5b0a4a37de099")
-  courts             courts?             @relation(fields: [court_id], references: [id], onUpdate: NoAction, map: "FK_cc9e667d26276198be9256eac42")
-
-  @@index([user_id], map: "IDX_728447781a30bc3fcfe5c2f1cd")
-  @@index([venue_id], map: "IDX_892f659696877d5b0a4a37de09")
-  @@index([court_id], map: "IDX_cc9e667d26276198be9256eac4")
-}
-
-model staff_shifts {
-  id          String      @id(map: "PK_7861d1bb0a4252ed8d3f5107656") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at  DateTime    @default(now()) @db.Timestamp(6)
-  updated_at  DateTime    @default(now()) @db.Timestamp(6)
-  deleted_at  DateTime?   @db.Timestamp(6)
-  venue_id    String      @db.Uuid
-  staff_id    String      @db.Uuid
-  start_time  DateTime    @db.Timestamp(6)
-  end_time    DateTime    @db.Timestamp(6)
-  note        String?
-  venue_staff venue_staff @relation(fields: [staff_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2c636067c2688af95767b43831c")
-  venues      venues      @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_62765597d0bd62406a22db3cdf8")
-
-  @@index([venue_id], map: "IDX_62765597d0bd62406a22db3cdf")
-}
-
-model venue_blacklist {
-  id                                     String    @id(map: "PK_75c382064a1af101613d583f002") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at                             DateTime  @default(now()) @db.Timestamp(6)
-  updated_at                             DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at                             DateTime? @db.Timestamp(6)
-  venue_id                               String    @db.Uuid
-  user_id                                String    @db.Uuid
-  reason                                 String?
-  venues                                 venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a8fea059c7488505e7a30673d72")
-  users                                  users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d7de078b3b4a54edec1a0fee7d2")
-
-  @@unique([venue_id, user_id], map: "UQ_a533f47a738b30ffb28687de5bb")
-  @@index([venue_id], map: "IDX_a8fea059c7488505e7a30673d7")
-  @@index([user_id], map: "IDX_d7de078b3b4a54edec1a0fee7d")
-}
-
-model venue_images {
-  id            String    @id(map: "PK_3cdef3bcc3a9d5c7a1a47dede36") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at    DateTime  @default(now()) @db.Timestamp(6)
-  updated_at    DateTime  @default(now()) @db.Timestamp(6)
-  venue_id      String    @db.Uuid
-  file_id       String    @db.Uuid
-  display_order Int       @default(0)
-  files         files     @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fbcd17ae4cc11d0bd874a3b10d5")
-  venues        venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3cdef3bcc3a9d5c7a1a47dede36")
-
-  @@index([file_id], map: "IDX_fbcd17ae4cc11d0bd874a3b10d")
-}
-
-model venue_memberships {
-  id                  String    @id(map: "PK_9ce244c9613a2dd9d22b73a9c7f") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at          DateTime  @default(now()) @db.Timestamp(6)
-  updated_at          DateTime  @default(now()) @db.Timestamp(6)
-  deleted_at          DateTime? @db.Timestamp(6)
-  venue_id            String    @db.Uuid
-  user_id             String    @db.Uuid
-  membership_tier_id  String?   @db.Uuid
-  total_spent         Decimal   @default(0) @db.Decimal(15, 2)
-  total_bookings      Int       @default(0)
-  points              Int       @default(0)
-  joined_at           DateTime  @default(now()) @db.Timestamp(6)
-  is_active           Boolean   @default(true)
-  venues              venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9ce244c9613a2dd9d22b73a9c7f")
-  users               users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fa4e3f91e54aeb743b1ac9affd2")
-
-  @@unique([venue_id, user_id], map: "UQ_9ce244c9613a2dd9d22b73a9c7f")
-  @@index([user_id], map: "IDX_fa4e3f91e54aeb743b1ac9affd")
-}
-
-model venue_operating_hours {
-  id           String                               @id(map: "PK_575371debf4dc474f06a33604f2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at   DateTime                             @default(now()) @db.Timestamp(6)
-  updated_at   DateTime                             @default(now()) @db.Timestamp(6)
-  venue_id     String                               @db.Uuid
-  day_of_week  Int
-  opening_time DateTime                             @db.Time(6)
-  closing_time DateTime                             @db.Time(6)
-  is_closed    Boolean                              @default(false)
-  venues       venues                               @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_97f14942a8ad0b52ae74b5dafb9")
-
-  @@index([venue_id], map: "IDX_97f14942a8ad0b52ae74b5dafb")
-}
-
-model venue_revenue_snapshots {
-  id                String    @id(map: "PK_5f43fa7bac8e79fe2d37da3c385") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at        DateTime  @default(now()) @db.Timestamp(6)
-  venue_id          String    @db.Uuid
-  date              DateTime  @db.Date
-  total_revenue     Decimal   @db.Decimal(15, 2)
-  booking_revenue   Decimal   @db.Decimal(15, 2)
-  service_revenue   Decimal   @db.Decimal(15, 2)
-  total_bookings    Int
-  completed_bookings Int
-  cancelled_bookings Int
-  venues            venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b228a8cc4ddb6deccc964e4c4d5")
-
-  @@unique([venue_id, date], map: "UQ_b228a8cc4ddb6deccc964e4c4d")
-  @@index([venue_id], map: "IDX_b228a8cc4ddb6deccc964e4c4d")
-}
-
-model venue_schedule_exceptions {
-  id         String    @id(map: "PK_68c0e1413451321f47ae4c41989") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  updated_at DateTime  @default(now()) @db.Timestamp(6)
-  venue_id   String    @db.Uuid
-  start_date DateTime  @db.Timestamp(6)
-  end_date   DateTime  @db.Timestamp(6)
-  is_closed  Boolean   @default(true)
-  reason     String?
-  venues     venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_606a66665170e0728f02605e4a8")
-
-  @@index([start_date], map: "IDX_25cbf5ddcb2974052d5aef13f0")
-  @@index([venue_id], map: "IDX_606a66665170e0728f02605e4a")
-  @@index([end_date], map: "IDX_92cb05f30506595d40e5d712a3")
-}
-
-model venue_services {
-  id              String           @id(map: "PK_e08e1c489bda9dff4eed304ba67") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at      DateTime         @default(now()) @db.Timestamp(6)
-  updated_at      DateTime         @default(now()) @db.Timestamp(6)
-  deleted_at      DateTime?        @db.Timestamp(6)
-  venue_id        String           @db.Uuid
-  name            String           @db.VarChar
-  description     String?
-  price           Decimal          @db.Decimal(10, 2)
-  type            venue_services_type_enum @default(SERVICE)
-  is_active       Boolean          @default(true)
-  venues          venues           @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8f134ab34b9a2685a785abf3d02")
-
-  @@index([venue_id], map: "IDX_8f134ab34b9a2685a785abf3d0")
-}
-
-model venue_staff {
-  id           String                @id(map: "PK_ac0458cb8e9996c850cd6a49997") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at   DateTime              @default(now()) @db.Timestamp(6)
-  updated_at   DateTime              @default(now()) @db.Timestamp(6)
-  deleted_at   DateTime?             @db.Timestamp(6)
-  venue_id     String                @db.Uuid
-  user_id      String                @db.Uuid
-  role         String                @db.VarChar(50)
-  is_active    Boolean               @default(true)
-  staff_shifts staff_shifts[]
-  venues       venues                @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_db462b64db54418c3e9f457019d")
-  users        users                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8da197d7419af7d5189af0e7cf2")
-
-  @@unique([venue_id, user_id], map: "UQ_db462b64db54418c3e9f457019d")
-}
-
-model venue_verifications {
-  id                      String                          @id(map: "PK_cc1ceb0c5f149ee16ef32e561e9") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at              DateTime                        @default(now()) @db.Timestamp(6)
-  updated_at              DateTime                        @default(now()) @db.Timestamp(6)
-  deleted_at              DateTime?                       @db.Timestamp(6)
-  venue_id                String                          @db.Uuid
-  status                  venue_verifications_status_enum @default(PENDING)
-  document_urls           Json?
-  reviewed_by             String?                         @db.Uuid
-  reviewed_at             DateTime?                       @db.Timestamp(6)
-  rejection_reason        String?
-  venues                  venues                          @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6e552bd5d7f921149c2da9e3c15")
-  users                   users?                          @relation(fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9af4c26d4842b2d55f8dfad8259")
-
-  @@index([venue_id], map: "IDX_6e552bd5d7f921149c2da9e3c11")
-  @@index([status], map: "IDX_9af4c26d4842b2d55f8dfad825")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model venues {
   id                        String                      @id(map: "PK_cb0f885278d12384eb7a81818be") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at                DateTime                    @default(now()) @db.Timestamp(6)
@@ -321,25 +79,326 @@ model venues {
   @@index([organization_id], map: "IDX_d88176e38bb768c1c09d3a5f2e")
 }
 
+model organizations {
+  id          String    @id(map: "PK_ organizations") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime? @db.Timestamp(6)
+  owner_id    String    @db.Uuid
+  name        String    @db.VarChar
+  description String?
+  tax_code    String?   @db.VarChar
+  address     String?
+  phone       String?   @db.VarChar
+  email       String?   @db.VarChar
+  website     String?   @db.VarChar
+  logo_url    String?
+  is_active   Boolean   @default(true)
+  users       users     @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_711e646d8043eea991d2e65e016")
+  venues      venues[]
+}
+
+model favorite_venues {
+  id         String    @id(map: "PK_307b221d60761e860980f836371") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  user_id    String    @db.Uuid
+  venue_id   String    @db.Uuid
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1d85fb66d6d84a7a8d51187c26a")
+  venues     venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_403c65019f79f674d1b2ab7626c")
+
+  @@unique([user_id, venue_id], map: "UQ_93a10e580f70c3d2e2e4b31ebf2")
+}
+
+model reviews {
+  id             String          @id(map: "PK_69cadcdfc8416b9fc6f907b7433") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime        @default(now()) @db.Timestamp(6)
+  updated_at     DateTime        @default(now()) @db.Timestamp(6)
+  deleted_at     DateTime?       @db.Timestamp(6)
+  user_id        String          @db.Uuid
+  venue_id       String          @db.Uuid
+  court_id       String?         @db.Uuid
+  booking_id     String?         @unique @db.Uuid
+  rating         Int
+  rating_clean   Int             @default(5)
+  rating_service Int             @default(5)
+  rating_price   Int             @default(5)
+  content        String?
+  comment        String?
+  is_visible     Boolean         @default(true)
+  is_anonymous   Boolean         @default(false)
+  is_verified    Boolean         @default(false)
+  helpful_count  Int             @default(0)
+  owner_reply    String?
+  replied_at     DateTime?       @db.Timestamp(6)
+  review_images  review_images[]
+  bookings       bookings?       @relation(fields: [booking_id], references: [id], onUpdate: NoAction, map: "FK_8cb5cf3df16fc75663f85b5b35d")
+  courts         courts?         @relation(fields: [court_id], references: [id], onUpdate: NoAction, map: "FK_a2cecd1a3531c0b041e29ba46e2")
+  users          users           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a3ffb1c0c8416b9fc6f907b7434")
+  venues         venues          @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cb0f885278d12384eb7a81818bf")
+  ai_review_analysis ai_review_analysis?
+
+
+  @@index([venue_id], map: "IDX_cb0f885278d12384eb7a81818b")
+}
+
+model review_images {
+  id         String    @id(map: "PK_06c564c515d8cdb40b6f3bfbbb5") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  review_id  String    @db.Uuid
+  file_id    String    @db.Uuid
+  files      files     @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_7c111344ccb078c7bf6aed4da11")
+  reviews    reviews   @relation(fields: [review_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bd2726fd31b35443f2245b93ba1")
+}
+
+model staff_shifts {
+  id          String      @id(map: "PK_7861d1bb0a4252ed8d3f5107656") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime    @default(now()) @db.Timestamp(6)
+  updated_at  DateTime    @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime?   @db.Timestamp(6)
+  staff_id    String      @db.Uuid
+  venue_id    String      @db.Uuid
+  start_at    DateTime    @db.Timestamp(6)
+  end_at      DateTime    @db.Timestamp(6)
+  note        String?
+  venue_staff venue_staff @relation(fields: [staff_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_33b27c77ae929c867e4af1a512b")
+  venues      venues      @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_62765597d0bd62406a22db3cdf2")
+
+  @@index([staff_id], map: "IDX_33b27c77ae929c867e4af1a512")
+  @@index([venue_id], map: "IDX_62765597d0bd62406a22db3cdf")
+}
+
+model venue_blacklist {
+  id                                     String    @id(map: "PK_75c382064a1af101613d583f002") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                             DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                             DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at                             DateTime? @db.Timestamp(6)
+  venue_id                               String    @db.Uuid
+  user_id                                String    @db.Uuid
+  reason                                 String?
+  banned_at                              DateTime  @default(now()) @db.Timestamp(6)
+  banned_by                              String    @db.Uuid
+  users_venue_blacklist_banned_byTousers users     @relation("venue_blacklist_banned_byTousers", fields: [banned_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_4918861f71b47ab526309d028cc")
+  venues                                 venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a8fea059c7488505e7a30673d77")
+  users_venue_blacklist_user_idTousers   users     @relation("venue_blacklist_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d7de078b3b4a54edec1a0fee7d7")
+
+  @@unique([venue_id, user_id], map: "UQ_a533f47a738b30ffb28687de5bb")
+  @@index([venue_id], map: "IDX_a8fea059c7488505e7a30673d7")
+  @@index([user_id], map: "IDX_d7de078b3b4a54edec1a0fee7d")
+}
+
+model venue_images {
+  id            String    @id(map: "PK_3cdef3bcc3a9d5c7a1a47dede36") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime  @default(now()) @db.Timestamp(6)
+  updated_at    DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime? @db.Timestamp(6)
+  venue_id      String    @db.Uuid
+  file_id       String    @db.Uuid
+  display_order Int       @default(0)
+  is_cover      Boolean   @default(false)
+  caption       String?   @db.VarChar
+  venues        venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5637e9000a376395a07682cf624")
+  files         files     @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fbcd17ae4cc11d0bd874a3b10d9")
+
+  @@index([venue_id], map: "IDX_5637e9000a376395a07682cf62")
+  @@index([file_id], map: "IDX_fbcd17ae4cc11d0bd874a3b10d")
+}
+
+model venue_memberships {
+  id                  String    @id(map: "PK_9ce244c9613a2dd9d22b73a9c7f") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at          DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime? @db.Timestamp(6)
+  venue_id            String    @db.Uuid
+  user_id             String    @db.Uuid
+  name                String    @db.VarChar
+  tier                Int       @default(1)
+  discount_percentage Decimal   @default(0) @db.Decimal(5, 2)
+  start_date          DateTime  @db.Date
+  end_date            DateTime? @db.Date
+  is_active           Boolean   @default(true)
+  benefits            Json?
+  venues              venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d764891da949aff1d5b7c060609")
+  users               users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fa4e3f91e54aeb743b1ac9affdb")
+
+  @@index([venue_id], map: "IDX_d764891da949aff1d5b7c06060")
+  @@index([user_id], map: "IDX_fa4e3f91e54aeb743b1ac9affd")
+}
+
+model venue_operating_hours {
+  id           String                               @id(map: "PK_575371debf4dc474f06a33604f2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime                             @default(now()) @db.Timestamp(6)
+  updated_at   DateTime                             @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?                            @db.Timestamp(6)
+  venue_id     String                               @db.Uuid
+  day_of_week  venue_operating_hours_dayofweek_enum @map("dayOfWeek")
+  opening_time DateTime                             @db.Time(6)
+  closing_time DateTime                             @db.Time(6)
+  is_closed    Boolean                              @default(false)
+  venues       venues                               @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_97f14942a8ad0b52ae74b5dafbf")
+
+  @@unique([venue_id, day_of_week], map: "UQ_8e068c8e712b8672da59dcc7c3c")
+  @@index([venue_id], map: "IDX_97f14942a8ad0b52ae74b5dafb")
+}
+
+model venue_revenue_snapshots {
+  id                String    @id(map: "PK_5f43fa7bac8e79fe2d37da3c385") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime  @default(now()) @db.Timestamp(6)
+  updated_at        DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime? @db.Timestamp(6)
+  venue_id          String    @db.Uuid
+  snapshot_date     DateTime  @db.Date
+  totalRevenue      Decimal   @default(0) @db.Decimal(15, 2)
+  totalBookings     Int       @default(0)
+  cancelledBookings Int       @default(0)
+  serviceRevenue    Decimal   @default(0) @db.Decimal(15, 2)
+  netProfit         Decimal   @default(0) @db.Decimal(15, 2)
+  metadata          Json?
+  venues            venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b228a8cc4ddb6deccc964e4c4d9")
+
+  @@unique([venue_id, snapshot_date], map: "UQ_c53838c0ce07efc3aba09b4aef2")
+  @@index([snapshot_date], map: "IDX_889678d3f9f74c7fbee85b10b6")
+  @@index([venue_id], map: "IDX_b228a8cc4ddb6deccc964e4c4d")
+}
+
+model venue_schedule_exceptions {
+  id         String    @id(map: "PK_68c0e1413451321f47ae4c41989") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  venue_id   String    @db.Uuid
+  start_date DateTime  @db.Timestamp(6)
+  end_date   DateTime  @db.Timestamp(6)
+  reason     String?
+  is_closed  Boolean   @default(true)
+  venues     venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_606a66665170e0728f02605e4ac")
+
+  @@index([start_date], map: "IDX_25cbf5ddcb2974052d5aef13f0")
+  @@index([venue_id], map: "IDX_606a66665170e0728f02605e4a")
+  @@index([end_date], map: "IDX_92cb05f30506595d40e5d712a3")
+}
+
+model venue_services {
+  id              String           @id(map: "PK_e08e1c489bda9dff4eed304ba67") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime         @default(now()) @db.Timestamp(6)
+  updated_at      DateTime         @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime?        @db.Timestamp(6)
+  venue_id        String           @db.Uuid
+  name            String           @db.VarChar
+  description     String?
+  price           Decimal          @db.Decimal(15, 2)
+  unit            String           @default("unit") @db.VarChar
+  is_available    Boolean          @default(true)
+  type            venue_services_type_enum @default(SERVICE)
+  track_inventory Boolean          @default(false)
+  stock_quantity  Int              @default(0)
+  category        String?          @db.VarChar
+  booking_addons  booking_addons[]
+  venues          venues           @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8f134ab34b9a2685a785abf3d0f")
+
+  @@index([venue_id], map: "IDX_8f134ab34b9a2685a785abf3d0")
+}
+
+model venue_staff {
+  id           String                @id(map: "PK_ac0458cb8e9996c850cd6a49997") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime              @default(now()) @db.Timestamp(6)
+  updated_at   DateTime              @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?             @db.Timestamp(6)
+  venue_id     String                @db.Uuid
+  user_id      String                @db.Uuid
+  role         venue_staff_role_enum @default(STAFF)
+  assigned_at  DateTime              @default(now()) @db.Timestamp(6)
+  staff_shifts staff_shifts[]
+  venues       venues                @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_134bd3ae6af3823027bc2dc14e1")
+  users        users                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8da197d7419af7d5189af0e7cf2")
+
+  @@unique([venue_id, user_id], map: "UQ_db462b64db54418c3e9f457019d")
+}
+
+model venue_verifications {
+  id                      String                          @id(map: "PK_cc1ceb0c5f149ee16ef32e561e9") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at              DateTime                        @default(now()) @db.Timestamp(6)
+  updated_at              DateTime                        @default(now()) @db.Timestamp(6)
+  deleted_at              DateTime?                       @db.Timestamp(6)
+  venue_id                String                          @db.Uuid
+  business_license_url    String
+  identity_card_front_url String
+  identity_card_back_url  String
+  owner_photo_url         String
+  status                  venue_verifications_status_enum @default(PENDING)
+  verified_at             DateTime?                       @db.Timestamp(6)
+  verified_by             String?                         @db.Uuid
+  rejection_reason        String?
+  users                   users?                          @relation(fields: [verified_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_11947660728f97f49886729672a")
+  venues                  venues                          @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6e552bd5d7f921149c2da9e3c16")
+
+  @@index([venue_id], map: "IDX_6e552bd5d7f921149c2da9e3c1")
+  @@index([status], map: "IDX_9af4c26d4842b2d55f8dfad825")
+}
+
+model refund_policies {
+  id                String    @id(map: "PK_6a3c65019f79f674d1b2ab7626d") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime  @default(now()) @db.Timestamp(6)
+  updated_at        DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime? @db.Timestamp(6)
+  venue_id          String    @db.Uuid
+  name              String    @db.VarChar
+  description       String?
+  is_default        Boolean   @default(false)
+  cancellation_fees Json?
+  refund_rules      refund_rules[]
+  venues            venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1a3c65019f79f674d1b2ab7626c")
+}
+
+model refund_rules {
+  id                String          @id(map: "PK_0bbada75e1b23902fdac1146fee") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime        @default(now()) @db.Timestamp(6)
+  updated_at        DateTime        @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?       @db.Timestamp(6)
+  policy_id         String          @db.Uuid
+  hours_before      Int
+  refund_percentage Decimal         @db.Decimal(5, 2)
+  refund_policies   refund_policies @relation(fields: [policy_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fee0f5b46155b623902fdac1146")
+}
+
 // ============================================================
 // Venue Enums
 // ============================================================
-
-enum venue_services_type_enum {
-  PRODUCT
-  SERVICE
-}
-
-enum venue_verifications_status_enum {
-  PENDING
-  APPROVED
-  REJECTED
-  SUSPENDED
-}
 
 enum venues_status_enum {
   PENDING
   APPROVED
   REJECTED
   SUSPENDED
+}
+
+enum venue_operating_hours_dayofweek_enum {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum venue_staff_role_enum {
+  OWNER
+  MANAGER
+  STAFF
+  RECEPTIONIST
+}
+
+enum venue_verifications_status_enum {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum venue_services_type_enum {
+  PRODUCT
+  SERVICE
 }
