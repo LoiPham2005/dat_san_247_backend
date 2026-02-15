@@ -1,0 +1,145 @@
+// ============================================================
+// Promotion Module
+// ============================================================
+
+model banners {
+  id                  String    @id(map: "PK_e9b186b959296fcb940790d31c3") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at          DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime? @db.Timestamp(6)
+  content_id          String    @unique(map: "REL_5d9b6291c71e9906b152831796") @db.Uuid
+  position            String    @db.VarChar(50)
+  type                String    @db.VarChar(50)
+  mobile_file_id      String?   @db.Uuid
+  mobile_image_url    String?   @db.VarChar
+  action_type         String    @default("NONE") @db.VarChar
+  action_value        String?   @db.VarChar
+  is_active           Boolean   @default(true)
+  display_order       Int       @default(0)
+  start_date          DateTime? @db.Timestamp(6)
+  end_date            DateTime? @db.Timestamp(6)
+  contents            contents  @relation(fields: [content_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5d9b6291c71e9906b1528317969")
+  files               files?    @relation(fields: [mobile_file_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_cc75e5855a914f98b2548c3d3cd")
+}
+
+model promotion_contents {
+  id                   String      @id(map: "PK_211e646d8043eea991d2e65e016") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime    @default(now()) @db.Timestamp(6)
+  updated_at           DateTime    @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime?   @db.Timestamp(6)
+  content_id           String      @unique(map: "REL_58acc0adca530c0fe77d184b73") @db.Uuid
+  promotion_type       String      @db.VarChar(50)
+  promotion_id         String?     @db.Uuid
+  min_membership_level String?     @db.VarChar
+  total_revenue        Decimal     @default(0) @db.Decimal(15, 2)
+  total_bookings       Int         @default(0)
+  conversion_rate      Decimal     @default(0) @db.Decimal(5, 2)
+  contents             contents    @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_58acc0adca530c0fe77d184b737")
+  promotions           promotions? @relation(fields: [promotion_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a430584aaefa8337b0d0ead9908")
+}
+
+model promotion_courts {
+  id           String     @id(map: "PK_683c918634ad172b538db1a3541") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime   @default(now()) @db.Timestamp(6)
+  updated_at   DateTime   @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?  @db.Timestamp(6)
+  promotion_id String     @db.Uuid
+  court_id     String     @db.Uuid
+  courts       courts     @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e2763ac108d82e2bdf71abc0e26")
+  promotions   promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f532c8f64c017b9d1d7510aa1cc")
+
+  @@unique([promotion_id, court_id], map: "UQ_fd48328c92b1a2edde40ce6914e")
+}
+
+model promotion_usage {
+  id              String     @id(map: "PK_5d5b80f7b3c1cb5d961e69ac49c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime   @default(now()) @db.Timestamp(6)
+  updated_at      DateTime   @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime?  @db.Timestamp(6)
+  promotion_id    String     @db.Uuid
+  booking_id      String     @db.Uuid
+  user_id         String     @db.Uuid
+  discount_amount Decimal    @db.Decimal(10, 2)
+  promotions      promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_51b1d9ae72d9343d0a27e6231d7")
+  bookings        bookings   @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_dada78cc1daba0a2f5195dc46a3")
+  users           users      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f00c80d5a1020449c9c3c18cca1")
+}
+
+model promotion_venues {
+  id           String     @id(map: "PK_8eee642dd8196b416e32ebbf44d") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime   @default(now()) @db.Timestamp(6)
+  updated_at   DateTime   @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?  @db.Timestamp(6)
+  promotion_id String     @db.Uuid
+  venue_id     String     @db.Uuid
+  venues       venues     @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e05440bcf22b7d7ea7a2b861647")
+  promotions   promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e700ecc1412f9fb66d7cc07fd68")
+
+  @@unique([promotion_id, venue_id], map: "UQ_1ec62d97d379a562baedb413b93")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model promotions {
+  id                  String                        @id(map: "PK_380cecbbe3ac11f0e5a7c452c34") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime                      @default(now()) @db.Timestamp(6)
+  updated_at          DateTime                      @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?                     @db.Timestamp(6)
+  code                String                        @unique(map: "UQ_8ab10e580f70c3d2e2e4b31ebf2") @db.VarChar
+  name                String                        @db.VarChar
+  description         String?
+  discount_type       promotions_discount_type_enum
+  discount_value      Decimal                       @db.Decimal(10, 2)
+  max_discount_amount Decimal?                      @db.Decimal(10, 2)
+  min_booking_amount  Decimal                       @default(0) @db.Decimal(10, 2)
+  usage_limit         Int?
+  usage_count         Int                           @default(0)
+  max_usage_per_user  Int                           @default(1)
+  is_public           Boolean                       @default(true)
+  valid_from          DateTime                      @db.Timestamp(6)
+  valid_to            DateTime                      @db.Timestamp(6)
+  status              promotions_status_enum        @default(ACTIVE)
+  ai_recommendations  ai_recommendations[]
+  promotion_contents  promotion_contents[]
+  promotion_courts    promotion_courts[]
+  promotion_usage     promotion_usage[]
+  promotion_venues    promotion_venues[]
+  user_vouchers       user_vouchers[]
+}
+
+model user_vouchers {
+  id           String                    @id(map: "PK_d300bbed4611400ba0f971c261b") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at   DateTime                  @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime?                 @db.Timestamp(6)
+  user_id      String                    @db.Uuid
+  promotion_id String                    @db.Uuid
+  status       user_vouchers_status_enum @default(UNUSED)
+  issued_at    DateTime                  @default(now()) @db.Timestamp(6)
+  used_at      DateTime?                 @db.Timestamp(6)
+  expires_at   DateTime?                 @db.Timestamp(6)
+  promotions   promotions                @relation(fields: [promotion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_4187bb081016893661eb104f728")
+  users        users                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e4acc84aaefa8337b0d0ead9909")
+
+  @@index([user_id], map: "IDX_e4acc84aaefa8337b0d0ead990")
+}
+
+// ============================================================
+// Promotion Enums
+// ============================================================
+
+enum promotions_discount_type_enum {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum promotions_status_enum {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+enum user_vouchers_status_enum {
+  UNUSED
+  USED
+  EXPIRED
+}

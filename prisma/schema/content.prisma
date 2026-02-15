@@ -1,0 +1,171 @@
+// ============================================================
+// Content Module
+// ============================================================
+
+model blog_posts {
+  id              String    @id(map: "PK_5bf5782109cfe8fe15085919807") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime  @default(now()) @db.Timestamp(6)
+  updated_at      DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime? @db.Timestamp(6)
+  content_id      String    @unique(map: "REL_5bf5782109cfe8fe1508591980") @db.Uuid
+  featured_image  String?   @db.VarChar
+  read_time       Int?
+  view_count      Int       @default(0)
+  share_count     Int       @default(0)
+  is_commentable  Boolean   @default(true)
+  allow_reactions Boolean   @default(true)
+  contents        contents  @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5bf5782109cfe8fe15085919807")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model contents {
+  id                 String                        @id(map: "PK_b7c504072e537532d7080c54fac") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at         DateTime                      @default(now()) @db.Timestamp(6)
+  updated_at         DateTime                      @default(now()) @db.Timestamp(6)
+  deleted_at         DateTime?                     @db.Timestamp(6)
+  type               String                        @db.VarChar(50)
+  title              String                        @db.VarChar
+  slug               String?                       @db.VarChar
+  description        String?
+  content            String
+  excerpt            String?
+  thumbnail_file_id  String?                       @db.Uuid
+  thumbnail_url      String?                       @db.VarChar
+  metadata           Json?
+  tags               Json?
+  categories         Json?
+  target_audience    contents_target_audience_enum @default(ALL)
+  target_user_ids    Json?
+  target_regions     Json?
+  status             contents_status_enum          @default(DRAFT)
+  published_at       DateTime?                     @db.Timestamp(6)
+  scheduled_at       DateTime?                     @db.Timestamp(6)
+  expired_at         DateTime?                     @db.Timestamp(6)
+  seo_title          String?                       @db.VarChar
+  seo_description    String?
+  seo_keywords       Json?
+  display_order      Int                           @default(0)
+  author_id          String?                       @db.Uuid
+  author_type        String                        @default("ADMIN") @db.VarChar
+  parent_id          String?                       @db.Uuid
+  is_featured        Boolean                       @default(false)
+  is_pinned          Boolean                       @default(false)
+  valid_from         DateTime?                     @db.Timestamp(6)
+  valid_to           DateTime?                     @db.Timestamp(6)
+  banners            banners?
+  blog_posts         blog_posts?
+  contents           contents?                     @relation("contentsTocontents", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_cee52fec66d922bac7e2e2f21b0")
+  other_contents     contents[]                    @relation("contentsTocontents")
+  files              files?                        @relation(fields: [thumbnail_file_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ddab9de66d29912c8fbbed7bba6")
+  users              users?                        @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ef9aa2f7890c5652724605b6724")
+  email_templates    email_templates?
+  faqs               faqs?
+  policies           policies?
+  promotion_contents promotion_contents?
+
+  @@index([slug], map: "IDX_8a8cf14dab55b4ebcd93bb536a")
+  @@index([type], map: "IDX_c777baa6b66dce57704a571358")
+  @@index([status], map: "IDX_cefd396cc5fe069703218286d7")
+}
+
+model email_templates {
+  id            String                            @id(map: "PK_06c564c515d8cdb40b6f3bfbbb4") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime                          @default(now()) @db.Timestamp(6)
+  updated_at    DateTime                          @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime?                         @db.Timestamp(6)
+  content_id    String                            @unique(map: "REL_7c111344ccb078c7bf6aed4da1") @db.Uuid
+  templateType  email_templates_templatetype_enum
+  template_name String                            @db.VarChar
+  subject       String                            @db.VarChar
+  preheader     String?                           @db.VarChar
+  html_content  String
+  text_content  String?
+  variables     Json?
+  sample_data   Json?
+  layout_id     String?                           @db.VarChar
+  theme         Json?
+  from_name     String                            @db.VarChar
+  from_email    String                            @db.VarChar
+  reply_to      String?                           @db.VarChar
+  version       Int                               @default(1)
+  is_default    Boolean                           @default(false)
+  last_used_at  DateTime?                         @db.Timestamp(6)
+  contents      contents                          @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_7c111344ccb078c7bf6aed4da10")
+}
+
+model faqs {
+  id                String             @id(map: "PK_2ddf4f2c910f8e8fa2663a67bf0") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime           @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?          @db.Timestamp(6)
+  content_id        String             @unique(map: "REL_1a3c65019f79f674d1b2ab7626") @db.Uuid
+  category          faqs_category_enum
+  question          String
+  answer            String
+  helpful_count     Int                @default(0)
+  not_helpful_count Int                @default(0)
+  related_faqs      String?
+  related_articles  String?
+  search_keywords   String?
+  display_order     Int                @default(0)
+  contents          contents           @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1a3c65019f79f674d1b2ab7626b")
+}
+
+model policies {
+  id                  String                   @id(map: "PK_603e09f183df0108d8695c57e28") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at          DateTime                 @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?                @db.Timestamp(6)
+  content_id          String                   @unique(map: "REL_69a15349ca5e00f8e36ec17a8f") @db.Uuid
+  type                String                   @db.VarChar(50)
+  version             String                   @db.VarChar(20)
+  effective_date      DateTime                 @db.Timestamp(6)
+  is_mandatory        Boolean                  @default(true)
+  legal_reviewed_at   DateTime?                @db.Timestamp(6)
+  contents            contents                 @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_69a15349ca5e00f8e36ec17a8f2")
+}
+
+model promotion_contents {
+  id            String   @id(map: "PK_promotion_contents") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  promotion_id  String   @db.Uuid
+  content_id    String   @unique(map: "REL_5bf5782109cfe8fe1508591980d") @db.Uuid
+  promotions    promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5bf5782109cfe8fe1508591980c")
+  contents      contents   @relation(fields: [content_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5bf5782109cfe8fe1508591980d")
+
+  @@id([promotion_id, content_id])
+}
+
+// ============================================================
+// Content Enums
+// ============================================================
+
+enum contents_status_enum {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  SCHEDULED
+}
+
+enum contents_target_audience_enum {
+  ALL
+  USERS
+  VENUES
+  GUESTS
+}
+
+enum email_templates_templatetype_enum {
+  TRANSACTIONAL
+  MARKETING
+  SYSTEM
+  NOTIFICATION
+}
+
+enum faqs_category_enum {
+  GENERAL
+  BOOKING
+  PAYMENT
+  ACCOUNT
+  TECHNICAL
+  OTHER
+}

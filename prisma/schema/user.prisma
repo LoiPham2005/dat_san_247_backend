@@ -1,0 +1,410 @@
+// ============================================================
+// User Module
+// ============================================================
+
+model membership_tiers {
+  id                  String           @id(map: "PK_membership_tiers") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime         @default(now()) @db.Timestamp(6)
+  updated_at          DateTime         @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?        @db.Timestamp(6)
+  name                String           @db.VarChar
+  level               Int
+  description         String?
+  min_spending        Decimal          @default(0) @db.Decimal(15, 2)
+  discount_percentage Decimal          @default(0) @db.Decimal(5, 2)
+  is_active           Boolean          @default(true)
+  users               users[]
+}
+
+model notification_settings {
+  id                   String    @id(map: "PK_d131abd7996c475ef768d4559ba") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime? @db.Timestamp(6)
+  user_id              String    @unique(map: "UQ_91a7ffebe8b406c4470845d4781") @db.Uuid
+  enable_push          Boolean   @default(true)
+  enable_email         Boolean   @default(true)
+  enable_sms           Boolean   @default(false)
+  booking_reminders    Boolean   @default(true)
+  promotional_messages Boolean   @default(true)
+  social_activity      Boolean   @default(true)
+  community_alerts     Boolean   @default(true)
+  users                users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_91a7ffebe8b406c4470845d4781")
+
+  @@index([user_id], map: "IDX_91a7ffebe8b406c4470845d478")
+}
+
+model notifications {
+  id         String                     @id(map: "PK_6a72c3c0f683f6462415e653c3a") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime                   @default(now()) @db.Timestamp(6)
+  updated_at DateTime                   @default(now()) @db.Timestamp(6)
+  deleted_at DateTime?                  @db.Timestamp(6)
+  user_id    String                     @db.Uuid
+  type       notifications_type_enum
+  channel    notifications_channel_enum
+  title      String                     @db.VarChar
+  message    String
+  data       Json?
+  is_read    Boolean                    @default(false)
+  read_at    DateTime?                  @db.Timestamp(6)
+  users      users                      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9a8a82462cab47c73d25f492613")
+
+  @@index([user_id], map: "IDX_9a8a82462cab47c73d25f49261")
+  @@index([is_read], map: "IDX_f12148ce379462ebbb4d06cc13")
+}
+
+model permissions {
+  id               String             @id(map: "PK_920331560282b8bd21bb02290df") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime           @default(now()) @db.Timestamp(6)
+  updated_at       DateTime           @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime?          @db.Timestamp(6)
+  name             String             @unique(map: "UQ_43d2c676d379a562baedb413b93") @db.VarChar
+  action           String             @db.VarChar
+  subject          String             @db.VarChar
+  description      String?
+  role_permissions role_permissions[]
+}
+
+model refresh_tokens {
+  id         String    @id(map: "PK_7d8bee0204106019488c4c50ffa") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  user_id    String    @db.Uuid
+  token      String    @unique(map: "UQ_3ddc983c5f7bcf132fd8732c3f4") @db.VarChar
+  expires_at DateTime  @db.Timestamp(6)
+  is_revoked Boolean   @default(false)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3ddc983c5f7bcf132fd8732c3f4")
+}
+
+model role_permissions {
+  role_id       String      @db.Uuid
+  permission_id String      @db.Uuid
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1bec494129322e164ecaed5d1e2")
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c2a38637fe5cc2e6454ca0d9263")
+
+  @@id([role_id, permission_id], map: "PK_feddad7d5768277e60c40e01cdca")
+}
+
+model roles {
+  id               String             @id(map: "PK_c14b443d431077f89344a3fd262") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime           @default(now()) @db.Timestamp(6)
+  updated_at       DateTime           @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime?          @db.Timestamp(6)
+  name             String             @unique(map: "UQ_de8536da4945fe980f4a61900d1") @db.VarChar
+  description      String?
+  is_system        Boolean            @default(false)
+  is_active        Boolean            @default(true)
+  role_permissions role_permissions[]
+  users            users[]
+}
+
+model user_achievements {
+  id               String    @id(map: "PK_3d94aba7e9ed55365f68b5e77fa") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime  @default(now()) @db.Timestamp(6)
+  updated_at       DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime? @db.Timestamp(6)
+  user_id          String    @db.Uuid
+  achievement_type String    @db.VarChar
+  achieved_at      DateTime  @default(now()) @db.Timestamp(6)
+  metadata         Json?
+  users            users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fee0f5b46155b623902fdac1146")
+
+  @@unique([user_id, achievement_type], map: "UQ_fee0f5b46155b623902fdac1146")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_behaviors {
+  id          String                          @id(map: "PK_c345f97744cae055a1777e02c4c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime                        @default(now()) @db.Timestamp(6)
+  updated_at  DateTime                        @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime?                       @db.Timestamp(6)
+  user_id     String?                         @db.Uuid
+  session_id  String?                         @db.VarChar
+  action_type user_behaviors_action_type_enum
+  entity_type String?                         @db.VarChar
+  entity_id   String?                         @db.Uuid
+  venue_id    String?                         @db.Uuid
+  court_id    String?                         @db.Uuid
+  metadata    Json?
+  users       users?                          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9dc2815b94a502c999a5dcf98c3")
+  venues      venues?                         @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e9b90dd84859fa08f74b984a8e2")
+  courts      courts?                         @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f3b90dd84859fa08f74b984a8e3")
+
+  @@index([session_id], map: "IDX_1ff142bde33c36cc6c680e626f")
+  @@index([user_id], map: "IDX_9dc2815b94a502c999a5dcf98c")
+  @@index([action_type], map: "IDX_d98de4d066c4bc68d2a71f1db1")
+  @@index([venue_id], map: "IDX_e9b90dd84859fa08f74b984a8e")
+}
+
+model user_devices {
+  id             String    @id(map: "PK_c9e7e648903a9e537347aba4371") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime  @default(now()) @db.Timestamp(6)
+  updated_at     DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at     DateTime? @db.Timestamp(6)
+  user_id        String    @db.Uuid
+  device_token   String    @db.VarChar
+  device_type    String    @db.VarChar(50)
+  os_version     String?   @db.VarChar(50)
+  app_version    String?   @db.VarChar(50)
+  last_active_at DateTime  @default(now()) @db.Timestamp(6)
+  is_active      Boolean   @default(true)
+  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_28bd79e1b3f7c1168f0904ce241")
+
+  @@index([user_id], map: "IDX_28bd79e1b3f7c1168f0904ce24")
+}
+
+model user_points {
+  id                     String    @id(map: "PK_b91f00258263b9d728c7b320674") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at             DateTime  @default(now()) @db.Timestamp(6)
+  updated_at             DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at             DateTime? @db.Timestamp(6)
+  user_id                String    @unique(map: "REL_b63a87a96091c755b78a75eecb") @db.Uuid
+  total_points           Int       @default(0)
+  available_points       Int       @default(0)
+  spent_points           Int       @default(0)
+  expired_points         Int       @default(0)
+  lifetime_points        Int       @default(0)
+  last_transaction_at    DateTime? @db.Timestamp(6)
+  points_to_next_tier    Int?
+  potential_points_boost Decimal?  @db.Decimal(5, 2)
+  users                  users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b63a87a96091c755b78a75eecbc")
+
+  @@index([user_id], map: "IDX_b63a87a96091c755b78a75eecb")
+}
+
+model user_preferences_ai {
+  id                    String    @id(map: "PK_4266df2629612094b7584b7f974") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at            DateTime  @default(now()) @db.Timestamp(6)
+  updated_at            DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at            DateTime? @db.Timestamp(6)
+  user_id               String    @unique(map: "REL_cee5459245f652b75eb2759b4c") @db.Uuid
+  preferred_sport_types Json?
+  preferred_time_slots  Json?
+  preferred_price_range Json?
+  preferred_regions     Json?
+  skill_levels          Json?
+  notification_frequency String    @default("NORMAL") @db.VarChar
+  ai_personality        String    @default("FRIENDLY") @db.VarChar
+  data_sharing_enabled  Boolean   @default(true)
+  users                 users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cee5459245f652b75eb2759b4c2")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_profiles {
+  id                 String    @id(map: "PK_1ec6662219f4605723f1e41b6cb") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at         DateTime  @default(now()) @db.Timestamp(6)
+  updated_at         DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at         DateTime? @db.Timestamp(6)
+  user_id            String    @unique(map: "REL_6ca9503d77ae39b4b5a6cc3ba8") @db.Uuid
+  bio                String?
+  hobbies            Json?
+  achievements       Json?
+  skill_score        Int       @default(0)
+  is_verified        Boolean   @default(false)
+  verification_date  DateTime? @db.Timestamp(6)
+  total_followers    Int       @default(0)
+  total_following    Int       @default(0)
+  total_posts        Int       @default(0)
+  is_profile_public  Boolean   @default(true)
+  show_email         Boolean   @default(false)
+  show_phone         Boolean   @default(false)
+  preferred_language String    @default("vi") @db.VarChar
+  timezone           String    @default("Asia/Ho_Chi_Minh") @db.VarChar
+  users              users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6ca9503d77ae39b4b5a6cc3ba82")
+
+  @@index([skill_score], map: "IDX_291785d7eac9a6f6e4c88fb1d6")
+  @@index([is_verified], map: "IDX_44530b0e0f8f72d42efaad1c03")
+  @@index([user_id], map: "IDX_6ca9503d77ae39b4b5a6cc3ba8")
+}
+
+model user_subscriptions {
+  id                 String                         @id(map: "PK_9e928b0954e51705ab44988812c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at         DateTime                       @default(now()) @db.Timestamp(6)
+  updated_at         DateTime                       @default(now()) @db.Timestamp(6)
+  deleted_at         DateTime?                      @db.Timestamp(6)
+  user_id            String                         @db.Uuid
+  plan_id            String                         @db.Uuid
+  status             user_subscriptions_status_enum @default(PENDING)
+  start_date         DateTime                       @db.Timestamp(6)
+  end_date           DateTime                       @db.Timestamp(6)
+  cancel_at_period_end Boolean                      @default(false)
+  canceled_at        DateTime?                      @db.Timestamp(6)
+  payment_method_id  String?                        @db.VarChar
+  subscription_plans subscription_plans             @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_fe0520c7b2c1c57924460864911")
+  users                users                          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0641da02314913e28f6131310e5")
+
+  @@index([user_id], map: "IDX_0641da02314913e28f6131310e")
+  @@index([status], map: "IDX_5970e6723936d28477041ebf85")
+  @@index([end_date], map: "IDX_f03121e46d2dbaf2d2a8462a77")
+  @@index([plan_id], map: "IDX_fe0520c7b2c1c5792446086491")
+}
+
+model users {
+  id                                                             String                      @id(map: "PK_a3ffb1c0c8416b9fc6f907b7433") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                                                     DateTime                    @default(now()) @db.Timestamp(6)
+  updated_at                                                     DateTime                    @default(now()) @db.Timestamp(6)
+  deleted_at                                                     DateTime?                   @db.Timestamp(6)
+  email                                                          String                      @unique(map: "UQ_97672ac88f789774dd47f7c8be3") @db.VarChar
+  username                                                       String?                     @unique(map: "UQ_fe0bb3f6520ee0469504521e710") @db.VarChar
+  kyc_status                                                     users_kyc_status_enum       @default(UNVERIFIED)
+  password                                                       String                      @db.VarChar
+  full_name                                                      String                      @db.VarChar
+  phone                                                          String?                     @unique(map: "UQ_a000cca60bcf04454e727699490") @db.VarChar
+  avatar_url                                                     String?                     @db.VarChar
+  gender                                                         users_gender_enum?
+  date_of_birth                                                  DateTime?                   @db.Date
+  address                                                        String?
+  is_active                                                      Boolean                     @default(true)
+  is_verified                                                    Boolean                     @default(false)
+  email_verified_at                                              DateTime?                   @db.Timestamp(6)
+  phone_verified_at                                              DateTime?                   @db.Timestamp(6)
+  last_login_at                                                  DateTime?                   @db.Timestamp(6)
+  reset_password_otp                                             String?                     @db.VarChar
+  reset_password_expires                                         DateTime?                   @db.Timestamp(6)
+  role_id                                                        String?                     @db.Uuid
+  membership_tier_id                                             String?                     @db.Uuid
+  activity_logs                                                  activity_logs[]
+  ai_assistance                                                  ai_assistance[]
+  ai_conversations_ai_conversations_user_idTousers               ai_conversations[]          @relation("ai_conversations_user_idTousers")
+  ai_conversations_ai_conversations_escalated_to_agent_idTousers ai_conversations[]          @relation("ai_conversations_escalated_to_agent_idTousers")
+  ai_feedback                                                    ai_feedback[]
+  ai_fraud_detections_ai_fraud_detections_user_idTousers         ai_fraud_detections[]       @relation("ai_fraud_detections_user_idTousers")
+  ai_fraud_detections_ai_fraud_detections_reviewed_byTousers     ai_fraud_detections[]       @relation("ai_fraud_detections_reviewed_byTousers")
+  ai_image_analysis                                              ai_image_analysis[]
+  ai_interactions                                                ai_interactions[]
+  ai_messages                                                    ai_messages[]
+  ai_quotas                                                      ai_quotas[]
+  ai_recommendations                                             ai_recommendations[]
+  ai_search_queries                                              ai_search_queries[]
+  ai_smart_notifications                                         ai_smart_notifications[]
+  audit_logs                                                     audit_logs[]
+  booking_status_history                                         booking_status_history[]
+  booking_waitlist                                               booking_waitlist[]
+  bookings                                                       bookings[]
+  chat_conversations                                             chat_conversations[]
+  chat_members                                                   chat_members[]
+  chat_message_reactions                                         chat_message_reactions[]
+  chat_message_receipts                                          chat_message_receipts[]
+  chat_messages                                                  chat_messages[]
+  chat_settings                                                  chat_settings?
+  chat_templates                                                 chat_templates[]
+  contents                                                       contents[]
+  favorite_venues                                                favorite_venues[]
+  files                                                          files[]
+  friendships_friendships_requester_idTousers                    friendships[]               @relation("friendships_requester_idTousers")
+  friendships_friendships_friend_idTousers                       friendships[]               @relation("friendships_friend_idTousers")
+  friendships_friendships_user_idTousers                         friendships[]               @relation("friendships_user_idTousers")
+  invoices                                                       invoices[]
+  match_findings                                                 match_findings[]
+  match_participants                                             match_participants[]
+  match_results                                                  match_results[]
+  notification_settings                                          notification_settings?
+  notifications                                                  notifications[]
+  organizations                                                  organizations[]
+  payout_requests_payout_requests_processed_byTousers            payout_requests[]           @relation("payout_requests_processed_byTousers")
+  payout_requests_payout_requests_user_idTousers                 payout_requests[]           @relation("payout_requests_user_idTousers")
+  point_transactions                                             point_transactions[]
+  post_comments                                                  post_comments[]
+  posts                                                          posts[]
+  promotion_usage                                                promotion_usage[]
+  recurring_bookings                                             recurring_bookings[]
+  refresh_tokens                                                 refresh_tokens[]
+  reports_reports_reporter_idTousers                             reports[]                   @relation("reports_reporter_idTousers")
+  reports_reports_reviewed_byTousers                             reports[]                   @relation("reports_reviewed_byTousers")
+  reviews                                                        reviews[]
+  social_likes                                                   social_likes[]
+  support_tickets_support_tickets_customer_idTousers             support_tickets[]           @relation("support_tickets_customer_idTousers")
+  support_tickets_support_tickets_assigned_to_idTousers          support_tickets[]           @relation("support_tickets_assigned_to_idTousers")
+  system_announcement_reads                                      system_announcement_reads[]
+  system_announcements                                           system_announcements[]
+  team_invitations_team_invitations_invited_user_idTousers       team_invitations[]          @relation("team_invitations_invited_user_idTousers")
+  team_invitations_team_invitations_invited_byTousers            team_invitations[]          @relation("team_invitations_invited_byTousers")
+  team_join_requests_team_join_requests_user_idTousers           team_join_requests[]        @relation("team_join_requests_user_idTousers")
+  team_join_requests_team_join_requests_reviewed_byTousers       team_join_requests[]        @relation("team_join_requests_reviewed_byTousers")
+  team_members                                                   team_members[]
+  teams                                                          teams[]
+  tournament_participants                                        tournament_participants[]
+  tournaments                                                    tournaments[]
+  transaction_disputes_transaction_disputes_resolved_byTousers   transaction_disputes[]      @relation("transaction_disputes_resolved_byTousers")
+  transaction_disputes_transaction_disputes_reporter_idTousers   transaction_disputes[]      @relation("transaction_disputes_reporter_idTousers")
+  transactions                                                   transactions[]
+  user_achievements                                              user_achievements[]
+  user_behaviors                                                 user_behaviors[]
+  user_blocks_user_blocks_user_idTousers                         user_blocks[]               @relation("user_blocks_user_idTousers")
+  user_blocks_user_blocks_blocked_user_idTousers                 user_blocks[]               @relation("user_blocks_blocked_user_idTousers")
+  user_devices                                                   user_devices[]
+  user_followers_user_followers_user_idTousers                   user_followers[]            @relation("user_followers_user_idTousers")
+  user_followers_user_followers_follower_idTousers               user_followers[]            @relation("user_followers_follower_idTousers")
+  user_points                                                    user_points?
+  user_preferences_ai                                            user_preferences_ai?
+  user_profiles                                                  user_profiles?
+  user_subscriptions                                             user_subscriptions[]
+  user_vouchers                                                  user_vouchers[]
+  venue_blacklist                                                venue_blacklist[]
+  venue_memberships                                              venue_memberships[]
+  venue_staff                                                    venue_staff[]
+  venue_verifications                                            venue_verifications[]
+  roles                                                          roles?                      @relation(fields: [role_id], references: [id], onUpdate: NoAction, map: "FK_fe0520c7b2c1c57924460864912")
+  membership_tier                                                membership_tiers?           @relation(fields: [membership_tier_id], references: [id], onUpdate: NoAction, map: "FK_fe0520c7b2c1c57924460864913")
+
+  @@index([email], map: "IDX_97672ac88f789774dd47f7c8be")
+  @@index([username], map: "IDX_fe0bb3f6520ee0469504521e71")
+}
+
+// ============================================================
+// User Enums
+// ============================================================
+
+enum notifications_channel_enum {
+  PUSH
+  EMAIL
+  SMS
+  IN_APP
+}
+
+enum notifications_type_enum {
+  BOOKING_CONFIRMATION
+  BOOKING_REMINDER
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  PROMOTION
+  SYSTEM_ANNOUNCEMENT
+  SOCIAL_ACTIVITY
+  SOCIAL_FRIEND_REQUEST
+  SOCIAL_MESSAGE
+  SUPPORT_TICKET_UPDATE
+}
+
+enum user_behaviors_action_type_enum {
+  VIEW_VENUE
+  VIEW_COURT
+  SEARCH
+  CLICK_BANNER
+  FAVORITE_TOGGLE
+  SHARE
+  BOOKING_START
+  BOOKING_CANCEL
+  REVIEW_POST
+  AI_CHAT
+}
+
+enum user_subscriptions_status_enum {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+enum users_gender_enum {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum users_kyc_status_enum {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}

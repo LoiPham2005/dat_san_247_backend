@@ -1,0 +1,206 @@
+// ============================================================
+// Chat Module
+// ============================================================
+
+model chat_conversations {
+  id                   String                       @id(map: "PK_99e9de5235a1cc708fcbc218e40") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime                     @default(now()) @db.Timestamp(6)
+  updated_at           DateTime                     @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime?                    @db.Timestamp(6)
+  type                 chat_conversations_type_enum @default(DIRECT)
+  title                String?                      @db.VarChar
+  venue_id             String?                      @db.Uuid
+  team_id              String?                      @db.Uuid
+  match_finding_id     String?                      @db.Uuid
+  max_members          Int                          @default(50)
+  is_muted             Boolean                      @default(false)
+  is_archived          Boolean                      @default(false)
+  allow_members_invite Boolean                      @default(true)
+  last_message_id      String?                      @db.Uuid
+  last_message_at      DateTime?                    @db.Timestamp(6)
+  total_messages       Int                          @default(0)
+  total_members        Int                          @default(0)
+  created_by           String?                      @db.Uuid
+  users                users?                       @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "FK_538bbdd8b128eec3a65d10ce1af")
+  venues               venues?                      @relation(fields: [venue_id], references: [id], onUpdate: NoAction, map: "FK_8af5a7bb72e64dcdec39b1e7603")
+  teams                teams?                       @relation(fields: [team_id], references: [id], onUpdate: NoAction, map: "FK_cd3a75c7450f650885d414d2682")
+  match_findings       match_findings?              @relation(fields: [match_finding_id], references: [id], onUpdate: NoAction, map: "FK_f77fa43c8b826180a924d203e1e")
+  chat_members         chat_members[]
+  chat_messages        chat_messages[]
+  support_tickets      support_tickets?
+
+  @@index([type], map: "IDX_1531d800679a2491503c87b47b")
+}
+
+model chat_members {
+  id                   String                 @id(map: "PK_aea646f59c92c47af5804ce73a7") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime               @default(now()) @db.Timestamp(6)
+  updated_at           DateTime               @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime?              @db.Timestamp(6)
+  conversation_id      String                 @db.Uuid
+  user_id              String                 @db.Uuid
+  role                 chat_members_role_enum @default(MEMBER)
+  nickname             String?                @db.VarChar(100)
+  is_muted             Boolean                @default(false)
+  is_pinned            Boolean                @default(false)
+  last_read_message_id String?                @db.Uuid
+  last_read_at         DateTime?              @db.Timestamp(6)
+  unread_count         Int                    @default(0)
+  notification_enabled Boolean                @default(true)
+  joined_at            DateTime               @default(now()) @db.Timestamp(6)
+  left_at              DateTime?              @db.Timestamp(6)
+  chat_conversations   chat_conversations     @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_785059c3d3e5425fb8862ccc14e")
+  users                users                  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9dc61e92eed1dc151c2b2ef01a0")
+
+  @@unique([conversation_id, user_id], map: "UQ_3f8ed51f16e31b1e150c305413c")
+  @@index([conversation_id], map: "IDX_785059c3d3e5425fb8862ccc14")
+  @@index([user_id], map: "IDX_9dc61e92eed1dc151c2b2ef01a")
+}
+
+model chat_message_reactions {
+  id            String        @id(map: "PK_61ee2549c725d0a741fa2943873") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime      @default(now()) @db.Timestamp(6)
+  updated_at    DateTime      @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime?     @db.Timestamp(6)
+  message_id    String        @db.Uuid
+  user_id       String        @db.Uuid
+  emoji         String        @db.VarChar(10)
+  chat_messages chat_messages @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f52b492cfc5facc14fc3f1b8a2b")
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ffb1de87f23b4063db4c5ea6aa0")
+
+  @@unique([message_id, user_id, emoji], map: "UQ_28f6f6459cba6c27e262bf07e21")
+}
+
+model chat_message_receipts {
+  id            String                            @id(map: "PK_4f58f0c9618fabd607de397c165") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime                          @default(now()) @db.Timestamp(6)
+  updated_at    DateTime                          @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime?                         @db.Timestamp(6)
+  message_id    String                            @db.Uuid
+  user_id       String                            @db.Uuid
+  status        chat_message_receipts_status_enum @default(SENT)
+  delivered_at  DateTime?                         @db.Timestamp(6)
+  read_at       DateTime?                         @db.Timestamp(6)
+  chat_messages chat_messages                     @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_82d00060d39147da308a03ca165")
+  users         users                             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_844ca822bbd7f4a9ed23e8f1f63")
+
+  @@unique([message_id, user_id], map: "UQ_041171c1449f36f47a2806d3ff3")
+}
+
+model chat_messages {
+  id                     String                   @id(map: "PK_40c55ee0e571e268b0d3cd37d10") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at             DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at             DateTime                 @default(now()) @db.Timestamp(6)
+  deleted_at             DateTime?                @db.Timestamp(6)
+  conversation_id        String                   @db.Uuid
+  sender_id              String                   @db.Uuid
+  type                   chat_messages_type_enum  @default(TEXT)
+  content                String?
+  media_urls             Json?
+  booking_id             String?                  @db.Uuid
+  venue_id               String?                  @db.Uuid
+  location               Json?
+  reply_to_message_id    String?                  @db.Uuid
+  is_edited              Boolean                  @default(false)
+  edited_at              DateTime?                @db.Timestamp(6)
+  is_deleted             Boolean                  @default(false)
+  deleted_for_everyone   Boolean                  @default(false)
+  chat_message_reactions chat_message_reactions[]
+  chat_message_receipts  chat_message_receipts[]
+  chat_conversations     chat_conversations       @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3d623662d4ee1219b23cf61e649")
+  chat_messages          chat_messages?           @relation("chat_messagesTochat_messages", fields: [reply_to_message_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_686a3bfebb7545534342c5fa272")
+  other_chat_messages    chat_messages[]          @relation("chat_messagesTochat_messages")
+  users                  users                    @relation(fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9e5fc47ecb06d4d7b84633b1718")
+
+  @@index([conversation_id], map: "IDX_3d623662d4ee1219b23cf61e64")
+}
+
+model chat_settings {
+  id                  String    @id(map: "PK_1802e10ebbe48cf6de0047de64d") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at          DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime? @db.Timestamp(6)
+  user_id             String    @unique(map: "UQ_e50016cc8f96412d68f82a53e7e") @db.Uuid
+  is_online           Boolean   @default(false)
+  last_seen_at        DateTime? @db.Timestamp(6)
+  last_seen_privacy   String    @default("EVERYONE") @db.VarChar
+  allow_notifications Boolean   @default(true)
+  message_sound       Boolean   @default(true)
+  vibration           Boolean   @default(true)
+  read_receipts       Boolean   @default(true)
+  typing_indicator    Boolean   @default(true)
+  auto_reply_enabled  Boolean   @default(false)
+  auto_reply_message  String?
+  auto_reply_schedule Json?
+  users               users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e50016cc8f96412d68f82a53e7e")
+
+  @@index([user_id], map: "IDX_e50016cc8f96412d68f82a53e7")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model chat_templates {
+  id            String                       @id(map: "PK_996127c93a84fc1ee5d352a934d") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime                     @default(now()) @db.Timestamp(6)
+  updated_at    DateTime                     @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime?                    @db.Timestamp(6)
+  title         String                       @db.VarChar
+  category      chat_templates_category_enum @default(OTHER)
+  content       String
+  variables     Json?
+  used_by       Json?
+  usage_count   Int                          @default(0)
+  is_public     Boolean                      @default(true)
+  created_by    String                       @db.Uuid
+  quick_replies Json?
+  users         users                        @relation(fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8feb75b4d3e8b2ac6cbb3cffd81")
+
+  @@index([created_by], map: "IDX_8feb75b4d3e8b2ac6cbb3cffd8")
+  @@index([category], map: "IDX_a07101df4c5f5ca9fc7ab8e646")
+}
+
+// ============================================================
+// Chat Enums
+// ============================================================
+
+enum chat_conversations_type_enum {
+  DIRECT
+  GROUP
+  VENUE
+  TEAM
+  MATCH
+  SUPPORT
+}
+
+enum chat_members_role_enum {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum chat_message_receipts_status_enum {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum chat_messages_type_enum {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+  LOCATION
+  BOOKING
+  VENUE
+  MATCH
+  SYSTEM
+}
+
+enum chat_templates_category_enum {
+  GREETING
+  BOOKING
+  VENUE_INFO
+  POLICY
+  SUPPORT
+  OTHER
+}

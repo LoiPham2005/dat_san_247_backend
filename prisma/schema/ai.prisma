@@ -1,0 +1,414 @@
+// ============================================================
+// AI Module
+// ============================================================
+
+model ai_assistance {
+  id               String                  @id(map: "PK_51c682ea69b129755db97f28246") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime                @default(now()) @db.Timestamp(6)
+  updated_at       DateTime                @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime?               @db.Timestamp(6)
+  user_id          String                  @db.Uuid
+  type             ai_assistance_type_enum
+  question         String
+  answer           Json
+  context          Json?
+  rating           Int?
+  feedback         String?
+  users            users                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a0983237e62f3a8d153078a8123")
+
+  @@index([user_id], map: "IDX_a0983237e62f3a8d153078a812")
+}
+
+model ai_cache {
+  id           String     @id(map: "PK_30b792e08262273016a05f34517") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime   @default(now()) @db.Timestamp(6)
+  updated_at   DateTime   @default(now()) @db.Timestamp(6)
+  cache_key    String     @unique(map: "UQ_9f59baef086138cc08e67be58ce") @db.VarChar
+  prompt_hash  String     @db.VarChar
+  feature_code String     @db.VarChar
+  model_id     String     @db.Uuid
+  response     Json
+  input_tokens Int        @default(0)
+  output_tokens Int       @default(0)
+  expires_at   DateTime   @db.Timestamp(6)
+  hit_count    Int        @default(0)
+
+  @@index([expires_at], map: "IDX_312f8b7d101835c1e0423b4cf8")
+  @@index([model_id], map: "IDX_88ea941e8ba614b919b802053d")
+  @@index([feature_code], map: "IDX_912b211e63ffe3f1a3d7f29440")
+  @@index([cache_key], map: "IDX_9f59baef086138cc08e67be58c")
+}
+
+model ai_conversations {
+  id                                                  String                          @id(map: "PK_60db12765b82858ba00c8aa4ae2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                                          DateTime                        @default(now()) @db.Timestamp(6)
+  updated_at                                          DateTime                        @default(now()) @db.Timestamp(6)
+  deleted_at                                          DateTime?                       @db.Timestamp(6)
+  user_id                                             String?                         @db.Uuid
+  title                                               String?                         @db.VarChar
+  status                                              ai_conversations_status_enum    @default(ACTIVE)
+  summary                                             String?
+  sentiment                                           ai_conversations_sentiment_enum @default(NEUTRAL)
+  metadata                                            Json?
+  escalated_to_agent_id                               String?                         @db.Uuid
+  escalated_at                                        DateTime?                       @db.Timestamp(6)
+  resolved_at                                         DateTime?                       @db.Timestamp(6)
+  users_ai_conversations_escalated_to_agent_idTousers users?                          @relation("ai_conversations_escalated_to_agent_idTousers", fields: [escalated_to_agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_06c564c515d8cdb40b6f3bfbbb42")
+  users_ai_conversations_user_idTousers               users?                          @relation("ai_conversations_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_12fdbf99ca0da93085d61edd3bb")
+  ai_messages                                         ai_messages[]
+
+  @@index([user_id], map: "IDX_12fdbf99ca0da93085d61edd3b")
+}
+
+model ai_feedback {
+  id            String      @id(map: "PK_aa34b6654c98bf014129c13c1b0") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime    @default(now()) @db.Timestamp(6)
+  updated_at    DateTime    @default(now()) @db.Timestamp(6)
+  user_id       String      @db.Uuid
+  interaction_id String?     @db.Uuid
+  rating        Int
+  comment       String?
+  entity_type   String?     @db.VarChar
+  entity_id     String?     @db.Uuid
+  users         users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_92a7f08baacc8317fcebb7d8ec8")
+}
+
+model ai_fraud_detections {
+  id                                           String                                @id(map: "PK_42010d55c1a20c0c806af51d84e") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                                   DateTime                              @default(now()) @db.Timestamp(6)
+  updated_at                                   DateTime                              @default(now()) @db.Timestamp(6)
+  deleted_at                                   DateTime?                             @db.Timestamp(6)
+  user_id                                      String?                               @db.Uuid
+  booking_id                                   String?                               @db.Uuid
+  fraud_type                                   ai_fraud_detections_fraud_type_enum
+  risk_score                                   Decimal                               @db.Decimal(5, 4)
+  analysis_details                             Json?
+  status                                       ai_fraud_detections_status_enum       @default(PENDING)
+  reviewed_by                                  String?                               @db.Uuid
+  reviewed_at                                  DateTime?                             @db.Timestamp(6)
+  notes                                        String?
+  users_ai_fraud_detections_user_idTousers     users?                                @relation("ai_fraud_detections_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0b23f38ec436cb9787d510be67a")
+  bookings                                     bookings?                             @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_197ab7af18c93fbb0c9b28b4a595")
+  users_ai_fraud_detections_reviewed_byTousers users?                                @relation("ai_fraud_detections_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_da722d93356ae3119d6be40d9885")
+
+  @@index([user_id], map: "IDX_0b23f38ec436cb9787d510be67")
+}
+
+model ai_image_analysis {
+  id                  String                                   @id(map: "PK_1475170bee3dd98b53e8aa7dd1a") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime                                 @default(now()) @db.Timestamp(6)
+  updated_at          DateTime                                 @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?                                @db.Timestamp(6)
+  file_id             String                                   @db.Uuid
+  analysis_type       ai_image_analysis_analysis_type_enum
+  results             Json
+  confidence_scores   Json?
+  reviewed_by         String?                                  @db.Uuid
+  reviewed_at         DateTime?                                @db.Timestamp(6)
+  human_decision      ai_image_analysis_human_decision_enum?
+  users               users?                                   @relation(fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_46656f4ce4b8e7ccea91c6adfae")
+  files               files                                    @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a8f31b7d8570c80d9dbc38ae9b5")
+
+  @@index([file_id], map: "IDX_a8f31b7d8570c80d9dbc38ae9b")
+}
+
+model ai_interactions {
+  id            String                      @id(map: "PK_3d775287d9543a6d92d5151a31c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime                    @default(now()) @db.Timestamp(6)
+  updated_at    DateTime                    @default(now()) @db.Timestamp(6)
+  user_id       String?                     @db.Uuid
+  session_id    String?                     @db.VarChar
+  model_id      String                      @db.Uuid
+  feature_code  String                      @db.VarChar
+  prompt        String
+  response      Json
+  input_tokens  Int                         @default(0)
+  output_tokens Int                         @default(0)
+  total_tokens  Int                         @default(0)
+  latency_ms    Int?
+  cost          Decimal?                    @db.Decimal(10, 6)
+  status        ai_interactions_status_enum @default(SUCCESS)
+  error_message String?
+  entity_type   String?                     @db.VarChar
+  entity_id     String?                     @db.Uuid
+  metadata      Json?
+  completed_at  DateTime?                   @db.Timestamp(6)
+  users         users?                      @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "FK_745b66db11c0c988b44334626d5")
+  ai_models     ai_models                   @relation(fields: [model_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f84c773559e914f32f3311a2cfc")
+
+  @@index([session_id], map: "IDX_43e6d8fc4e2442c03150ecb54d")
+  @@index([status], map: "IDX_4db62cc796efb87ac201322b20")
+  @@index([user_id], map: "IDX_745b66db11c0c988b44334626d")
+  @@index([entity_type], map: "IDX_ee88cad54b53e8cee10f89fa46")
+  @@index([model_id], map: "IDX_f84c773559e914f32f3311a2cf")
+}
+
+model ai_messages {
+  id               String                       @id(map: "PK_a390434d4a515ba18a41bc996c2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime                     @default(now()) @db.Timestamp(6)
+  updated_at       DateTime                     @default(now()) @db.Timestamp(6)
+  conversation_id  String                       @db.Uuid
+  sender_type      ai_messages_sender_type_enum
+  user_id          String?                      @db.Uuid
+  model_id         String?                      @db.Uuid
+  content          String
+  tokens_used      Int?
+  metadata         Json?
+  ai_conversations ai_conversations             @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_de21fcb2d1df7fd6ca70f555b62")
+  ai_models        ai_models?                   @relation(fields: [model_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f00c80d5a1020449c9c3c18cca3")
+  users            users?                       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f00c80d5a1020449c9c3c18cca4")
+
+  @@index([conversation_id], map: "IDX_de21fcb2d1df7fd6ca70f555b6")
+}
+
+model ai_models {
+  id                        String                  @id(map: "PK_3d254744f0bcf6f35be5826e25e") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                DateTime                @default(now()) @db.Timestamp(6)
+  updated_at                DateTime                @default(now()) @db.Timestamp(6)
+  name                      String                  @unique(map: "UQ_b2e64c27a46f4707b83ea5ee750") @db.VarChar
+  provider                  String                  @db.VarChar
+  type                      ai_models_type_enum
+  version                   String                  @db.VarChar
+  is_active                 Boolean                 @default(true)
+  base_url                  String?                 @db.VarChar
+  api_key_env               String?                 @db.VarChar
+  max_tokens                Int?
+  context_window            Int?
+  default_config            Json?
+  status                    ai_models_status_enum   @default(ACTIVE)
+  total_requests            BigInt                  @default(0)
+  total_tokens_used         BigInt                  @default(0)
+  total_cost                Decimal                 @default(0) @db.Decimal(12, 2)
+  avg_latency_ms            Decimal?                @db.Decimal(10, 2)
+  success_rate              Decimal?                @db.Decimal(5, 4)
+  ai_interactions           ai_interactions[]
+  ai_messages               ai_messages[]
+
+  @@index([type], map: "IDX_41afdcb44aa3e72d74033462d1")
+  @@index([provider], map: "IDX_6d3ea7c98f14266a28684a73d3")
+  @@index([status], map: "IDX_7d576a1dc563494e7456d61278")
+  @@index([name], map: "IDX_b2e64c27a46f4707b83ea5ee75")
+}
+
+model ai_quotas {
+  id                   String                @id(map: "PK_f0c851d9cd288b716ada41e840f") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime              @default(now()) @db.Timestamp(6)
+  updated_at           DateTime              @default(now()) @db.Timestamp(6)
+  user_id              String                @db.Uuid
+  feature_code         String                @db.VarChar
+  limit                Int
+  used                 Int                   @default(0)
+  period               ai_quotas_period_enum @default(DAILY)
+  reset_at             DateTime              @db.Timestamp(6)
+  users                users                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_48f09e0bbb6fa33582739647963")
+
+  @@unique([user_id, feature_code, period], map: "UQ_797756d2e436f05d09c37efc9f7")
+  @@index([user_id], map: "IDX_48f09e0bbb6fa3358273964796")
+  @@index([feature_code], map: "IDX_82f1163a131d4589797b8869f7")
+}
+
+model ai_recommendations {
+  id                    String                                      @id(map: "PK_57aa33b4356a91e94e98bcd3f2d") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at            DateTime                                    @default(now()) @db.Timestamp(6)
+  user_id               String                                      @db.Uuid
+  recommendation_type   ai_recommendations_recommendation_type_enum
+  algorithm             ai_recommendations_algorithm_enum           @default(HYBRID)
+  score                 Decimal                                     @db.Decimal(5, 4)
+  results               Json
+  metadata              Json?
+  is_converted          Boolean                                     @default(false)
+  converted_at          DateTime?                                   @db.Timestamp(6)
+  display_position      Int?
+  session_id            String?                                     @db.VarChar
+  venue_id              String?                                     @db.Uuid
+  court_id              String?                                     @db.Uuid
+  promotion_id          String?                                     @db.Uuid
+  courts                courts?                                     @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_41afdcb44aa3e72d74033462d1d")
+  promotions            promotions?                                 @relation(fields: [promotion_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5bf5782109cfe8fe15085919808")
+  users                 users                                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5bf5782109cfe8fe15085919809")
+  venues                venues?                                     @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_76ad086acd95cd91cf57998c9a5")
+
+  @@index([user_id], map: "IDX_5bf5782109cfe8fe1508591980")
+  @@index([recommendation_type], map: "IDX_76ad086acd95cd91cf57998c9a")
+}
+
+model ai_review_analysis {
+  id                   String                            @id(map: "PK_8b2776b7f630db543943b014364") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime                          @default(now()) @db.Timestamp(6)
+  review_id            String                            @db.Uuid
+  sentiment            ai_review_analysis_sentiment_enum @default(NEUTRAL)
+  sentiment_score       Decimal                           @db.Decimal(5, 4)
+  summary              String?
+  keywords             Json?
+  key_points           Json?
+  improvements        Json?
+  ai_model             String?                           @db.VarChar
+  reviews              reviews                           @relation(fields: [review_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_23c11097cb45f7eadb9fd037ec2")
+}
+
+model ai_search_queries {
+  id                    String               @id(map: "PK_9ebaefdeabafc373e6fe8a611e9") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at            DateTime             @default(now()) @db.Timestamp(6)
+  user_id               String?              @db.Uuid
+  query_text            String
+  parsed_intent         Json?
+  filters_applied       Json?
+  results_count         Int                  @default(0)
+  session_id            String?              @db.VarChar
+  ai_processing_time_ms Int?
+  users                 users?               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_30b1aec4e7718cf2262a71e4678")
+  ai_search_rankings    ai_search_rankings[]
+}
+
+model ai_search_rankings {
+  id                    String            @id(map: "PK_b87b0d88df5ced8ce98bfc6dddf") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at            DateTime          @default(now()) @db.Timestamp(6)
+  query_id              String            @db.Uuid
+  venue_id              String            @db.Uuid
+  relevance_score       Decimal           @db.Decimal(5, 4)
+  ranking_factors       Json?
+  position              Int
+  ai_search_queries     ai_search_queries @relation(fields: [query_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b87b0d88df5ced8ce98bfc6dddf1")
+  venues                venues            @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fd5dd437da5d295c8906b7b827a")
+}
+
+model ai_smart_notifications {
+  id                 String                                   @id(map: "PK_3f465249c37c90664e2094718e6") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at         DateTime                                 @default(now()) @db.Timestamp(6)
+  user_id            String                                   @db.Uuid
+  type               ai_smart_notifications_trigger_type_enum
+  content            Json
+  priority           Int                                      @default(0)
+  is_sent            Boolean                                  @default(false)
+  sent_at            DateTime?                                @db.Timestamp(6)
+  is_opened          Boolean                                  @default(false)
+  opened_at          DateTime?                                @db.Timestamp(6)
+  is_clicked         Boolean                                  @default(false)
+  clicked_at         DateTime?                                @db.Timestamp(6)
+  is_converted       Boolean                                  @default(false)
+  users              users                                    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8d60a1327fae87618df28f68348")
+}
+
+// ============================================================
+// AI Enums
+// ============================================================
+
+enum ai_assistance_type_enum {
+  RECOMMENDATION
+  PREDICTION
+  ANALYSIS
+  FRAUD_DETECTION
+  PRICING_SUGGESTION
+}
+
+enum ai_conversations_sentiment_enum {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  VERY_NEGATIVE
+}
+
+enum ai_conversations_status_enum {
+  ACTIVE
+  ARCHIVED
+  ESCALATED
+}
+
+enum ai_fraud_detections_fraud_type_enum {
+  ACCOUNT_TAKEOVER
+  PAYMENT_FRAUD
+  FAKE_REVIEW
+  BOOKING_ABUSE
+  OTHER
+}
+
+enum ai_fraud_detections_status_enum {
+  PENDING
+  CONFIRMED
+  DISMISSED
+}
+
+enum ai_image_analysis_analysis_type_enum {
+  OBJECT_DETECTION
+  TEXT_RECOGNITION
+  QUALITY_ASSESSMENT
+  INAPPROPRIATE_CONTENT
+  FACE_RECOGNITION
+}
+
+enum ai_image_analysis_human_decision_enum {
+  APPROVE
+  REJECT
+  FLAG
+}
+
+enum ai_interactions_status_enum {
+  SUCCESS
+  FAILED
+  TIMEOUT
+}
+
+enum ai_messages_sender_type_enum {
+  USER
+  AI
+  SYSTEM
+}
+
+enum ai_models_status_enum {
+  ACTIVE
+  INACTIVE
+  DEPRECATED
+  TESTING
+}
+
+enum ai_models_type_enum {
+  LLM
+  VISION
+  EMBEDDING
+  CLASSIFICATION
+  REGRESSION
+  RECOMMENDATION
+  FORECASTING
+  ANOMALY
+  NLP
+  CUSTOM
+}
+
+enum ai_quotas_period_enum {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum ai_recommendations_algorithm_enum {
+  COLLABORATIVE_FILTERING
+  CONTENT_BASED
+  HYBRID
+  POPULARITY_BASED
+  LOCATION_BASED
+  TIME_BASED
+  DEEP_LEARNING
+}
+
+enum ai_recommendations_recommendation_type_enum {
+  VENUE
+  COURT
+  TIME_SLOT
+  PROMOTION
+}
+
+enum ai_review_analysis_sentiment_enum {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  VERY_NEGATIVE
+}
+
+enum ai_smart_notifications_trigger_type_enum {
+  PREDICTED_CANCELLATION
+  PRICE_DROP
+  AVAILABILITY_ALERT
+  WEATHER_ALERT
+  PERSONALIZED_OFFER
+}

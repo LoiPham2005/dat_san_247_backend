@@ -1,0 +1,232 @@
+// ============================================================
+// System Module
+// ============================================================
+
+model activity_logs {
+  id            String                     @id(map: "PK_0c0f64c515d8cdb40b6f3bfbbb4") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime                   @default(now()) @db.Timestamp(6)
+  user_id       String?                    @db.Uuid
+  activity_type activity_logs_activity_type_enum
+  description   String?
+  ip_address    String?                    @db.VarChar
+  user_agent    String?                    @db.VarChar
+  metadata      Json?
+  users         users?                     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0c0f64c515d8cdb40b6f3bfbbb4")
+
+  @@index([user_id], map: "IDX_0c0f64c515d8cdb40b6f3bfbbb")
+  @@index([activity_type], map: "IDX_603e09f183df0108d8695c57e2")
+}
+
+model audit_logs {
+  id          String    @id(map: "PK_1bb179d048bbc581caa3b013439") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime? @db.Timestamp(6)
+  user_id     String?   @db.Uuid
+  action      String    @db.VarChar(100)
+  entity_name String    @db.VarChar(50)
+  entity_id   String?   @db.Uuid
+  oldValues   Json?
+  newValues   Json?
+  ip_address  String?   @db.VarChar
+  user_agent  String?   @db.VarChar
+  users       users?    @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "FK_bd2726fd31b35443f2245b93ba0")
+
+  @@index([user_id], map: "IDX_bd2726fd31b35443f2245b93ba")
+  @@index([action], map: "IDX_cee5459245f652b75eb2759b4c")
+}
+
+model files {
+  id             String               @id(map: "PK_6cde615dcda93a201274f83b169") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime             @default(now()) @db.Timestamp(6)
+  updated_at     DateTime             @default(now()) @db.Timestamp(6)
+  deleted_at     DateTime?            @db.Timestamp(6)
+  owner_id       String?              @db.Uuid
+  filename       String               @db.VarChar
+  original_name  String               @db.VarChar
+  mime_type      String               @db.VarChar
+  size           Int
+  url            String               @db.VarChar
+  key            String               @db.VarChar
+  provider       files_provider_enum  @default(LOCAL)
+  is_public      Boolean              @default(true)
+  metadata       Json?
+  ai_image_analysis ai_image_analysis[]
+  banners        banners[]
+  social_media   social_media[]
+  users          users?               @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6cde615dcda93a201274f83b169")
+  venue_images   venue_images[]
+  review_images  review_images[]
+
+  @@index([owner_id], map: "IDX_6cde615dcda93a201274f83b16")
+}
+
+model organizations {
+  id              String            @id(map: "PK_6b031fcd0863e3f6b44230163f9") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime          @default(now()) @db.Timestamp(6)
+  updated_at      DateTime          @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime?         @db.Timestamp(6)
+  name            String            @unique(map: "UQ_9b7ca6d30b94fef571cff876884") @db.VarChar
+  description     String?
+  logo_url        String?
+  website_url     String?
+  owner_id        String            @db.Uuid
+  tax_code        String?           @db.VarChar
+  address         String?
+  is_active       Boolean           @default(true)
+  users           users             @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e08c0b40ce104f44edf060126fe")
+  venues          venues[]
+
+  @@index([owner_id], map: "IDX_e08c0b40ce104f44edf060126f")
+}
+
+model settings {
+  id         String    @id(map: "PK_91a7ffebe8b406c4470845d4781") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  key        String    @unique(map: "UQ_ac0f09364e3701d9ed35435288b") @db.VarChar
+  value      Json
+  group      String    @default("GENERAL") @db.VarChar
+  is_system  Boolean   @default(false)
+  is_public  Boolean   @default(true)
+  description String?
+
+  @@index([group], map: "IDX_91a7ffebe8b406c4470845d47")
+}
+
+model subscription_plans {
+  id                  String                         @id(map: "PK_subscription_plans") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at          DateTime                       @default(now()) @db.Timestamp(6)
+  updated_at          DateTime                       @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?                      @db.Timestamp(6)
+  name                String                         @db.VarChar
+  description         String?
+  price               Decimal                        @db.Decimal(15, 2)
+  currency            String                         @default("VND") @db.VarChar(10)
+  interval            subscription_plans_interval_enum @default(MONTHLY)
+  features            Json?
+  is_active           Boolean                        @default(true)
+  user_subscriptions   user_subscriptions[]
+}
+
+model support_tickets {
+  id                                    String                    @id(map: "PK_bcccb94a1fe4c82aefeab8c23ad") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                            DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at                            DateTime                  @default(now()) @db.Timestamp(6)
+  deleted_at                            DateTime?                 @db.Timestamp(6)
+  ticket_number                         String                    @unique(map: "UQ_bcccb94a1fe4c82aefeab8c23ad") @db.VarChar
+  customer_id                            String                    @db.Uuid
+  assigned_to_id                         String?                   @db.Uuid
+  venue_id                               String?                   @db.Uuid
+  booking_id                             String?                   @db.Uuid
+  title                                 String                    @db.VarChar
+  description                           String
+  status                                support_tickets_status_enum @default(OPEN)
+  priority                              support_tickets_priority_enum @default(MEDIUM)
+  category                              support_tickets_category_enum
+  metadata                              Json?
+  users_support_tickets_customer_idTousers users                     @relation("support_tickets_customer_idTousers", fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bcccb94a1fe4c82aefeab8c23ad")
+  users_support_tickets_assigned_to_idTousers users?                    @relation("support_tickets_assigned_to_idTousers", fields: [assigned_to_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e8c2534f317bd655481d3f96c72")
+  venues                                venues?                   @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f03121e46d2dbaf2d2a8462a77b")
+  bookings                              bookings?                 @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f7d9e1b3f96c42c36fb9dc2815b")
+
+  @@index([customer_id], map: "IDX_bcccb94a1fe4c82aefeab8c23a")
+  @@index([status], map: "IDX_dab4d78b3be05c1ca4a626f57f2")
+}
+
+model system_announcement_reads {
+  id                   String              @id(map: "PK_f12148ce379462ebbb4d06cc13b") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime            @default(now()) @db.Timestamp(6)
+  announcement_id      String              @db.Uuid
+  user_id              String              @db.Uuid
+  system_announcements system_announcements @relation(fields: [announcement_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f12148ce379462ebbb4d06cc13b")
+  users                users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f12148ce379462ebbb4d06cc13c")
+
+  @@unique([announcement_id, user_id], map: "UQ_f12148ce379462ebbb4d06cc13b")
+}
+
+model system_announcements {
+  id                        String                                   @id(map: "PK_9128bff0e1e043ce4adb912808c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at                DateTime                                 @default(now()) @db.Timestamp(6)
+  updated_at                DateTime                                 @default(now()) @db.Timestamp(6)
+  deleted_at                DateTime?                                @db.Timestamp(6)
+  title                     String                                   @db.VarChar
+  content                   String
+  type                      String                                   @default("GENERAL") @db.VarChar
+  priority                  String                                   @default("NORMAL") @db.VarChar
+  target_audience           system_announcements_target_audience_enum @default(ALL)
+  start_at                  DateTime?                                @db.Timestamp(6)
+  end_at                    DateTime?                                @db.Timestamp(6)
+  is_active                 Boolean                                  @default(true)
+  created_by                String                                   @db.Uuid
+  system_announcement_reads system_announcement_reads[]
+  users                     users                                    @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9128bff0e1e043ce4adb912808c")
+
+  @@index([is_active], map: "IDX_9128bff0e1e043ce4adb912808")
+}
+
+// ============================================================
+// System Enums
+// ============================================================
+
+enum activity_logs_activity_type_enum {
+  LOGIN
+  LOGOUT
+  BOOKING_CREATED
+  BOOKING_CANCELLED
+  PAYMENT
+  REVIEW_POSTED
+  VENUE_UPDATED
+  USER_UPDATED
+  VENUE_APPROVED
+  VENUE_REJECTED
+  VIEW_VENUE
+  VIEW_COURT
+  SEARCH_QUERY
+  FAVORITE_TOGGLE
+  PROMOTION_CLICK
+  AI_CHAT_START
+}
+
+enum files_provider_enum {
+  LOCAL
+  S3
+  CLOUDINARY
+  GOOGLE_STORAGE
+}
+
+enum subscription_plans_interval_enum {
+  MONTHLY
+  YEARLY
+  LIFETIME
+}
+
+enum support_tickets_category_enum {
+  BOOKING
+  PAYMENT
+  ACCOUNT
+  TECHNICAL
+  FEEDBACK
+  OTHER
+}
+
+enum support_tickets_priority_enum {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum support_tickets_status_enum {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum system_announcements_target_audience_enum {
+  ALL
+  USERS
+  VENUES
+  ADMINS
+}
