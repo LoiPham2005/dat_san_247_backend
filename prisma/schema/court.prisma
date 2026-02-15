@@ -78,7 +78,7 @@ model pricing_rules {
   updated_at DateTime                      @default(now()) @db.Timestamp(6)
   deleted_at DateTime?                     @db.Timestamp(6)
   court_id   String                        @db.Uuid
-  dayOfWeek  pricing_rules_dayofweek_enum?
+  day_of_week pricing_rules_dayofweek_enum? @map("dayOfWeek")
   start_time DateTime                      @db.Time(6)
   end_time   DateTime                      @db.Time(6)
   price      Decimal                       @db.Decimal(10, 2)
