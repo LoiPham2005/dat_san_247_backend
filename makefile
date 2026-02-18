@@ -19,8 +19,11 @@ Select-String "^enum\s" prisma\schema.prisma | Measure-Object
 kiểm tra số lượng mdel trong prisma/schema:
 Select-String "^model\s" prisma\schema\*.prisma | Measure-Object  
 
+liệt kê tên model trong prisma/schema:
+Select-String "^model\s+(\w+)" prisma\schema\*.prisma | ForEach-Object { $_.Matches.Groups[1].Value }
+
 câu lệnh pull db trên cloud trên db về:
-npx prisma introspect
+npx.cmd prisma introspect
 
 câu lệnh push db lên cloud:
 npx prisma db push

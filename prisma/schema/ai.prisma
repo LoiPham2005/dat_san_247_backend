@@ -55,8 +55,8 @@ model ai_conversations {
   escalated_to_agent_id                               String?                         @db.Uuid
   escalated_at                                        DateTime?                       @db.Timestamp(6)
   resolved_at                                         DateTime?                       @db.Timestamp(6)
-  users_ai_conversations_user_idTousers               users?                          @relation("ai_conversations_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a3ffb1c0c8416b9fc6f907b743m")
   users_ai_conversations_escalated_to_agent_idTousers users?                          @relation("ai_conversations_escalated_to_agent_idTousers", fields: [escalated_to_agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a2cecd1a3531c0b041e29ba46e8")
+  users_ai_conversations_user_idTousers               users?                          @relation("ai_conversations_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a3ffb1c0c8416b9fc6f907b743m")
   ai_messages                                         ai_messages[]
 
   @@index([user_id], map: "IDX_12fdbf99ca0da93085d61edd3b")
@@ -268,10 +268,10 @@ model ai_recommendations {
   venue_id              String?                                     @db.Uuid
   court_id              String?                                     @db.Uuid
   promotion_id          String?                                     @db.Uuid
-  users                 users                                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fee0f5b46155b623902fdac114c")
   venues                venues?                                     @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6ee25cf81e0431018ac4afc3dae")
   courts                courts?                                     @relation(fields: [court_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_984d26e97118fb9aa63e578d960")
   promotions            promotions?                                 @relation(fields: [promotion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c1497ad4a4dacfa34325a2dfae6")
+  users                 users                                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fee0f5b46155b623902fdac114c")
 
   @@index([user_id], map: "IDX_5bf5782109cfe8fe1508591980")
   @@index([recommendation_type], map: "IDX_76ad086acd95cd91cf57998c9a")

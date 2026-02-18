@@ -61,8 +61,8 @@ model users {
   reset_password_otp                                             String?                     @db.VarChar
   activity_logs                                                  activity_logs[]
   ai_assistance                                                  ai_assistance[]
-  ai_conversations_ai_conversations_user_idTousers               ai_conversations[]          @relation("ai_conversations_user_idTousers")
   ai_conversations_ai_conversations_escalated_to_agent_idTousers ai_conversations[]          @relation("ai_conversations_escalated_to_agent_idTousers")
+  ai_conversations_ai_conversations_user_idTousers               ai_conversations[]          @relation("ai_conversations_user_idTousers")
   ai_feedback                                                    ai_feedback[]
   ai_fraud_detections_ai_fraud_detections_user_idTousers         ai_fraud_detections[]       @relation("ai_fraud_detections_user_idTousers")
   ai_fraud_detections_ai_fraud_detections_reviewed_byTousers     ai_fraud_detections[]       @relation("ai_fraud_detections_reviewed_byTousers")

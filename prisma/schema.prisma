@@ -82,8 +82,8 @@ model ai_conversations {
   escalated_to_agent_id                               String?                         @db.Uuid
   escalated_at                                        DateTime?                       @db.Timestamp(6)
   resolved_at                                         DateTime?                       @db.Timestamp(6)
-  users_ai_conversations_user_idTousers               users?                          @relation("ai_conversations_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_12fdbf99ca0da93085d61edd3bb")
   users_ai_conversations_escalated_to_agent_idTousers users?                          @relation("ai_conversations_escalated_to_agent_idTousers", fields: [escalated_to_agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a2a32a7bdb9f70d496b9df0f571")
+  users_ai_conversations_user_idTousers               users?                          @relation("ai_conversations_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_12fdbf99ca0da93085d61edd3bb")
   ai_messages                                         ai_messages[]
 
   @@index([user_id], map: "IDX_12fdbf99ca0da93085d61edd3b")
@@ -299,10 +299,10 @@ model ai_recommendations {
   venue_id              String?                                     @db.Uuid
   court_id              String?                                     @db.Uuid
   promotion_id          String?                                     @db.Uuid
-  users                 users                                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5bf5782109cfe8fe1508591980b")
   venues                venues?                                     @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6ee25cf81e0431018ac4afc3dae")
   courts                courts?                                     @relation(fields: [court_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_984d26e97118fb9aa63e578d960")
   promotions            promotions?                                 @relation(fields: [promotion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c1497ad4a4dacfa34325a2dfae6")
+  users                 users                                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5bf5782109cfe8fe1508591980b")
 
   @@index([user_id], map: "IDX_5bf5782109cfe8fe1508591980")
   @@index([recommendation_type], map: "IDX_76ad086acd95cd91cf57998c9a")
@@ -693,9 +693,9 @@ model chat_messages {
   deleted_for_everyone   Boolean                  @default(false)
   chat_message_reactions chat_message_reactions[]
   chat_message_receipts  chat_message_receipts[]
-  chat_conversations     chat_conversations       @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3d623662d4ee1219b23cf61e649")
   chat_messages          chat_messages?           @relation("chat_messagesTochat_messages", fields: [reply_to_message_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_686a3bfebb7545534342c5fa272")
   other_chat_messages    chat_messages[]          @relation("chat_messagesTochat_messages")
+  chat_conversations     chat_conversations       @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3d623662d4ee1219b23cf61e649")
   users                  users                    @relation(fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9e5fc47ecb06d4d7b84633b1718")
 
   @@index([conversation_id], map: "IDX_3d623662d4ee1219b23cf61e64")
@@ -805,8 +805,8 @@ model court_images {
   display_order Int       @default(0)
   is_cover      Boolean   @default(false)
   caption       String?   @db.VarChar
-  files         files     @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_84686c69dc61195925075b49888")
   courts        courts    @relation(fields: [court_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e676d7863d3e39bb0f704e33344")
+  files         files     @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_84686c69dc61195925075b49888")
 
   @@index([file_id], map: "IDX_84686c69dc61195925075b4988")
   @@index([court_id], map: "IDX_e676d7863d3e39bb0f704e3334")
@@ -920,8 +920,8 @@ model favorite_venues {
   deleted_at DateTime? @db.Timestamp(6)
   user_id    String    @db.Uuid
   venue_id   String    @db.Uuid
-  venues     venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2363073206d3f5f0234397fa6e9")
   users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e3ab3269f6915ae8caf181af035")
+  venues     venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2363073206d3f5f0234397fa6e9")
 
   @@unique([user_id, venue_id], map: "UQ_20b265ba4ce372b1ca3bceb1db5")
 }
@@ -1058,11 +1058,11 @@ model match_findings {
   booking_id           String?                            @db.Uuid
   expires_at           DateTime?                          @db.Timestamp(6)
   chat_conversations   chat_conversations[]
-  venues               venues?                            @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1dde8f92bd05b3b3242160bde06")
   bookings             bookings?                          @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_4771a4fa3c81b329b987a024092")
+  courts               courts?                            @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d1e9f6bd893c3a6e19da007b9a8")
   users                users?                             @relation(fields: [organizer_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_68e219822fbc3e94a8fa4a9a77f")
   teams                teams?                             @relation(fields: [organizer_team_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_841dc86babb3e430a59fe5b15e9")
-  courts               courts?                            @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d1e9f6bd893c3a6e19da007b9a8")
+  venues               venues?                            @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1dde8f92bd05b3b3242160bde06")
   match_participants   match_participants[]
   match_results        match_results[]
 
@@ -1083,8 +1083,8 @@ model match_participants {
   message          String?
   is_host          Boolean                        @default(false)
   side             Int?
-  match_findings   match_findings                 @relation(fields: [match_finding_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5320589b1d5e2bbc24ebb72dfcd")
   users            users                          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bb0b53928a62088ac805487bb26")
+  match_findings   match_findings                 @relation(fields: [match_finding_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5320589b1d5e2bbc24ebb72dfcd")
 
   @@unique([match_finding_id, user_id], map: "UQ_0f10d84d9f1548154d4e59849d2")
   @@index([match_finding_id], map: "IDX_5320589b1d5e2bbc24ebb72dfc")
@@ -1109,9 +1109,9 @@ model match_results {
   notes                                String?
   bookings                             bookings?      @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_851aadfac73798b5fe411938ea7")
   match_findings                       match_findings @relation(fields: [match_finding_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a20ea5393787f62b910347a2ad6")
-  users                                users?         @relation(fields: [mvp_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d0984a27d9926c7f08fb0fb5d59")
   teams_match_results_team_b_idToteams teams?         @relation("match_results_team_b_idToteams", fields: [team_b_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_daa433ae6674c7a3bc08059aee1")
   teams_match_results_team_a_idToteams teams?         @relation("match_results_team_a_idToteams", fields: [team_a_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e8a0b9cbe7aacf1f77d02c06409")
+  users                                users?         @relation(fields: [mvp_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d0984a27d9926c7f08fb0fb5d59")
   posts                                posts[]
 
   @@index([match_finding_id], map: "IDX_a20ea5393787f62b910347a2ad")
@@ -1211,8 +1211,8 @@ model payout_requests {
   proof_image_url                           String?
   processed_at                              DateTime?                   @db.Timestamp(6)
   processed_by                              String?                     @db.Uuid
-  teams                                     teams?                      @relation(fields: [team_id], references: [id], onUpdate: NoAction, map: "FK_18579b56a70f869043619ef09d6")
   users_payout_requests_processed_byTousers users?                      @relation("payout_requests_processed_byTousers", fields: [processed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_28618fd3491a70c26272d6f5724")
+  teams                                     teams?                      @relation(fields: [team_id], references: [id], onUpdate: NoAction, map: "FK_18579b56a70f869043619ef09d6")
   users_payout_requests_user_idTousers      users                       @relation("payout_requests_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e4bcc5d168043756413c5145a35")
 
   @@index([team_id], map: "IDX_18579b56a70f869043619ef09d")
@@ -1278,10 +1278,10 @@ model post_comments {
   total_likes         Int             @default(0)
   is_edited           Boolean         @default(false)
   edited_at           DateTime?       @db.Timestamp(6)
+  posts               posts           @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e8ffd07822f03f90f637b13cd59")
   post_comments       post_comments?  @relation("post_commentsTopost_comments", fields: [parent_comment_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_47e60da1f7aeb75961190bff75d")
   other_post_comments post_comments[] @relation("post_commentsTopost_comments")
   users               users           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8eb985b7bd35fd7bc760b6cbe8b")
-  posts               posts           @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e8ffd07822f03f90f637b13cd59")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1315,8 +1315,8 @@ model posts {
   posts           posts?             @relation("postsToposts", fields: [shared_post_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_96c4bbc13f8ac6af832dbc7bf20")
   other_posts     posts[]            @relation("postsToposts")
   match_results   match_results?     @relation(fields: [match_result_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ae6c261aa6307da7b4a7f45e691")
-  venues          venues?            @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b11b7963fe67cce2c674b115890")
   users           users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c4f9a7bd77b489e711277ee5986")
+  venues          venues?            @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b11b7963fe67cce2c674b115890")
 
   @@index([slug], map: "IDX_54ddf9075260407dcfdd724857")
   @@index([user_id], map: "IDX_c4f9a7bd77b489e711277ee598")
@@ -1520,8 +1520,8 @@ model review_images {
   review_id     String    @db.Uuid
   file_id       String    @db.Uuid
   display_order Int       @default(0)
-  reviews       reviews   @relation(fields: [review_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_45b8671ec9f03b6682a52adb120")
   files         files     @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d831e106bbe0c0edcc8dd589094")
+  reviews       reviews   @relation(fields: [review_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_45b8671ec9f03b6682a52adb120")
 
   @@index([review_id], map: "IDX_45b8671ec9f03b6682a52adb12")
   @@index([file_id], map: "IDX_d831e106bbe0c0edcc8dd58909")
@@ -1548,10 +1548,10 @@ model reviews {
   is_visible         Boolean             @default(true)
   ai_review_analysis ai_review_analysis?
   review_images      review_images[]
-  users              users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_728447781a30bc3fcfe5c2f1cdf")
-  venues             venues              @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_892f659696877d5b0a4a37de098")
   bookings           bookings            @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bbd6ac6e3e6a8f8c6e0e8692d63")
   courts             courts?             @relation(fields: [court_id], references: [id], onUpdate: NoAction, map: "FK_cc9e667d26276198be9256eac42")
+  users              users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_728447781a30bc3fcfe5c2f1cdf")
+  venues             venues              @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_892f659696877d5b0a4a37de098")
 
   @@index([user_id], map: "IDX_728447781a30bc3fcfe5c2f1cd")
   @@index([venue_id], map: "IDX_892f659696877d5b0a4a37de09")
@@ -2246,8 +2246,8 @@ model users {
   reset_password_otp                                             String?                     @db.VarChar
   activity_logs                                                  activity_logs[]
   ai_assistance                                                  ai_assistance[]
-  ai_conversations_ai_conversations_user_idTousers               ai_conversations[]          @relation("ai_conversations_user_idTousers")
   ai_conversations_ai_conversations_escalated_to_agent_idTousers ai_conversations[]          @relation("ai_conversations_escalated_to_agent_idTousers")
+  ai_conversations_ai_conversations_user_idTousers               ai_conversations[]          @relation("ai_conversations_user_idTousers")
   ai_feedback                                                    ai_feedback[]
   ai_fraud_detections_ai_fraud_detections_user_idTousers         ai_fraud_detections[]       @relation("ai_fraud_detections_user_idTousers")
   ai_fraud_detections_ai_fraud_detections_reviewed_byTousers     ai_fraud_detections[]       @relation("ai_fraud_detections_reviewed_byTousers")
@@ -3287,7 +3287,4 @@ enum invoice_items_type_enum {
   PRODUCT
   SERVICE
   ADDON
-  MEMBERSHIP
-  VOUCHER
-  OTHER
 }
