@@ -1,6 +1,7 @@
 // ================================================================
-// PRISMA SCHEMA - Sports Court Booking Platform
+// PRISMA SCHEMA - Sports Court Booking Platform v3
 // Production-Ready | PostgreSQL | Optimized
+// 6 Roles: super_admin, admin, staff, owner, venue_staff, customer
 // ================================================================
 
 generator client {
@@ -107,6 +108,13 @@ enum TimeSlotStatus {
   MAINTENANCE
 }
 
+// ----------------------------------------------------------------
+// VenueStaffRole — dùng trong venue_staff table
+// OWNER    = chủ sân (tự động assign khi tạo venue)
+// MANAGER  = quản lý được uỷ quyền bởi owner
+// STAFF    = nhân viên vận hành
+// RECEPTIONIST = lễ tân check-in
+// ----------------------------------------------------------------
 enum VenueStaffRole {
   OWNER
   MANAGER
@@ -217,6 +225,7 @@ enum NotificationType {
   REVIEW_RECEIVED
   PROMOTION
   PAYOUT_PROCESSED
+  VENUE_STAFF_INVITE
   SYSTEM
 }
 
@@ -279,10 +288,35 @@ enum FraudAction {
   MANUAL_REVIEW
 }
 
+// ----------------------------------------------------------------
+// VenueStaffInviteStatus — trạng thái lời mời làm việc tại sân
+// ----------------------------------------------------------------
+enum VenueStaffInviteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  REVOKED
+}
+
 // ================================================================
 // SECTION 1 — AUTH & USERS
 // ================================================================
 
+// ----------------------------------------------------------------
+// users — bảng chính cho TẤT CẢ roles
+//
+// CÁCH PHÂN QUYỀN:
+//   Platform roles  → users.role_id → roles.slug:
+//     'super_admin' | 'admin' | 'staff' | 'owner' | 'customer'
+//
+//   Venue-level     → venue_staff.role (VenueStaffRole):
+//     OWNER | MANAGER | STAFF | RECEPTIONIST
+//     (1 user có thể là staff ở nhiều venue khác nhau)
+//
+// NOTE: user với role 'owner' trên platform PHẢI có ít nhất 1 record
+//   trong venue_staff với role=OWNER khi họ tạo venue
+// ----------------------------------------------------------------
 model users {
   id                    String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at            DateTime   @default(now()) @db.Timestamp(6)
@@ -306,10 +340,11 @@ model users {
   phone_verified_at     DateTime?  @db.Timestamp(6)
   last_login_at         DateTime?  @db.Timestamp(6)
 
+  // Platform role — xác định quyền trên toàn hệ thống
   role_id               String?    @db.Uuid
 
   // Relations - Auth
-  role                  roles?                @relation(fields: [role_id], references: [id])
+  role                  roles?                   @relation(fields: [role_id], references: [id])
   refresh_tokens        refresh_tokens[]
   otp_verifications     otp_verifications[]
 
@@ -318,9 +353,11 @@ model users {
   notification_settings notification_settings?
   devices               user_devices[]
 
-  // Relations - Venue
-  owned_venues          venues[]
-  venue_staff           venue_staff[]
+  // Relations - Venue (dùng cho OWNER + VENUE_STAFF)
+  owned_venues          venues[]                 // venues mà user này là owner
+  venue_staff           venue_staff[]            // tất cả venue user này làm việc
+  venue_staff_invites_sent     venue_staff_invites[] @relation("invite_sender")
+  venue_staff_invites_received venue_staff_invites[] @relation("invite_receiver")
 
   // Relations - Booking
   bookings              bookings[]
@@ -331,8 +368,8 @@ model users {
   // Relations - Finance
   wallet                wallets?
   transactions          transactions[]
-  payout_requests_own   payout_requests[]       @relation("payout_owner")
-  payout_requests_proc  payout_requests[]       @relation("payout_processor")
+  payout_requests_own   payout_requests[]        @relation("payout_owner")
+  payout_requests_proc  payout_requests[]        @relation("payout_processor")
   invoices              invoices[]
 
   // Relations - Content
@@ -343,14 +380,14 @@ model users {
   notifications         notifications[]
   promotion_usage       promotion_usage[]
 
-  // Relations - Admin/Support
-  support_tickets_as_customer support_tickets[] @relation("ticket_customer")
-  support_tickets_as_agent    support_tickets[] @relation("ticket_agent")
+  // Relations - Admin/Support (dùng cho ADMIN + STAFF)
+  support_tickets_as_customer support_tickets[]  @relation("ticket_customer")
+  support_tickets_as_agent    support_tickets[]  @relation("ticket_agent")
   support_ticket_messages     support_ticket_messages[]
-  reports_submitted     reports[]               @relation("report_reporter")
-  reports_reviewed      reports[]               @relation("report_reviewer")
-  fraud_as_subject      fraud_detections[]      @relation("fraud_subject")
-  fraud_as_reviewer     fraud_detections[]      @relation("fraud_reviewer")
+  reports_submitted     reports[]                @relation("report_reporter")
+  reports_reviewed      reports[]                @relation("report_reviewer")
+  fraud_as_subject      fraud_detections[]       @relation("fraud_subject")
+  fraud_as_reviewer     fraud_detections[]       @relation("fraud_reviewer")
   audit_logs            audit_logs[]
 
   @@index([email])
@@ -471,14 +508,27 @@ model notification_settings {
   promotional_messages Boolean  @default(true)
   payment_alerts       Boolean  @default(true)
   system_alerts        Boolean  @default(true)
+  staff_alerts         Boolean  @default(true) // cho venue_staff: booking mới, check-in, etc.
 
   users                users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 // ================================================================
-// SECTION 2 — ROLES & PERMISSIONS
+// SECTION 2 — ROLES & PERMISSIONS (Platform-level)
 // ================================================================
 
+// ----------------------------------------------------------------
+// roles — 6 platform roles cố định:
+//   super_admin : Toàn quyền hệ thống, quản lý admin khác, settings
+//   admin       : Approve venue, quản lý user, xử lý report/support
+//   staff       : Xử lý support tickets, review report
+//   owner       : Chủ sân — quản lý venue/courts/revenue của mình
+//   customer    : Đặt sân, thanh toán, review
+//
+// NOTE: "venue_staff" KHÔNG phải platform role — họ vẫn có role
+//   'customer' trên platform NHƯNG có thêm record trong venue_staff
+//   Điều này cho phép: 1 người vừa là customer vừa là staff của sân
+// ----------------------------------------------------------------
 model roles {
   id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at       DateTime           @default(now()) @db.Timestamp(6)
@@ -486,7 +536,7 @@ model roles {
   name             String             @unique @db.VarChar(100)
   slug             String             @unique @db.VarChar(100)
   description      String?
-  is_system        Boolean            @default(false)
+  is_system        Boolean            @default(false) // system roles không được xoá
   is_active        Boolean            @default(true)
 
   users            users[]
@@ -499,10 +549,12 @@ model permissions {
   resource         String             @db.VarChar(100)
   action           String             @db.VarChar(50)
   description      String?
+  scope            String             @default("platform") @db.VarChar(20) // 'platform' | 'venue'
 
   role_permissions role_permissions[]
 
   @@index([resource])
+  @@index([scope])
 }
 
 model role_permissions {
@@ -577,7 +629,7 @@ model venues {
   opening_time              DateTime    @default(dbgenerated("'06:00:00'::time without time zone")) @db.Time(6)
   closing_time              DateTime    @default(dbgenerated("'23:00:00'::time without time zone")) @db.Time(6)
 
-  // Ratings — denormalized for query performance
+  // Ratings (denormalized cho performance)
   rating                    Decimal     @default(0) @db.Decimal(3, 2)
   rating_cleanliness        Decimal     @default(0) @db.Decimal(3, 2)
   rating_facilities         Decimal     @default(0) @db.Decimal(3, 2)
@@ -593,6 +645,11 @@ model venues {
   min_booking_before_hours  Int         @default(0)
   cancellation_before_hours Int         @default(24)
 
+  // Admin notes (dùng cho admin/staff platform)
+  admin_notes               String?     @db.Text
+  approved_at               DateTime?   @db.Timestamp(6)
+  approved_by               String?     @db.Uuid
+
   users                     users       @relation(fields: [owner_id], references: [id], onDelete: Cascade)
 
   courts                    courts[]
@@ -603,6 +660,7 @@ model venues {
   venue_operating_hours     venue_operating_hours[]
   venue_schedule_exceptions venue_schedule_exceptions[]
   venue_staff               venue_staff[]
+  venue_staff_invites       venue_staff_invites[]
   venue_services            venue_services[]
   venue_verifications       venue_verifications[]
   refund_policies           refund_policies[]
@@ -698,7 +756,6 @@ model venue_schedule_exceptions {
   venues     venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade)
 
   @@unique([venue_id, date])
-  @@index([venue_id])
   @@index([date])
 }
 
@@ -723,18 +780,105 @@ model venue_verifications {
   @@index([status])
 }
 
+// ----------------------------------------------------------------
+// venue_staff — quản lý nhân viên tại từng venue
+//
+// ROLES:
+//   OWNER       : Tự động tạo khi user tạo venue. Toàn quyền venue
+//   MANAGER     : Được owner uỷ quyền. Quản lý booking, staff, dịch vụ
+//   STAFF       : Vận hành hàng ngày. Check-in, xem booking
+//   RECEPTIONIST: Chỉ check-in và xem lịch hôm nay
+//
+// QUAN TRỌNG:
+//   - Khi tạo venue → tự động tạo venue_staff record cho owner
+//   - is_active = false khi staff bị tạm ngưng (vẫn giữ lịch sử)
+//   - permissions[] override — owner có thể cấp thêm quyền đặc biệt
+// ----------------------------------------------------------------
 model venue_staff {
-  id         String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime       @default(now()) @db.Timestamp(6)
-  venue_id   String         @db.Uuid
-  user_id    String         @db.Uuid
-  role       VenueStaffRole @default(STAFF)
+  id           String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime       @default(now()) @db.Timestamp(6)
+  updated_at   DateTime       @updatedAt @db.Timestamp(6)
 
-  venues     venues         @relation(fields: [venue_id], references: [id], onDelete: Cascade)
-  users      users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  venue_id     String         @db.Uuid
+  user_id      String         @db.Uuid
+  role         VenueStaffRole @default(STAFF)
+  is_active    Boolean        @default(true)
+
+  // Audit trail
+  invited_by   String?        @db.Uuid  // ai thêm staff này
+  joined_at    DateTime?      @db.Timestamp(6)
+  deactivated_at DateTime?    @db.Timestamp(6)
+  deactivated_by String?      @db.Uuid
+
+  // Staff working schedule (optional)
+  work_start_time DateTime?   @db.Time(6)
+  work_end_time   DateTime?   @db.Time(6)
+  work_days       String?     @db.VarChar(50) // e.g. "MON,TUE,WED" — denormalized for simplicity
+
+  // Internal note từ owner/manager
+  note          String?       @db.VarChar(500)
+
+  venues        venues        @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  permissions   venue_staff_permissions[]
 
   @@unique([venue_id, user_id])
   @@index([venue_id])
+  @@index([user_id])
+  @@index([role])
+  @@index([is_active])
+}
+
+// ----------------------------------------------------------------
+// venue_staff_permissions — quyền bổ sung cho từng staff
+//
+// Dùng khi owner muốn cấp quyền ngoài role mặc định
+// Ví dụ: RECEPTIONIST được phép xem doanh thu của ngày hôm nay
+// ----------------------------------------------------------------
+model venue_staff_permissions {
+  id             String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  venue_staff_id String      @db.Uuid
+  permission     String      @db.VarChar(100) // e.g. "bookings:cancel", "revenue:view_daily"
+  granted_by     String      @db.Uuid
+  granted_at     DateTime    @default(now()) @db.Timestamp(6)
+
+  venue_staff    venue_staff @relation(fields: [venue_staff_id], references: [id], onDelete: Cascade)
+
+  @@unique([venue_staff_id, permission])
+  @@index([venue_staff_id])
+}
+
+// ----------------------------------------------------------------
+// venue_staff_invites — lời mời nhân viên vào làm tại venue
+//
+// Flow: Owner/Manager gửi invite → Staff nhận email/link
+//   → Staff accept/reject → Nếu accept: tạo venue_staff record
+// ----------------------------------------------------------------
+model venue_staff_invites {
+  id           String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime                @default(now()) @db.Timestamp(6)
+  updated_at   DateTime                @updatedAt @db.Timestamp(6)
+
+  venue_id     String                  @db.Uuid
+  sender_id    String                  @db.Uuid   // owner/manager gửi invite
+  receiver_id  String?                 @db.Uuid   // nếu đã có tài khoản
+  invite_email String                  @db.VarChar(255) // email được mời
+  role         VenueStaffRole          @default(STAFF)
+  token        String                  @unique @db.VarChar(100) // token trong link invite
+  expires_at   DateTime                @db.Timestamp(6)
+  status       VenueStaffInviteStatus  @default(PENDING)
+  message      String?                 @db.VarChar(500) // lời nhắn từ sender
+
+  responded_at DateTime?               @db.Timestamp(6)
+
+  venues       venues                  @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  sender       users                   @relation("invite_sender", fields: [sender_id], references: [id])
+  receiver     users?                  @relation("invite_receiver", fields: [receiver_id], references: [id])
+
+  @@index([venue_id])
+  @@index([invite_email])
+  @@index([token])
+  @@index([status])
 }
 
 model venue_services {
@@ -867,6 +1011,7 @@ model court_maintenance {
   end_at       DateTime  @db.Timestamp(6)
   reason       String    @db.VarChar(500)
   is_emergency Boolean   @default(false)
+  created_by   String?   @db.Uuid  // staff/manager tạo lịch maintenance
 
   courts       courts    @relation(fields: [court_id], references: [id], onDelete: Cascade)
 
@@ -952,9 +1097,9 @@ model bookings {
   note                  String?       @db.Text
   cancellation_deadline DateTime?     @db.Timestamp(6)
   checked_in_at         DateTime?     @db.Timestamp(6)
-  checked_in_by         String?       @db.VarChar(100)
+  checked_in_by         String?       @db.Uuid    // venue_staff.user_id thực hiện check-in
   cancelled_at          DateTime?     @db.Timestamp(6)
-  cancelled_by          String?       @db.VarChar(100)
+  cancelled_by          String?       @db.Uuid    // ai cancel
   cancellation_reason   String?
 
   customers             users                  @relation(fields: [customer_id], references: [id], onDelete: Cascade)
@@ -985,13 +1130,13 @@ model bookings {
 model booking_addons {
   id             String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at     DateTime       @default(now()) @db.Timestamp(6)
-
   booking_id     String         @db.Uuid
   service_id     String         @db.Uuid
   quantity       Int            @default(1)
   price_per_unit Decimal        @db.Decimal(15, 2)
   total_price    Decimal        @db.Decimal(15, 2)
   note           String?
+  added_by       String?        @db.Uuid // staff có thể add dịch vụ khi check-in
 
   bookings       bookings       @relation(fields: [booking_id], references: [id], onDelete: Cascade)
   venue_services venue_services @relation(fields: [service_id], references: [id])
@@ -1000,15 +1145,16 @@ model booking_addons {
 }
 
 model booking_status_history {
-  id         String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime      @default(now()) @db.Timestamp(6)
-  booking_id String        @db.Uuid
-  status     BookingStatus
-  changed_by String?       @db.Uuid
-  note       String?
+  id           String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime      @default(now()) @db.Timestamp(6)
+  booking_id   String        @db.Uuid
+  status       BookingStatus
+  changed_by   String?       @db.Uuid
+  actor_role   String?       @db.VarChar(50) // 'customer' | 'venue_staff' | 'admin' | 'system'
+  note         String?
 
-  bookings   bookings      @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  users      users?        @relation(fields: [changed_by], references: [id])
+  bookings     bookings      @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  users        users?        @relation(fields: [changed_by], references: [id])
 
   @@index([booking_id])
 }
@@ -1134,7 +1280,7 @@ model wallets {
   locked_balance Decimal   @default(0) @db.Decimal(15, 2)
   currency       String    @default("VND") @db.VarChar(10)
   is_active      Boolean   @default(true)
-  version        Int       @default(0)
+  version        Int       @default(0) // optimistic lock
 
   users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   bank_accounts  payout_bank_accounts[]
@@ -1192,7 +1338,7 @@ model transaction_disputes {
   status          DisputeStatus @default(OPEN)
   resolution_note String?
   resolved_at     DateTime?     @db.Timestamp(6)
-  resolved_by     String?       @db.Uuid
+  resolved_by     String?       @db.Uuid // admin/staff platform giải quyết
 
   transactions    transactions  @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
 
@@ -1255,7 +1401,7 @@ model payout_requests {
   rejection_reason String?
   proof_image_url  String?      @db.VarChar(500)
   processed_at     DateTime?    @db.Timestamp(6)
-  processed_by     String?      @db.Uuid
+  processed_by     String?      @db.Uuid // admin/staff platform xử lý
 
   users            users        @relation("payout_owner", fields: [user_id], references: [id], onDelete: Cascade)
   processor        users?       @relation("payout_processor", fields: [processed_by], references: [id])
@@ -1283,10 +1429,16 @@ model reviews {
   rating_facilities  Int?
   rating_staff       Int?
   comment            String?   @db.Text
+
+  // Phản hồi từ owner/manager
   response           String?   @db.Text
-  responded_by       String?   @db.VarChar(100)
+  responded_by       String?   @db.Uuid // venue_staff.user_id (owner/manager)
   responded_at       DateTime? @db.Timestamp(6)
+
+  // Kiểm duyệt bởi admin/staff platform
   is_visible         Boolean   @default(true)
+  hidden_by          String?   @db.Uuid
+  hidden_reason      String?
 
   bookings           bookings  @relation(fields: [booking_id], references: [id], onDelete: Cascade)
   venues             venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade)
@@ -1322,6 +1474,7 @@ model promotions {
   updated_at          DateTime              @updatedAt @db.Timestamp(6)
   deleted_at          DateTime?             @db.Timestamp(6)
 
+  created_by          String?               @db.Uuid // admin/owner tạo promotion
   code                String                @unique @db.VarChar(50)
   name                String                @db.VarChar(255)
   description         String?
@@ -1447,8 +1600,8 @@ model support_tickets {
   updated_at        DateTime              @updatedAt @db.Timestamp(6)
 
   ticket_number     String                @unique @db.VarChar(20)
-  customer_id       String                @db.Uuid
-  assigned_to_id    String?               @db.Uuid
+  customer_id       String                @db.Uuid // người tạo ticket (customer/owner)
+  assigned_to_id    String?               @db.Uuid // admin/staff platform được assign
   assigned_at       DateTime?             @db.Timestamp(6)
   category          SupportTicketCategory @default(OTHER)
   priority          SupportTicketPriority @default(MEDIUM)
@@ -1473,6 +1626,7 @@ model support_tickets {
   @@index([customer_id])
   @@index([status])
   @@index([assigned_to_id])
+  @@index([priority])
 }
 
 model support_ticket_messages {
@@ -1481,7 +1635,7 @@ model support_ticket_messages {
   ticket_id  String          @db.Uuid
   sender_id  String          @db.Uuid
   message    String          @db.Text
-  is_staff   Boolean         @default(false)
+  is_staff   Boolean         @default(false) // true nếu là admin/staff platform
 
   tickets    support_tickets @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
   users      users           @relation(fields: [sender_id], references: [id])
@@ -1503,7 +1657,7 @@ model reports {
   reason       ReportReason
   description  String?          @db.Text
   status       ReportStatus     @default(PENDING)
-  reviewed_by  String?          @db.Uuid
+  reviewed_by  String?          @db.Uuid // admin/staff platform xử lý
   reviewed_at  DateTime?        @db.Timestamp(6)
   action_taken String?
 
@@ -1528,7 +1682,7 @@ model fraud_detections {
   risk_score        Decimal          @db.Decimal(5, 4)
   action_taken      FraudAction      @default(NONE)
   is_false_positive Boolean?
-  reviewed_by       String?          @db.Uuid
+  reviewed_by       String?          @db.Uuid // admin/staff platform review
   reviewed_at       DateTime?        @db.Timestamp(6)
   notes             String?          @db.Text
 
@@ -1562,6 +1716,7 @@ model audit_logs {
   id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at  DateTime  @default(now()) @db.Timestamp(6)
   user_id     String?   @db.Uuid
+  actor_role  String?   @db.VarChar(50) // 'super_admin'|'admin'|'staff'|'owner'|'venue_staff'|'customer'|'system'
   action      String    @db.VarChar(100)
   entity_name String    @db.VarChar(100)
   entity_id   String?   @db.Uuid
@@ -1576,6 +1731,7 @@ model audit_logs {
   @@index([entity_name, entity_id])
   @@index([action])
   @@index([created_at])
+  @@index([actor_role])
 }
 
 model settings {
