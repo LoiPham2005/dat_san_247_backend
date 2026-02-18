@@ -18,28 +18,6 @@ model ai_assistance {
   @@index([user_id], map: "IDX_a0983237e62f3a8d153078a812")
 }
 
-model ai_cache {
-  id           String     @id(map: "PK_30b792e08262273016a05f34517") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at   DateTime   @default(now()) @db.Timestamp(6)
-  updated_at   DateTime   @default(now()) @db.Timestamp(6)
-  deleted_at   DateTime?  @db.Timestamp(6)
-  cache_key    String     @unique(map: "UQ_9f59baef086138cc08e67be58c3") @db.VarChar
-  model_id     String?    @db.Uuid
-  feature_code String?    @db.VarChar
-  input_data   Json
-  output_data  Json
-  hit_count    Int        @default(0)
-  last_hit_at  DateTime?  @db.Timestamp(6)
-  tokens_saved BigInt     @default(0)
-  cost_saved   Decimal    @default(0) @db.Decimal(10, 4)
-  expires_at   DateTime   @db.Timestamp(6)
-  ai_models    ai_models? @relation(fields: [model_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_36d1b72fc4771960205d15c8e31")
-
-  @@index([expires_at], map: "IDX_312f8b7d101835c1e0423b4cf8")
-  @@index([model_id], map: "IDX_88ea941e8ba614b919b802053d")
-  @@index([feature_code], map: "IDX_912b211e63ffe3f1a3d7f29440")
-  @@index([cache_key], map: "IDX_9f59baef086138cc08e67be58c")
-}
 
 model ai_conversations {
   id                                                  String                          @id(map: "PK_60db12765b82858ba00c8aa4ae2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
@@ -126,42 +104,6 @@ model ai_image_analysis {
   @@index([file_id], map: "IDX_a8f31b7d8570c80d9dbc38ae9b")
 }
 
-model ai_interactions {
-  id            String                      @id(map: "PK_3d775287d9543a6d92d5151a31c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at    DateTime                    @default(now()) @db.Timestamp(6)
-  updated_at    DateTime                    @default(now()) @db.Timestamp(6)
-  deleted_at    DateTime?                   @db.Timestamp(6)
-  model_id      String                      @db.Uuid
-  type          ai_interactions_type_enum
-  user_id       String?                     @db.Uuid
-  session_id    String?                     @db.VarChar
-  entity_type   String?                     @db.VarChar
-  entity_id     String?                     @db.Uuid
-  input_data    Json
-  input_tokens  Int?
-  output_data   Json?
-  output_tokens Int?
-  model_config  Json?
-  latency_ms    Int?
-  cost          Decimal?                    @db.Decimal(10, 6)
-  status        ai_interactions_status_enum @default(PENDING)
-  error_message String?
-  error_code    String?                     @db.VarChar
-  retry_count   Int                         @default(0)
-  started_at    DateTime                    @default(now()) @db.Timestamp(6)
-  completed_at  DateTime?                   @db.Timestamp(6)
-  users         users?                      @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "FK_745b66db11c0c988b44334626d5")
-  ai_models     ai_models                   @relation(fields: [model_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f84c773559e914f32f3311a2cfc")
-
-  @@index([session_id], map: "IDX_43e6d8fc4e2442c03150ecb54d")
-  @@index([type], map: "IDX_485e89ca27183ab8335e6339c6")
-  @@index([entity_id], map: "IDX_4ab64927aba000f046e32580b0")
-  @@index([status], map: "IDX_4db62cc796efb87ac201322b20")
-  @@index([user_id], map: "IDX_745b66db11c0c988b44334626d")
-  @@index([entity_type], map: "IDX_ee88cad54b53e8cee10f89fa46")
-  @@index([model_id], map: "IDX_f84c773559e914f32f3311a2cf")
-}
-
 model ai_messages {
   id               String                       @id(map: "PK_a390434d4a515ba18a41bc996c2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at       DateTime                     @default(now()) @db.Timestamp(6)
@@ -181,69 +123,6 @@ model ai_messages {
   ai_conversations ai_conversations             @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fee0f5b46155b623902fdac114a")
 
   @@index([conversation_id], map: "IDX_de21fcb2d1df7fd6ca70f555b6")
-}
-
-model ai_models {
-  id                        String                  @id(map: "PK_3d254744f0bcf6f35be5826e25e") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at                DateTime                @default(now()) @db.Timestamp(6)
-  updated_at                DateTime                @default(now()) @db.Timestamp(6)
-  deleted_at                DateTime?               @db.Timestamp(6)
-  name                      String                  @unique(map: "UQ_b2e64c27a46f4707b83ea5ee75d") @db.VarChar
-  display_name              String?                 @db.VarChar
-  version                   String?                 @db.VarChar
-  model_type                ai_models_type_enum     @map("type")
-  provider                  ai_models_provider_enum
-  api_endpoint              String?
-  api_key_name              String?                 @db.VarChar
-  capabilities              Json?
-  max_tokens                Int?
-  max_context_length        Int?
-  cost_per_1k_input_tokens  Decimal?                @db.Decimal(10, 6)
-  cost_per_1k_output_tokens Decimal?                @db.Decimal(10, 6)
-  rate_limit_rpm            Int?
-  rate_limit_tpm            Int?
-  description               String?
-  documentation_url         String?
-  default_config            Json?
-  status                    ai_models_status_enum   @default(ACTIVE)
-  total_requests            BigInt                  @default(0)
-  total_tokens_used         BigInt                  @default(0)
-  total_cost                Decimal                 @default(0) @db.Decimal(12, 2)
-  avg_latency_ms            Decimal?                @db.Decimal(10, 2)
-  success_rate              Decimal?                @db.Decimal(5, 4)
-  ai_cache                  ai_cache[]
-  ai_interactions           ai_interactions[]
-
-  @@index([model_type], map: "IDX_41afdcb44aa3e72d74033462d1")
-  @@index([provider], map: "IDX_6d3ea7c98f14266a28684a73d3")
-  @@index([status], map: "IDX_7d576a1dc563494e7456d61278")
-  @@index([name], map: "IDX_b2e64c27a46f4707b83ea5ee75")
-}
-
-model ai_quotas {
-  id                   String                @id(map: "PK_f0c851d9cd288b716ada41e840f") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at           DateTime              @default(now()) @db.Timestamp(6)
-  updated_at           DateTime              @default(now()) @db.Timestamp(6)
-  deleted_at           DateTime?             @db.Timestamp(6)
-  user_id              String?               @db.Uuid
-  feature_code         String?               @db.VarChar
-  period               ai_quotas_period_enum
-  max_requests         Int?
-  max_tokens           BigInt?
-  max_cost             Decimal?              @db.Decimal(10, 2)
-  current_requests     Int                   @default(0)
-  current_tokens       BigInt                @default(0)
-  current_cost         Decimal               @default(0) @db.Decimal(10, 2)
-  period_start         DateTime              @db.Timestamp(6)
-  period_end           DateTime              @db.Timestamp(6)
-  auto_reset           Boolean               @default(true)
-  notify_at_percentage Int?
-  last_notified_at     DateTime?             @db.Timestamp(6)
-  users                users?                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a23c65019f79f674d1b2ab7626p")
-
-  @@unique([user_id, feature_code, period], map: "UQ_797756d2e436f05d09c37efc9f7")
-  @@index([user_id], map: "IDX_48f09e0bbb6fa3358273964796")
-  @@index([feature_code], map: "IDX_82f1163a131d4589797b8869f7")
 }
 
 model ai_recommendations {
@@ -319,26 +198,8 @@ model ai_search_queries {
   search_duration_ms    Int?
   ai_processing_time_ms Int?
   users                 users?               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a23c65019f79f674d1b2ab7626q")
-  ai_search_rankings    ai_search_rankings[]
 }
 
-model ai_search_rankings {
-  id                    String            @id(map: "PK_b87b0d88df5ced8ce98bfc6dddf") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at            DateTime          @default(now()) @db.Timestamp(6)
-  updated_at            DateTime          @default(now()) @db.Timestamp(6)
-  deleted_at            DateTime?         @db.Timestamp(6)
-  query_id              String            @db.Uuid
-  venue_id              String            @db.Uuid
-  relevance_score       Decimal?          @db.Decimal(5, 4)
-  popularity_score      Decimal?          @db.Decimal(5, 4)
-  personalization_score Decimal?          @db.Decimal(5, 4)
-  final_score           Decimal?          @db.Decimal(5, 4)
-  rank_position         Int?
-  was_clicked           Boolean           @default(false)
-  click_position        Int?
-  ai_search_queries     ai_search_queries @relation(fields: [query_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_84dd4b3206d505aa52ae5799c9a")
-  venues                venues            @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fd5dd437da5d295c8906b7b827a")
-}
 
 model ai_smart_notifications {
   id                 String                                   @id(map: "PK_3f465249c37c90664e2094718e6") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid

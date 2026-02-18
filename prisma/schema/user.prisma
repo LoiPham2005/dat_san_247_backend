@@ -67,9 +67,7 @@ model users {
   ai_fraud_detections_ai_fraud_detections_user_idTousers         ai_fraud_detections[]       @relation("ai_fraud_detections_user_idTousers")
   ai_fraud_detections_ai_fraud_detections_reviewed_byTousers     ai_fraud_detections[]       @relation("ai_fraud_detections_reviewed_byTousers")
   ai_image_analysis                                              ai_image_analysis[]
-  ai_interactions                                                ai_interactions[]
   ai_messages                                                    ai_messages[]
-  ai_quotas                                                      ai_quotas[]
   ai_recommendations                                             ai_recommendations[]
   ai_search_queries                                              ai_search_queries[]
   ai_smart_notifications                                         ai_smart_notifications[]

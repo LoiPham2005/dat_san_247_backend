@@ -513,7 +513,7 @@ export class VenuesService {
                             target_type: 'VENUE',
                             target_id: venue.id,
                             display_order: i,
-                            category: 'IMAGE' as any
+                            category: 'VENUE_IMAGE' as any
                         }
                     });
                 }
@@ -553,7 +553,7 @@ export class VenuesService {
                             target_type: 'VENUE',
                             target_id: id,
                             display_order: currentImagesCount + i,
-                            category: 'IMAGE' as any
+                            category: 'VENUE_IMAGE' as any
                         }
                     });
                 }

@@ -39,7 +39,6 @@ model venues {
   cancellation_before_hours Int                         @default(24)
   amenities                 Json?
   ai_recommendations        ai_recommendations[]
-  ai_search_rankings        ai_search_rankings[]
   bookings                  bookings[]
   chat_conversations        chat_conversations[]
   courts                    courts[]
