@@ -350,6 +350,7 @@ model users {
 
   // Relations - Profile
   profile               user_profiles?
+  referrals             user_profiles[]          @relation("user_referrals")
   notification_settings notification_settings?
   devices               user_devices[]
 
