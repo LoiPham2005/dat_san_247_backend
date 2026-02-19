@@ -1,19 +1,29 @@
 // ================================================================
-// PRISMA SCHEMA - Sports Court Booking Platform v5
-// Production-Ready | PostgreSQL | Final Optimized
-// 54 models | 6 Roles: super_admin, admin, staff, owner, venue_staff, customer
+// PRISMA SCHEMA — Sports Court Booking Platform v6
+// Production-Ready | PostgreSQL | Commercial Optimized
+// 57 models | 6 Roles: super_admin, admin, staff, owner, venue_staff, customer
 //
-// THAY ĐỔI SO VỚI v4:
-//   BỎ venue_social_links       → 4 fields thẳng trong venues
-//   BỎ venue_images             → gộp vào media_attachments
-//   BỎ court_images             → gộp vào media_attachments
-//   BỎ review_images            → gộp vào media_attachments
-//   BỎ notification_settings    → gộp vào user_profiles
-//   BỎ promotion_venues         → gộp vào promotion_scopes
-//   BỎ promotion_courts         → gộp vào promotion_scopes
-//   THÊM fraud_indicators       → model riêng (bỏ JSON)
-//   THÊM media_attachments      → thay 3 bảng ảnh
-//   THÊM promotion_scopes       → thay 2 bảng pivot
+// TỐI ƯU TỪ doc3 (v5 mở rộng):
+//   BỎ  blog_posts          → không cần cho MVP đặt sân
+//   BỎ  content_tags        → phụ thuộc blog_posts
+//   BỎ  email_templates     → dùng Sendgrid/Brevo, thêm sau khi cần
+//   BỎ  time_slots          → trùng logic với bookings + pricing_rules
+//   GỘP venue_sport_types
+//       + court_sport_types → sport_assignments (entity_type VENUE/COURT)
+//   GỘP venue_amenities
+//       + court_amenities   → amenities (entity_type VENUE/COURT)
+//   THÊM holiday_calendar   → lịch ngày lễ + hệ số giá VN
+//   THÊM commission_records → track hoa hồng từng booking
+//   THÊM search_history     → analytics + gợi ý sân
+//   THÊM app_versions       → force update mobile app
+//   FIX  users.is_active    → bỏ (trùng status)
+//   FIX  users reset_password fields → bỏ (dùng otp_verifications)
+//   FIX  files.r2_key       → bỏ (trùng storage_key)
+//   FIX  files.target_type/id → bỏ (đã có media_attachments)
+//   FIX  venues.opening_time/closing_time → bỏ (có venue_operating_hours)
+//   FIX  bookings.platform_fee → bỏ (= commission_amount)
+//   FIX  notifications.data Json → bỏ (reference_id đủ rồi)
+//   FIX  contents.type String → đổi thành enum ContentType
 // ================================================================
 
 generator client {
@@ -113,17 +123,10 @@ enum RecurringType {
   MONTHLY
 }
 
-enum TimeSlotStatus {
-  AVAILABLE
-  BOOKED
-  BLOCKED
-  MAINTENANCE
-}
-
-// OWNER    = chủ sân, tự động tạo khi tạo venue
-// MANAGER  = quản lý được owner uỷ quyền
-// STAFF    = nhân viên vận hành hàng ngày
-// RECEPTIONIST = lễ tân, chỉ check-in + xem lịch
+// OWNER        = chủ sân, tự động assign khi tạo venue
+// MANAGER      = được owner uỷ quyền: quản lý booking, staff, dịch vụ
+// STAFF        = vận hành hàng ngày: check-in, xem lịch, add addon
+// RECEPTIONIST = chỉ check-in và xem lịch hôm nay
 enum VenueStaffRole {
   OWNER
   MANAGER
@@ -142,6 +145,23 @@ enum VenueStaffInviteStatus {
 enum VenueServiceType {
   PRODUCT
   SERVICE
+}
+
+// Dùng cho sport_assignments và amenities — gộp 2 loại entity
+enum SportEntityType {
+  VENUE
+  COURT
+}
+
+enum AmenityEntityType {
+  VENUE
+  COURT
+}
+
+enum MediaEntityType {
+  VENUE
+  COURT
+  REVIEW
 }
 
 enum PaymentMethod {
@@ -193,6 +213,12 @@ enum PayoutStatus {
   CANCELLED
 }
 
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  PAID
+}
+
 enum PromotionDiscountType {
   PERCENTAGE
   FIXED_AMOUNT
@@ -208,22 +234,6 @@ enum VoucherStatus {
   UNUSED
   USED
   EXPIRED
-}
-
-enum BannerPage {
-  HOME
-  VENUE_LIST
-  VENUE_DETAIL
-  BOOKING
-  PROMOTION
-  SEARCH
-  PROFILE
-}
-
-enum MediaEntityType {
-  VENUE
-  COURT
-  REVIEW
 }
 
 enum NotificationType {
@@ -307,85 +317,110 @@ enum FraudAction {
   MANUAL_REVIEW
 }
 
+enum ContentType {
+  BANNER
+  FAQ
+  POLICY
+  PROMOTION_PAGE
+}
+
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum BannerPage {
+  HOME
+  VENUE_LIST
+  VENUE_DETAIL
+  BOOKING
+  PROMOTION
+  SEARCH
+  PROFILE
+}
+
+enum FaqCategory {
+  BOOKING
+  PAYMENT
+  CANCELLATION
+  ACCOUNT
+  VENUE
+  GENERAL
+}
+
+enum PolicyType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  REFUND_POLICY
+  CANCELLATION_POLICY
+  COOKIE_POLICY
+  COMMUNITY_GUIDELINES
+}
+
 // ================================================================
 // SECTION 1 — AUTH & USERS
 // ================================================================
 
-// Platform roles → users.role_id:
+// Platform roles → users.role_id (slug):
 //   super_admin | admin | staff | owner | customer
 //
 // Venue roles → venue_staff.role (VenueStaffRole):
 //   OWNER | MANAGER | STAFF | RECEPTIONIST
-//   (1 user có thể làm việc ở nhiều venue)
-//
-// venue_staff KHÔNG phải platform role riêng — họ có
-// role='customer' trên platform + record trong venue_staff
+//   1 user có thể làm việc ở nhiều venue khác nhau
+//   venue_staff KHÔNG phải platform role riêng:
+//   họ có platform role='customer' + record trong venue_staff
 model users {
-  id               String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at       DateTime   @default(now()) @db.Timestamp(6)
-  updated_at       DateTime   @updatedAt @db.Timestamp(6)
-  deleted_at       DateTime?  @db.Timestamp(6)
+  id                String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime   @default(now()) @db.Timestamp(6)
+  updated_at        DateTime   @updatedAt @db.Timestamp(6)
+  deleted_at        DateTime?  @db.Timestamp(6)
 
-  email            String     @unique @db.VarChar(255)
-  username         String?    @unique @db.VarChar(100)
-  password         String     @db.VarChar(255)
-  full_name        String     @db.VarChar(255)
-  phone            String?    @unique @db.VarChar(20)
-  avatar_url       String?    @db.VarChar(500)
-  gender           Gender?
-  date_of_birth    DateTime?  @db.Date
+  email             String     @unique @db.VarChar(255)
+  username          String?    @unique @db.VarChar(100)
+  password          String     @db.VarChar(255)
+  full_name         String     @db.VarChar(255)
+  phone             String?    @unique @db.VarChar(20)
+  avatar_url        String?    @db.VarChar(500)
+  gender            Gender?
+  date_of_birth     DateTime?  @db.Date
 
-  status           UserStatus @default(ACTIVE)
-  is_active        Boolean    @default(true)
-  kyc_status       KycStatus  @default(UNVERIFIED)
-  is_email_verified Boolean   @default(false)
-  is_phone_verified Boolean   @default(false)
-  email_verified_at DateTime? @db.Timestamp(6)
-  phone_verified_at DateTime? @db.Timestamp(6)
-  last_login_at    DateTime?  @db.Timestamp(6)
-  reset_password_otp String?   @db.VarChar(100)
-  reset_password_expires DateTime? @db.Timestamp(6)
+  status            UserStatus @default(ACTIVE)
+  kyc_status        KycStatus  @default(UNVERIFIED)
+  is_email_verified Boolean    @default(false)
+  is_phone_verified Boolean    @default(false)
+  email_verified_at DateTime?  @db.Timestamp(6)
+  phone_verified_at DateTime?  @db.Timestamp(6)
+  last_login_at     DateTime?  @db.Timestamp(6)
 
-  role_id          String?    @db.Uuid
+  role_id           String?    @db.Uuid
 
-  // Auth
-  roles                        roles?                @relation(fields: [role_id], references: [id])
+  role                         roles?                @relation(fields: [role_id], references: [id])
   refresh_tokens               refresh_tokens[]
   otp_verifications            otp_verifications[]
-
-  // Profile
   profile                      user_profiles?
-  referrals                    user_profiles[]     @relation("user_referrals")
   devices                      user_devices[]
-
-  // Venue
   owned_venues                 venues[]
   venue_staff                  venue_staff[]
   venue_staff_invites_sent     venue_staff_invites[] @relation("invite_sender")
   venue_staff_invites_received venue_staff_invites[] @relation("invite_receiver")
-
-  // Booking
   bookings                     bookings[]
   booking_status_history       booking_status_history[]
   booking_waitlist             booking_waitlist[]
   recurring_bookings           recurring_bookings[]
-
-  // Finance
   wallet                       wallets?
   transactions                 transactions[]
   payout_requests_own          payout_requests[]     @relation("payout_owner")
   payout_requests_proc         payout_requests[]     @relation("payout_processor")
   invoices                     invoices[]
-
-  // Content
+  referrals                    user_profiles[]       @relation("user_referrals")
   reviews                      reviews[]
   files                        files[]
   favorite_venues              favorite_venues[]
   user_vouchers                user_vouchers[]
   notifications                notifications[]
   promotion_usage              promotion_usage[]
-
-  // Support & Admin
   support_tickets_as_customer  support_tickets[]     @relation("ticket_customer")
   support_tickets_as_agent     support_tickets[]     @relation("ticket_agent")
   support_ticket_messages      support_ticket_messages[]
@@ -401,99 +436,97 @@ model users {
   @@index([deleted_at])
 }
 
-// user_profiles: tách riêng để users table gọn
-// notification_settings đã gộp vào đây (7 boolean, không cần bảng riêng)
+// tách riêng để users table gọn
+// notification preferences gộp vào đây (bỏ bảng notification_settings riêng)
 model user_profiles {
-  id                   String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at           DateTime  @default(now()) @db.Timestamp(6)
-  updated_at           DateTime  @updatedAt @db.Timestamp(6)
+  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at         DateTime  @default(now()) @db.Timestamp(6)
+  updated_at         DateTime  @updatedAt @db.Timestamp(6)
 
-  user_id              String    @unique @db.Uuid
+  user_id            String    @unique @db.Uuid
+  bio                String?   @db.Text
+  cover_url          String?   @db.VarChar(500)
+  address            String?   @db.VarChar(500)
+  city               String?   @db.VarChar(100)
+  district           String?   @db.VarChar(100)
+  latitude           Decimal?  @db.Decimal(10, 8)
+  longitude          Decimal?  @db.Decimal(11, 8)
+  referral_code      String?   @unique @db.VarChar(20)
+  referred_by_id     String?   @db.Uuid
+  reliability_score  Int       @default(100)
+  is_profile_public  Boolean   @default(true)
+  show_email         Boolean   @default(false)
+  show_phone         Boolean   @default(false)
+  preferred_language String    @default("vi") @db.VarChar(10)
+  timezone           String    @default("Asia/Ho_Chi_Minh") @db.VarChar(50)
 
-  // Profile info
-  bio                  String?   @db.Text
-  cover_url            String?   @db.VarChar(500)
-  address              String?   @db.VarChar(500)
-  city                 String?   @db.VarChar(100)
-  district             String?   @db.VarChar(100)
-  latitude             Decimal?  @db.Decimal(10, 8)
-  longitude            Decimal?  @db.Decimal(11, 8)
-  referral_code        String?   @unique @db.VarChar(20)
-  referred_by_id       String?   @db.Uuid
-  reliability_score    Int       @default(100)
-  is_profile_public    Boolean   @default(true)
-  show_email           Boolean   @default(false)
-  show_phone           Boolean   @default(false)
-  preferred_language   String    @default("vi") @db.VarChar(10)
-  timezone             String    @default("Asia/Ho_Chi_Minh") @db.VarChar(50)
+  // Notification preferences (gộp để tránh JOIN thêm)
+  notif_push         Boolean   @default(true)
+  notif_email        Boolean   @default(true)
+  notif_sms          Boolean   @default(false)
+  notif_booking      Boolean   @default(true)
+  notif_promotion    Boolean   @default(true)
+  notif_payment      Boolean   @default(true)
+  notif_system       Boolean   @default(true)
+  notif_staff        Boolean   @default(true)
 
-  // Notification preferences (gộp từ notification_settings)
-  notif_push           Boolean   @default(true)
-  notif_email          Boolean   @default(true)
-  notif_sms            Boolean   @default(false)
-  notif_booking        Boolean   @default(true)
-  notif_promotion      Boolean   @default(true)
-  notif_payment        Boolean   @default(true)
-  notif_system         Boolean   @default(true)
-  notif_staff          Boolean   @default(true) // cho venue_staff
+  users             users                    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  referred_by       users?                   @relation("user_referrals", fields: [referred_by_id], references: [id])
+  sport_preferences user_sport_preferences[]
 
-  users                users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  referred_by          users?    @relation("user_referrals", fields: [referred_by_id], references: [id])
-  sport_preferences    user_sport_preferences[]
+  @@index([user_id])
+  @@index([referral_code])
 }
 
+// dùng cho feature gợi ý sân theo môn thể thao + trình độ
 model user_sport_preferences {
   id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   user_profile_id String        @db.Uuid
   sport_type      String        @db.VarChar(50)
-  skill_level     Int           @default(1)
+  skill_level     Int           @default(1) // 1-5
 
-  user_profiles   user_profiles @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
+  user_profiles user_profiles @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
 
   @@unique([user_profile_id, sport_type])
   @@index([sport_type])
 }
 
 model user_devices {
-  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at     DateTime  @default(now()) @db.Timestamp(6)
-  updated_at     DateTime  @updatedAt @db.Timestamp(6)
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime @default(now()) @db.Timestamp(6)
+  updated_at     DateTime @updatedAt @db.Timestamp(6)
+  user_id        String   @db.Uuid
+  fcm_token      String   @unique @db.VarChar(500)
+  device_type    String?  @db.VarChar(20) // 'ios'|'android'|'web'
+  app_version    String?  @db.VarChar(20)
+  is_active      Boolean  @default(true)
+  last_active_at DateTime @default(now()) @db.Timestamp(6)
 
-  user_id        String    @db.Uuid
-  fcm_token      String    @unique @db.VarChar(500)
-  device_type    String?   @db.VarChar(20)
-  device_model   String?   @db.VarChar(100)
-  os_version     String?   @db.VarChar(20)
-  app_version    String?   @db.VarChar(20)
-  is_active      Boolean   @default(true)
-  last_active_at DateTime  @default(now()) @db.Timestamp(6)
-
-  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  users users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
 }
 
 model refresh_tokens {
-  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime  @default(now()) @db.Timestamp(6)
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  user_id    String   @db.Uuid
+  token      String   @unique @db.VarChar(500)
+  expires_at DateTime @db.Timestamp(6)
+  is_revoked Boolean  @default(false)
+  ip_address String?  @db.VarChar(45)
+  user_agent String?  @db.VarChar(500)
 
-  user_id    String    @db.Uuid
-  token      String    @unique @db.VarChar(500)
-  expires_at DateTime  @db.Timestamp(6)
-  is_revoked Boolean   @default(false)
-  ip_address String?   @db.VarChar(45)
-  user_agent String?   @db.VarChar(500)
-
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  users users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
   @@index([expires_at])
 }
 
+// dùng cho verify email/phone VÀ reset password (không cần field riêng trong users)
 model otp_verifications {
   id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at DateTime  @default(now()) @db.Timestamp(6)
-
   user_id    String    @db.Uuid
   type       OtpType
   code_hash  String    @db.VarChar(255)
@@ -502,7 +535,7 @@ model otp_verifications {
   used_at    DateTime? @db.Timestamp(6)
   attempts   Int       @default(0)
 
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  users users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, type])
   @@index([expires_at])
@@ -515,7 +548,6 @@ model otp_verifications {
 model roles {
   id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at       DateTime           @default(now()) @db.Timestamp(6)
-
   name             String             @unique @db.VarChar(100)
   slug             String             @unique @db.VarChar(100)
   description      String?
@@ -532,7 +564,7 @@ model permissions {
   resource         String             @db.VarChar(100)
   action           String             @db.VarChar(50)
   description      String?
-  scope            String             @default("platform") @db.VarChar(20) // 'platform' | 'venue'
+  scope            String             @default("platform") @db.VarChar(20) // 'platform'|'venue'
 
   role_permissions role_permissions[]
 
@@ -541,11 +573,11 @@ model permissions {
 }
 
 model role_permissions {
-  role_id       String      @db.Uuid
-  permission_id String      @db.Uuid
+  role_id       String @db.Uuid
+  permission_id String @db.Uuid
 
-  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade)
-  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+  roles       roles       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permissions permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade)
 
   @@id([role_id, permission_id])
 }
@@ -554,41 +586,32 @@ model role_permissions {
 // SECTION 3 — FILES & MEDIA
 // ================================================================
 
-// files: lưu metadata file upload (S3/R2)
 model files {
-  id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at    DateTime        @default(now()) @db.Timestamp(6)
-
-  user_id       String?         @db.Uuid
-  original_name String          @db.VarChar(255)
-  file_name     String          @db.VarChar(255)
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  user_id       String?  @db.Uuid
+  original_name String   @db.VarChar(255)
+  file_name     String   @db.VarChar(255)
   file_size     BigInt
-  mime_type     String          @db.VarChar(100)
-  storage_key   String?         @db.VarChar(500)
-  r2_key        String?         @db.VarChar(500)
-  bucket        String?         @db.VarChar(100)
-  public_url    String          @db.VarChar(1000)
+  mime_type     String   @db.VarChar(100)
+  storage_key   String?  @db.VarChar(500)
+  bucket        String?  @db.VarChar(100)
+  public_url    String   @db.VarChar(1000)
   width         Int?
   height        Int?
-  target_type   String?         @db.VarChar(50)
-  target_id     String?         @db.Uuid
-  category      String?         @db.VarChar(100)
-  display_order Int             @default(0)
 
-  users         users?          @relation(fields: [user_id], references: [id])
-  attachments   media_attachments[]
-  banners       banners[]
-  contents      contents[]
+  users       users?              @relation(fields: [user_id], references: [id])
+  attachments media_attachments[]
+  banners     banners[]
+  contents    contents[]
 
   @@index([user_id])
 }
 
-// media_attachments: thay thế venue_images + court_images + review_images
-// entity_type xác định đây là ảnh của venue, court, hay review
+// thay thế venue_images + court_images + review_images — 3 bảng → 1 bảng
 model media_attachments {
   id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at    DateTime        @default(now()) @db.Timestamp(6)
-
   file_id       String          @db.Uuid
   entity_type   MediaEntityType
   entity_id     String          @db.Uuid
@@ -596,7 +619,7 @@ model media_attachments {
   is_cover      Boolean         @default(false)
   caption       String?         @db.VarChar(255)
 
-  files         files           @relation(fields: [file_id], references: [id], onDelete: Cascade)
+  files files @relation(fields: [file_id], references: [id], onDelete: Cascade)
 
   @@index([entity_type, entity_id])
   @@index([file_id])
@@ -625,10 +648,8 @@ model venues {
   phone                     String?     @db.VarChar(20)
   email                     String?     @db.VarChar(255)
   thumbnail_url             String?     @db.VarChar(500)
-  opening_time              DateTime?   @db.Timestamp(6)
-  closing_time              DateTime?   @db.Timestamp(6)
 
-  // Social links (thay venue_social_links — thực tế chỉ dùng 4 cái này)
+  // Social links (4 platform phổ biến ở VN)
   fb_url                    String?     @db.VarChar(500)
   instagram_url             String?     @db.VarChar(500)
   zalo_url                  String?     @db.VarChar(500)
@@ -640,7 +661,7 @@ model venues {
   is_featured               Boolean     @default(false)
   featured_until            DateTime?   @db.Timestamp(6)
 
-  // Ratings (denormalized cho performance — cập nhật khi có review mới)
+  // Rating denormalized (trigger cập nhật khi có review mới)
   rating                    Decimal     @default(0) @db.Decimal(3, 2)
   rating_cleanliness        Decimal     @default(0) @db.Decimal(3, 2)
   rating_facilities         Decimal     @default(0) @db.Decimal(3, 2)
@@ -656,16 +677,15 @@ model venues {
   min_booking_before_hours  Int         @default(0)
   cancellation_before_hours Int         @default(24)
 
-  // Admin workflow
   admin_notes               String?     @db.Text
   approved_at               DateTime?   @db.Timestamp(6)
   approved_by               String?     @db.Uuid
 
-  users                     users       @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  users users @relation(fields: [owner_id], references: [id], onDelete: Cascade)
 
   courts                    courts[]
-  venue_sport_types         venue_sport_types[]
-  venue_amenities           venue_amenities[]
+  sport_assignments         sport_assignments[]
+  amenities                 amenities[]
   venue_operating_hours     venue_operating_hours[]
   venue_schedule_exceptions venue_schedule_exceptions[]
   venue_staff               venue_staff[]
@@ -679,6 +699,7 @@ model venues {
   favorite_venues           favorite_venues[]
   support_tickets           support_tickets[]
   promotion_venues          promotion_venues[]
+  commission_records        commission_records[]
 
   @@index([owner_id])
   @@index([status])
@@ -688,42 +709,47 @@ model venues {
   @@index([deleted_at])
 }
 
-model venue_sport_types {
-  id         String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  venue_id   String  @db.Uuid
-  sport_type String  @db.VarChar(50)
-
-  venues     venues  @relation(fields: [venue_id], references: [id], onDelete: Cascade)
-
-  @@unique([venue_id, sport_type])
-  @@index([sport_type])
-}
-
-// sport_types: bảng tra cứu (lookup) — tạo sẵn các loại phổ biến
-// Chủ sân có thể thêm loại hình mới → is_system=false
-// venue_sport_types.sport_type tham chiếu name ở đây (không FK cứng → linh hoạt)
+// lookup table — seeded sẵn môn phổ biến, chủ sân có thể thêm
 model sport_types {
   id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at DateTime @default(now()) @db.Timestamp(6)
-
-  name       String   @unique @db.VarChar(50) // "FOOTBALL", "BADMINTON", ...
-  label      String   @db.VarChar(100)        // "Bóng đá", "Cầu lông", ...
+  name       String   @unique @db.VarChar(50)  // "FOOTBALL"|"BADMINTON"...
+  label      String   @db.VarChar(100)          // "Bóng đá"|"Cầu lông"...
   icon       String?  @db.VarChar(100)
-  is_system  Boolean  @default(false)         // true = admin tạo, false = chủ sân tự thêm
+  is_system  Boolean  @default(true)
   is_active  Boolean  @default(true)
-  created_by String?  @db.Uuid               // null = system seed, có giá trị = chủ sân tạo
+  created_by String?  @db.Uuid
 }
 
-model venue_amenities {
-  id       String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  venue_id String  @db.Uuid
-  name     String  @db.VarChar(100)
-  icon     String? @db.VarChar(100)
-  is_free  Boolean @default(true)
+// thay thế venue_sport_types + court_sport_types — 2 bảng → 1 bảng
+model sport_assignments {
+  id          String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  entity_type SportEntityType
+  entity_id   String          @db.Uuid
+  sport_type  String          @db.VarChar(50)
 
-  venues   venues  @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  venues venues? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "sport_assignments_venue_fkey")
+  courts courts? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "sport_assignments_court_fkey")
 
-  @@unique([venue_id, name])
+  @@unique([entity_type, entity_id, sport_type])
+  @@index([entity_type, entity_id])
+  @@index([sport_type])
+}
+
+// thay thế venue_amenities + court_amenities — 2 bảng → 1 bảng
+model amenities {
+  id          String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  entity_type AmenityEntityType
+  entity_id   String            @db.Uuid
+  name        String            @db.VarChar(100)
+  icon        String?           @db.VarChar(100)
+  is_free     Boolean           @default(true)
+
+  venues venues? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "amenities_venue_fkey")
+  courts courts? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "amenities_court_fkey")
+
+  @@unique([entity_type, entity_id, name])
+  @@index([entity_type, entity_id])
 }
 
 model venue_operating_hours {
@@ -734,11 +760,12 @@ model venue_operating_hours {
   closing_time DateTime  @db.Time(6)
   is_closed    Boolean   @default(false)
 
-  venues       venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  venues venues @relation(fields: [venue_id], references: [id], onDelete: Cascade)
 
   @@unique([venue_id, day_of_week])
 }
 
+// ngày đặc biệt riêng của venue: đóng cửa, đổi giờ
 model venue_schedule_exceptions {
   id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at DateTime  @default(now()) @db.Timestamp(6)
@@ -749,7 +776,7 @@ model venue_schedule_exceptions {
   close_time DateTime? @db.Time(6)
   reason     String?   @db.VarChar(255)
 
-  venues     venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  venues venues @relation(fields: [venue_id], references: [id], onDelete: Cascade)
 
   @@unique([venue_id, date])
   @@index([date])
@@ -759,7 +786,6 @@ model venue_verifications {
   id                   String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at           DateTime           @default(now()) @db.Timestamp(6)
   updated_at           DateTime           @updatedAt @db.Timestamp(6)
-
   venue_id             String             @db.Uuid
   business_license_url String             @db.VarChar(500)
   id_card_front_url    String             @db.VarChar(500)
@@ -770,20 +796,16 @@ model venue_verifications {
   verified_by          String?            @db.Uuid
   rejection_reason     String?
 
-  venues               venues             @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  venues venues @relation(fields: [venue_id], references: [id], onDelete: Cascade)
 
   @@index([venue_id])
   @@index([status])
 }
 
-// venue_staff: nhân viên của từng venue
-// Khi tạo venue → tự động tạo record với role=OWNER
-// is_active=false khi ngưng (giữ lịch sử)
 model venue_staff {
   id              String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at      DateTime       @default(now()) @db.Timestamp(6)
   updated_at      DateTime       @updatedAt @db.Timestamp(6)
-
   venue_id        String         @db.Uuid
   user_id         String         @db.Uuid
   role            VenueStaffRole @default(STAFF)
@@ -794,12 +816,12 @@ model venue_staff {
   deactivated_by  String?        @db.Uuid
   work_start_time DateTime?      @db.Time(6)
   work_end_time   DateTime?      @db.Time(6)
-  work_days       String?        @db.VarChar(50) // "MON,TUE,WED"
+  work_days       String?        @db.VarChar(50) // "MON,TUE,WED,THU,FRI"
   note            String?        @db.VarChar(500)
 
-  venues          venues         @relation(fields: [venue_id], references: [id], onDelete: Cascade)
-  users           users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  permissions     venue_staff_permissions[]
+  venues      venues                    @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  users       users                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  permissions venue_staff_permissions[]
 
   @@unique([venue_id, user_id])
   @@index([venue_id])
@@ -808,27 +830,22 @@ model venue_staff {
   @@index([is_active])
 }
 
-// quyền bổ sung ngoài role mặc định
-// ví dụ: RECEPTIONIST được xem doanh thu ngày
 model venue_staff_permissions {
   id             String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   venue_staff_id String      @db.Uuid
-  permission     String      @db.VarChar(100)
+  permission     String      @db.VarChar(100) // "bookings:cancel"|"revenue:view_daily"
   granted_by     String      @db.Uuid
   granted_at     DateTime    @default(now()) @db.Timestamp(6)
 
-  venue_staff    venue_staff @relation(fields: [venue_staff_id], references: [id], onDelete: Cascade)
+  venue_staff venue_staff @relation(fields: [venue_staff_id], references: [id], onDelete: Cascade)
 
   @@unique([venue_staff_id, permission])
 }
 
-// flow: owner/manager invite → nhận email + token link
-// → accept → tạo venue_staff record
 model venue_staff_invites {
   id           String                 @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at   DateTime               @default(now()) @db.Timestamp(6)
   updated_at   DateTime               @updatedAt @db.Timestamp(6)
-
   venue_id     String                 @db.Uuid
   sender_id    String                 @db.Uuid
   receiver_id  String?                @db.Uuid
@@ -840,9 +857,9 @@ model venue_staff_invites {
   message      String?                @db.VarChar(500)
   responded_at DateTime?              @db.Timestamp(6)
 
-  venues       venues                 @relation(fields: [venue_id], references: [id], onDelete: Cascade)
-  sender       users                  @relation("invite_sender", fields: [sender_id], references: [id])
-  receiver     users?                 @relation("invite_receiver", fields: [receiver_id], references: [id])
+  venues   venues  @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  sender   users   @relation("invite_sender", fields: [sender_id], references: [id])
+  receiver users?  @relation("invite_receiver", fields: [receiver_id], references: [id])
 
   @@index([venue_id])
   @@index([invite_email])
@@ -854,7 +871,6 @@ model venue_services {
   id              String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at      DateTime         @default(now()) @db.Timestamp(6)
   updated_at      DateTime         @updatedAt @db.Timestamp(6)
-
   venue_id        String           @db.Uuid
   name            String           @db.VarChar(255)
   description     String?
@@ -866,8 +882,8 @@ model venue_services {
   track_inventory Boolean          @default(false)
   stock_quantity  Int              @default(0)
 
-  venues          venues           @relation(fields: [venue_id], references: [id], onDelete: Cascade)
-  booking_addons  booking_addons[]
+  venues         venues           @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  booking_addons booking_addons[]
 
   @@index([venue_id])
 }
@@ -894,16 +910,15 @@ model courts {
   height          Decimal?          @db.Decimal(5, 2)
   is_active       Boolean           @default(true)
   thumbnail_url   String?           @db.VarChar(500)
-  parent_court_id String?           @db.Uuid
+  parent_court_id String?           @db.Uuid // sub-court của sân lớn
 
-  venues          venues            @relation(fields: [venue_id], references: [id], onDelete: Cascade)
-  parent_court    courts?           @relation("court_children", fields: [parent_court_id], references: [id])
-  sub_courts      courts[]          @relation("court_children")
+  venues       venues  @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  parent_court courts? @relation("court_children", fields: [parent_court_id], references: [id])
+  sub_courts   courts[] @relation("court_children")
 
-  court_sport_types  court_sport_types[]
-  court_amenities    court_amenities[]
+  sport_assignments  sport_assignments[]
+  amenities          amenities[]
   pricing_rules      pricing_rules[]
-  time_slots         time_slots[]
   court_maintenance  court_maintenance[]
   bookings           bookings[]
   recurring_bookings recurring_bookings[]
@@ -915,39 +930,17 @@ model courts {
   @@index([deleted_at])
 }
 
-model court_sport_types {
-  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  court_id   String   @db.Uuid
-  sport_type String   @db.VarChar(50)
-
-  courts     courts   @relation(fields: [court_id], references: [id], onDelete: Cascade)
-
-  @@unique([court_id, sport_type])
-  @@index([sport_type])
-}
-
-model court_amenities {
-  id       String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  court_id String  @db.Uuid
-  name     String  @db.VarChar(100)
-  is_free  Boolean @default(true)
-
-  courts   courts  @relation(fields: [court_id], references: [id], onDelete: Cascade)
-
-  @@unique([court_id, name])
-}
-
 model court_maintenance {
-  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at   DateTime  @default(now()) @db.Timestamp(6)
-  court_id     String    @db.Uuid
-  start_at     DateTime  @db.Timestamp(6)
-  end_at       DateTime  @db.Timestamp(6)
-  reason       String    @db.VarChar(500)
-  is_emergency Boolean   @default(false)
-  created_by   String?   @db.Uuid
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  court_id     String   @db.Uuid
+  start_at     DateTime @db.Timestamp(6)
+  end_at       DateTime @db.Timestamp(6)
+  reason       String   @db.VarChar(500)
+  is_emergency Boolean  @default(false)
+  created_by   String?  @db.Uuid
 
-  courts       courts    @relation(fields: [court_id], references: [id], onDelete: Cascade)
+  courts courts @relation(fields: [court_id], references: [id], onDelete: Cascade)
 
   @@index([court_id])
   @@index([start_at])
@@ -957,7 +950,6 @@ model pricing_rules {
   id          String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at  DateTime   @default(now()) @db.Timestamp(6)
   updated_at  DateTime   @updatedAt @db.Timestamp(6)
-
   court_id    String     @db.Uuid
   name        String?    @db.VarChar(100)
   day_of_week DayOfWeek?
@@ -969,26 +961,10 @@ model pricing_rules {
   priority    Int        @default(1)
   is_active   Boolean    @default(true)
 
-  courts      courts     @relation(fields: [court_id], references: [id], onDelete: Cascade)
+  courts courts @relation(fields: [court_id], references: [id], onDelete: Cascade)
 
   @@index([court_id])
   @@index([is_active])
-}
-
-model time_slots {
-  id         String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  court_id   String         @db.Uuid
-  date       DateTime       @db.Date
-  start_time DateTime       @db.Time(6)
-  end_time   DateTime       @db.Time(6)
-  status     TimeSlotStatus @default(AVAILABLE)
-  price      Decimal        @db.Decimal(10, 2)
-
-  courts     courts         @relation(fields: [court_id], references: [id], onDelete: Cascade)
-
-  @@unique([court_id, date, start_time, end_time])
-  @@index([court_id, date])
-  @@index([status])
 }
 
 // ================================================================
@@ -996,62 +972,62 @@ model time_slots {
 // ================================================================
 
 model bookings {
-  id                   String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at           DateTime      @default(now()) @db.Timestamp(6)
-  updated_at           DateTime      @updatedAt @db.Timestamp(6)
-  deleted_at           DateTime?     @db.Timestamp(6)
+  id                    String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at            DateTime      @default(now()) @db.Timestamp(6)
+  updated_at            DateTime      @updatedAt @db.Timestamp(6)
+  deleted_at            DateTime?     @db.Timestamp(6)
 
-  booking_code         String        @unique @db.VarChar(20)
-  check_in_code        String?       @unique @db.VarChar(10)
-  customer_id          String        @db.Uuid
-  court_id             String        @db.Uuid
-  venue_id             String        @db.Uuid
-  recurring_booking_id String?       @db.Uuid
-  rescheduled_from_id  String?       @db.Uuid
+  booking_code          String        @unique @db.VarChar(20)
+  check_in_code         String?       @unique @db.VarChar(10)
+  customer_id           String        @db.Uuid
+  court_id              String        @db.Uuid
+  venue_id              String        @db.Uuid
+  recurring_booking_id  String?       @db.Uuid
+  rescheduled_from_id   String?       @db.Uuid
 
-  booking_date         DateTime      @db.Date
-  start_time           DateTime      @db.Time(6)
-  end_time             DateTime      @db.Time(6)
-  status               BookingStatus @default(PENDING)
+  booking_date          DateTime      @db.Date
+  start_time            DateTime      @db.Time(6)
+  end_time              DateTime      @db.Time(6)
+  status                BookingStatus @default(PENDING)
 
-  total_hours          Decimal       @db.Decimal(4, 2)
-  price_per_hour       Decimal       @db.Decimal(10, 2)
-  sub_total            Decimal       @default(0) @db.Decimal(10, 2)
-  discount_amount      Decimal       @default(0) @db.Decimal(10, 2)
-  vat_rate             Decimal       @default(0) @db.Decimal(5, 2)
-  vat_amount           Decimal       @default(0) @db.Decimal(10, 2)
-  commission_amount    Decimal       @default(0) @db.Decimal(10, 2)
-  platform_fee         Decimal       @default(0) @db.Decimal(10, 2)
-  total_amount         Decimal       @db.Decimal(10, 2)
-  deposit_amount       Decimal       @default(0) @db.Decimal(10, 2)
-  refund_amount        Decimal       @default(0) @db.Decimal(10, 2)
-  cancellation_fee     Decimal       @default(0) @db.Decimal(10, 2)
+  total_hours           Decimal       @db.Decimal(4, 2)
+  price_per_hour        Decimal       @db.Decimal(10, 2)
+  sub_total             Decimal       @default(0) @db.Decimal(10, 2)
+  discount_amount       Decimal       @default(0) @db.Decimal(10, 2)
+  vat_rate              Decimal       @default(0) @db.Decimal(5, 2)
+  vat_amount            Decimal       @default(0) @db.Decimal(10, 2)
+  commission_amount     Decimal       @default(0) @db.Decimal(10, 2)
+  total_amount          Decimal       @db.Decimal(10, 2)
+  deposit_amount        Decimal       @default(0) @db.Decimal(10, 2)
+  refund_amount         Decimal       @default(0) @db.Decimal(10, 2)
+  cancellation_fee      Decimal       @default(0) @db.Decimal(10, 2)
 
-  promotion_code       String?       @db.VarChar(50)
-  note                 String?       @db.Text
-  cancellation_deadline DateTime?    @db.Timestamp(6)
-  checked_in_at        DateTime?     @db.Timestamp(6)
-  checked_in_by        String?       @db.Uuid
-  cancelled_at         DateTime?     @db.Timestamp(6)
-  cancelled_by         String?       @db.Uuid
-  cancellation_reason  String?
+  promotion_code        String?       @db.VarChar(50)
+  note                  String?       @db.Text
+  cancellation_deadline DateTime?     @db.Timestamp(6)
+  checked_in_at         DateTime?     @db.Timestamp(6)
+  checked_in_by         String?       @db.Uuid
+  cancelled_at          DateTime?     @db.Timestamp(6)
+  cancelled_by          String?       @db.Uuid
+  cancellation_reason   String?
 
-  users                users                  @relation(fields: [customer_id], references: [id], onDelete: Cascade)
-  courts               courts                 @relation(fields: [court_id], references: [id], onDelete: Cascade)
-  venues               venues                 @relation(fields: [venue_id], references: [id], onDelete: Cascade)
-  recurring_booking    recurring_bookings?    @relation(fields: [recurring_booking_id], references: [id])
-  rescheduled_from     bookings?              @relation("booking_reschedules", fields: [rescheduled_from_id], references: [id])
-  rescheduled_to       bookings[]             @relation("booking_reschedules")
+  customers          users                    @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  courts             courts                   @relation(fields: [court_id], references: [id], onDelete: Cascade)
+  venues             venues                   @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  recurring_booking  recurring_bookings?      @relation(fields: [recurring_booking_id], references: [id])
+  rescheduled_from   bookings?                @relation("booking_reschedules", fields: [rescheduled_from_id], references: [id])
+  rescheduled_to     bookings[]               @relation("booking_reschedules")
 
-  booking_addons        booking_addons[]
+  booking_addons         booking_addons[]
   booking_status_history booking_status_history[]
-  payments              payments[]
-  invoice               invoices?
-  reviews               reviews[]
-  transactions          transactions[]
-  promotion_usage       promotion_usage[]
-  support_tickets       support_tickets[]
-  fraud_detections      fraud_detections[]
+  payments               payments[]
+  invoice                invoices?
+  reviews                reviews[]
+  transactions           transactions[]
+  promotion_usage        promotion_usage[]
+  support_tickets        support_tickets[]
+  fraud_detections       fraud_detections[]
+  commission_records     commission_records[]
 
   @@index([customer_id])
   @@index([court_id])
@@ -1062,21 +1038,20 @@ model bookings {
 }
 
 model booking_addons {
-  id             String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at     DateTime       @default(now()) @db.Timestamp(6)
-  booking_id     String         @db.Uuid
-  service_id     String         @db.Uuid
-  quantity       Int            @default(1)
-  price_per_unit Decimal        @db.Decimal(15, 2)
-  total_price    Decimal        @db.Decimal(15, 2)
+  id             String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime      @default(now()) @db.Timestamp(6)
+  booking_id     String        @db.Uuid
+  service_id     String        @db.Uuid
+  quantity       Int           @default(1)
+  price_per_unit Decimal       @db.Decimal(15, 2)
+  total_price    Decimal       @db.Decimal(15, 2)
   note           String?
-  added_by       String?        @db.Uuid
+  added_by       String?       @db.Uuid
 
   bookings       bookings       @relation(fields: [booking_id], references: [id], onDelete: Cascade)
   venue_services venue_services @relation(fields: [service_id], references: [id])
 
   @@index([booking_id])
-  @@index([service_id])
 }
 
 model booking_status_history {
@@ -1088,8 +1063,8 @@ model booking_status_history {
   actor_role String?       @db.VarChar(50) // 'customer'|'venue_staff'|'admin'|'system'
   note       String?
 
-  bookings   bookings      @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  users      users?        @relation(fields: [changed_by], references: [id])
+  bookings bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  users    users?   @relation(fields: [changed_by], references: [id])
 
   @@index([booking_id])
 }
@@ -1106,8 +1081,8 @@ model booking_waitlist {
   is_notified  Boolean        @default(false)
   status       WaitlistStatus @default(WAITING)
 
-  users        users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  courts       courts         @relation(fields: [court_id], references: [id], onDelete: Cascade)
+  users  users  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  courts courts @relation(fields: [court_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
   @@index([court_id, booking_date])
@@ -1118,7 +1093,6 @@ model recurring_bookings {
   id                  String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at          DateTime      @default(now()) @db.Timestamp(6)
   updated_at          DateTime      @updatedAt @db.Timestamp(6)
-
   user_id             String        @db.Uuid
   venue_id            String        @db.Uuid
   court_id            String        @db.Uuid
@@ -1146,7 +1120,7 @@ model recurring_booking_days {
   recurring_booking_id String             @db.Uuid
   day_of_week          DayOfWeek
 
-  recurring_bookings   recurring_bookings @relation(fields: [recurring_booking_id], references: [id], onDelete: Cascade)
+  recurring_bookings recurring_bookings @relation(fields: [recurring_booking_id], references: [id], onDelete: Cascade)
 
   @@unique([recurring_booking_id, day_of_week])
 }
@@ -1156,15 +1130,14 @@ model recurring_booking_days {
 // ================================================================
 
 model refund_policies {
-  id           String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at   DateTime      @default(now()) @db.Timestamp(6)
-  updated_at   DateTime      @updatedAt @db.Timestamp(6)
-
-  venue_id     String?       @db.Uuid
-  name         String        @db.VarChar(255)
-  description  String?
-  is_active    Boolean       @default(true)
-  is_default   Boolean       @default(false)
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
+  venue_id    String?  @db.Uuid
+  name        String   @db.VarChar(255)
+  description String?
+  is_active   Boolean  @default(true)
+  is_default  Boolean  @default(false)
 
   venues       venues?       @relation(fields: [venue_id], references: [id], onDelete: Cascade)
   refund_rules refund_rules[]
@@ -1179,7 +1152,7 @@ model refund_rules {
   refund_percentage   Decimal         @db.Decimal(5, 2)
   description         String?
 
-  refund_policies     refund_policies @relation(fields: [policy_id], references: [id], onDelete: Cascade)
+  refund_policies refund_policies @relation(fields: [policy_id], references: [id], onDelete: Cascade)
 
   @@index([policy_id])
 }
@@ -1192,7 +1165,6 @@ model payments {
   id               String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at       DateTime      @default(now()) @db.Timestamp(6)
   updated_at       DateTime      @updatedAt @db.Timestamp(6)
-
   booking_id       String        @db.Uuid
   gateway_txn_id   String?       @unique @db.VarChar(100)
   amount           Decimal       @db.Decimal(10, 2)
@@ -1201,26 +1173,25 @@ model payments {
   paid_at          DateTime?     @db.Timestamp(6)
   gateway_response String?       @db.Text
 
-  bookings         bookings      @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  bookings bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
 
   @@index([booking_id])
   @@index([status])
 }
 
 model wallets {
-  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at     DateTime  @default(now()) @db.Timestamp(6)
-  updated_at     DateTime  @updatedAt @db.Timestamp(6)
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at     DateTime @default(now()) @db.Timestamp(6)
+  updated_at     DateTime @updatedAt @db.Timestamp(6)
+  user_id        String   @unique @db.Uuid
+  balance        Decimal  @default(0) @db.Decimal(15, 2)
+  locked_balance Decimal  @default(0) @db.Decimal(15, 2)
+  currency       String   @default("VND") @db.VarChar(10)
+  is_active      Boolean  @default(true)
+  version        Int      @default(0) // optimistic lock
 
-  user_id        String    @unique @db.Uuid
-  balance        Decimal   @default(0) @db.Decimal(15, 2)
-  locked_balance Decimal   @default(0) @db.Decimal(15, 2)
-  currency       String    @default("VND") @db.VarChar(10)
-  is_active      Boolean   @default(true)
-  version        Int       @default(0) // optimistic lock
-
-  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  bank_accounts  payout_bank_accounts[]
+  users         users                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  bank_accounts payout_bank_accounts[]
 }
 
 model payout_bank_accounts {
@@ -1234,7 +1205,7 @@ model payout_bank_accounts {
   branch         String?  @db.VarChar(255)
   is_default     Boolean  @default(false)
 
-  wallets         wallets           @relation(fields: [wallet_id], references: [id], onDelete: Cascade)
+  wallets         wallets          @relation(fields: [wallet_id], references: [id], onDelete: Cascade)
   payout_requests payout_requests[]
 
   @@index([wallet_id])
@@ -1244,19 +1215,18 @@ model transactions {
   id               String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at       DateTime          @default(now()) @db.Timestamp(6)
   updated_at       DateTime          @updatedAt @db.Timestamp(6)
-
   user_id          String            @db.Uuid
   type             TransactionType
   amount           Decimal           @db.Decimal(15, 2)
   balance_after    Decimal           @db.Decimal(15, 2)
   status           TransactionStatus @default(PENDING)
   reference_id     String?           @db.Uuid
-  reference_type   String?           @db.VarChar(50) // 'booking' | 'payout' | 'deposit' | 'adjustment'
+  reference_type   String?           @db.VarChar(50) // 'booking'|'payout'|'deposit'
   description      String?
   payment_provider String?           @db.VarChar(50)
 
-  users    users      @relation(fields: [user_id], references: [id])
-  bookings bookings?  @relation(fields: [reference_id], references: [id])
+  users    users     @relation(fields: [user_id], references: [id])
+  bookings bookings? @relation(fields: [reference_id], references: [id])
   invoice  invoices?
 
   @@index([user_id])
@@ -1268,7 +1238,6 @@ model transactions {
 model invoices {
   id             String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at     DateTime      @default(now()) @db.Timestamp(6)
-
   invoice_number String        @unique @db.VarChar(50)
   booking_id     String?       @unique @db.Uuid
   transaction_id String        @unique @db.Uuid
@@ -1291,7 +1260,7 @@ model invoices {
 model invoice_items {
   id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   invoice_id   String   @db.Uuid
-  item_type    String   @db.VarChar(50)
+  item_type    String   @db.VarChar(50) // 'COURT'|'ADDON'|'VAT'|'DISCOUNT'
   reference_id String?  @db.Uuid
   name         String   @db.VarChar(255)
   quantity     Int      @default(1)
@@ -1300,7 +1269,7 @@ model invoice_items {
   tax_amount   Decimal  @default(0) @db.Decimal(15, 2)
   total_amount Decimal  @db.Decimal(15, 2)
 
-  invoices     invoices @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  invoices invoices @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
 
   @@index([invoice_id])
 }
@@ -1309,7 +1278,6 @@ model payout_requests {
   id               String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at       DateTime     @default(now()) @db.Timestamp(6)
   updated_at       DateTime     @updatedAt @db.Timestamp(6)
-
   user_id          String       @db.Uuid
   amount           Decimal      @db.Decimal(15, 2)
   currency         String       @default("VND") @db.VarChar(10)
@@ -1326,6 +1294,29 @@ model payout_requests {
   bank_account payout_bank_accounts @relation(fields: [bank_account_id], references: [id])
 
   @@index([user_id])
+  @@index([status])
+}
+
+// track hoa hồng từng booking — cần cho kế toán và đối soát cuối tháng
+model commission_records {
+  id                String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at        DateTime         @default(now()) @db.Timestamp(6)
+  booking_id        String           @db.Uuid
+  venue_id          String           @db.Uuid
+  owner_id          String           @db.Uuid
+  booking_amount    Decimal          @db.Decimal(15, 2)
+  commission_rate   Decimal          @db.Decimal(5, 2)
+  commission_amount Decimal          @db.Decimal(15, 2) // platform thu
+  owner_receives    Decimal          @db.Decimal(15, 2) // chủ sân nhận
+  status            CommissionStatus @default(PENDING)
+  paid_at           DateTime?        @db.Timestamp(6)
+  notes             String?
+
+  bookings bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  venues   venues   @relation(fields: [venue_id], references: [id])
+
+  @@index([booking_id])
+  @@index([venue_id])
   @@index([status])
 }
 
@@ -1349,21 +1340,20 @@ model reviews {
   rating_facilities  Int?
   rating_staff       Int?
   comment            String?   @db.Text
+  likes_count        Int       @default(0) // denormalized
 
-  // Phản hồi từ owner/manager
   response           String?   @db.Text
   responded_by       String?   @db.Uuid
   responded_at       DateTime? @db.Timestamp(6)
 
-  // Kiểm duyệt bởi admin/staff
   is_visible         Boolean   @default(true)
   hidden_by          String?   @db.Uuid
   hidden_reason      String?
 
-  bookings  bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  venues    venues   @relation(fields: [venue_id], references: [id], onDelete: Cascade)
-  courts    courts?  @relation(fields: [court_id], references: [id])
-  users     users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  bookings bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  venues   venues   @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  courts   courts?  @relation(fields: [court_id], references: [id])
+  users    users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([booking_id, user_id])
   @@index([venue_id])
@@ -1380,7 +1370,6 @@ model promotions {
   created_at          DateTime              @default(now()) @db.Timestamp(6)
   updated_at          DateTime              @updatedAt @db.Timestamp(6)
   deleted_at          DateTime?             @db.Timestamp(6)
-
   created_by          String?               @db.Uuid
   code                String                @unique @db.VarChar(50)
   name                String                @db.VarChar(255)
@@ -1397,10 +1386,9 @@ model promotions {
   valid_to            DateTime              @db.Timestamp(6)
   status              PromotionStatus       @default(ACTIVE)
 
-  promotion_usage     promotion_usage[]
-  promotion_venues    promotion_venues[]
-  user_vouchers       user_vouchers[]
-  content_id          String?               @unique @db.Uuid   // optional landing page content
+  promotion_venues promotion_venues[]
+  promotion_usage  promotion_usage[]
+  user_vouchers    user_vouchers[]
 
   @@index([status])
   @@index([deleted_at])
@@ -1408,27 +1396,26 @@ model promotions {
 }
 
 model promotion_venues {
-  id           String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at   DateTime   @default(now()) @db.Timestamp(6)
-  promotion_id String     @db.Uuid
-  venue_id     String     @db.Uuid
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  promotion_id String   @db.Uuid
+  venue_id     String   @db.Uuid
 
-  promotions   promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
-  venues       venues     @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+  promotions promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
+  venues     venues     @relation(fields: [venue_id], references: [id], onDelete: Cascade)
 
   @@unique([promotion_id, venue_id])
   @@index([promotion_id])
   @@index([venue_id])
 }
 
-
 model promotion_usage {
-  id              String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at      DateTime   @default(now()) @db.Timestamp(6)
-  promotion_id    String     @db.Uuid
-  booking_id      String     @db.Uuid
-  user_id         String     @db.Uuid
-  discount_amount Decimal    @db.Decimal(10, 2)
+  id              String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  promotion_id    String   @db.Uuid
+  booking_id      String   @db.Uuid
+  user_id         String   @db.Uuid
+  discount_amount Decimal  @db.Decimal(10, 2)
 
   promotions promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
   bookings   bookings   @relation(fields: [booking_id], references: [id])
@@ -1466,14 +1453,12 @@ model notifications {
   channel        NotificationChannel
   title          String              @db.VarChar(255)
   message        String              @db.Text
-  reference_id   String?             @db.Uuid
+  reference_id   String?             @db.Uuid  // FK mềm → booking/payment/review...
   reference_type String?             @db.VarChar(50)
   is_read        Boolean             @default(false)
   read_at        DateTime?           @db.Timestamp(6)
-  updated_at     DateTime?           @db.Timestamp(6)
-  data           Json?
 
-  users          users               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  users users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, is_read])
   @@index([created_at])
@@ -1502,7 +1487,6 @@ model support_tickets {
   id                String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at        DateTime              @default(now()) @db.Timestamp(6)
   updated_at        DateTime              @updatedAt @db.Timestamp(6)
-
   ticket_number     String                @unique @db.VarChar(20)
   customer_id       String                @db.Uuid
   assigned_to_id    String?               @db.Uuid
@@ -1521,8 +1505,8 @@ model support_tickets {
   customer_rating   Int?
   customer_feedback String?
 
-  users_support_tickets_customer_idTousers  users            @relation("ticket_customer", fields: [customer_id], references: [id], onDelete: Cascade)
-  users_support_tickets_assigned_to_idTousers users?         @relation("ticket_agent", fields: [assigned_to_id], references: [id])
+  customers users            @relation("ticket_customer", fields: [customer_id], references: [id], onDelete: Cascade)
+  agents    users?           @relation("ticket_agent", fields: [assigned_to_id], references: [id])
   bookings  bookings?        @relation(fields: [booking_id], references: [id])
   venues    venues?          @relation(fields: [venue_id], references: [id])
   messages  support_ticket_messages[]
@@ -1534,12 +1518,12 @@ model support_tickets {
 }
 
 model support_ticket_messages {
-  id         String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime        @default(now()) @db.Timestamp(6)
-  ticket_id  String          @db.Uuid
-  sender_id  String          @db.Uuid
-  message    String          @db.Text
-  is_staff   Boolean         @default(false)
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  ticket_id  String   @db.Uuid
+  sender_id  String   @db.Uuid
+  message    String   @db.Text
+  is_staff   Boolean  @default(false)
 
   tickets support_tickets @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
   users   users           @relation(fields: [sender_id], references: [id])
@@ -1552,14 +1536,10 @@ model support_ticket_messages {
 // SECTION 14 — REPORTS
 // ================================================================
 
-// target_type=TRANSACTION: dùng cho tranh chấp tài chính
-//   → có thêm resolution_note, resolved_at, resolved_by
-// target_type=USER/VENUE/REVIEW: report vi phạm thông thường
 model reports {
   id              String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at      DateTime         @default(now()) @db.Timestamp(6)
   updated_at      DateTime         @updatedAt @db.Timestamp(6)
-
   reporter_id     String           @db.Uuid
   target_type     ReportTargetType
   target_id       String           @db.Uuid
@@ -1570,7 +1550,7 @@ model reports {
   reviewed_at     DateTime?        @db.Timestamp(6)
   action_taken    String?
 
-  // Dùng khi target_type = TRANSACTION
+  // Dùng khi target_type=TRANSACTION (tranh chấp giao dịch)
   resolution_note String?
   resolved_at     DateTime?        @db.Timestamp(6)
   resolved_by     String?          @db.Uuid
@@ -1590,7 +1570,6 @@ model reports {
 model fraud_detections {
   id                String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at        DateTime       @default(now()) @db.Timestamp(6)
-
   user_id           String?        @db.Uuid
   booking_id        String?        @db.Uuid
   risk_level        FraudRiskLevel
@@ -1614,11 +1593,11 @@ model fraud_detections {
 model fraud_indicators {
   id                 String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   fraud_detection_id String           @db.Uuid
-  indicator_type     String           @db.VarChar(100) // "multiple_accounts"|"suspicious_ip"|"rapid_cancellations"
+  indicator_type     String           @db.VarChar(100) // "multiple_accounts"|"suspicious_ip"
   indicator_value    String           @db.VarChar(500)
-  severity           FraudRiskLevel   // dùng lại enum thay vì String
+  severity           FraudRiskLevel
 
-  fraud_detections   fraud_detections @relation(fields: [fraud_detection_id], references: [id], onDelete: Cascade)
+  fraud_detections fraud_detections @relation(fields: [fraud_detection_id], references: [id], onDelete: Cascade)
 
   @@index([fraud_detection_id])
 }
@@ -1631,7 +1610,7 @@ model audit_logs {
   id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at  DateTime @default(now()) @db.Timestamp(6)
   user_id     String?  @db.Uuid
-  actor_role  String?  @db.VarChar(50) // 'super_admin'|'admin'|'staff'|'owner'|'venue_staff'|'customer'|'system'
+  actor_role  String?  @db.VarChar(50)
   action      String   @db.VarChar(100)
   entity_name String   @db.VarChar(100)
   entity_id   String?  @db.Uuid
@@ -1658,243 +1637,148 @@ model settings {
   is_active   Boolean  @default(true)
   group_name  String?  @db.VarChar(50)
   created_at  DateTime @default(now()) @db.Timestamp(6)
-  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
 
   @@index([group_name])
 }
 
-// ================================================================
-// SECTION 18 — CONTENT
-// ================================================================
-// 5 content types, tất cả dùng bảng cha `contents`:
-//   BANNER       → mở rộng qua `banners` (nhiều field riêng)
-//   BLOG         → mở rộng qua `blog_posts` (nhiều field riêng)
-//   FAQ          → chỉ thêm faq_category → merge thẳng vào contents
-//   POLICY       → chỉ thêm 4 fields → merge thẳng vào contents
-//   PROMOTION    → liên kết qua promotions.content_id
-//
-// email_templates: standalone (system-level, không phải user-facing content)
+// ngày lễ quốc gia — Tết, 30/4, 2/9... ảnh hưởng đến giá và lịch sân
+model holiday_calendar {
+  id               String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  holiday_date     DateTime @unique @db.Date
+  holiday_name     String   @db.VarChar(200)
+  is_recurring     Boolean  @default(false) // lặp hàng năm (âm lịch hoặc dương lịch)
+  price_multiplier Decimal  @default(1.5) @db.Decimal(5, 2) // 1.5 = giá +50%
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now()) @db.Timestamp(6)
 
-model contents {
-  id                 String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at         DateTime             @default(now()) @db.Timestamp(6)
-  updated_at         DateTime             @default(now()) @db.Timestamp(6)
-  deleted_at         DateTime?            @db.Timestamp(6)
-
-  // Core fields
-  type               String               @db.VarChar(50)  // 'BANNER'|'BLOG'|'FAQ'|'POLICY'|'PROMOTION'
-  title              String               @db.VarChar(500)
-  slug               String?              @db.VarChar(500)
-  description        String?
-  content            String               @db.Text
-  excerpt            String?
-
-  // Media
-  thumbnail_file_id  String?              @db.Uuid
-  thumbnail_url      String?              @db.VarChar(500) // denormalized URL for fast query
-
-  // SEO (blog / policy cần, các type khác để null)
-  seo_title          String?              @db.VarChar(255)
-  seo_description    String?              @db.VarChar(500)
-  seo_keywords       String?              @db.VarChar(500)
-
-  // Publishing
-  status             ContentStatus        @default(DRAFT)
-  published_at       DateTime?            @db.Timestamp(6)
-  scheduled_at       DateTime?            @db.Timestamp(6)
-  expired_at         DateTime?            @db.Timestamp(6)
-  author_id          String?              @db.Uuid
-  author_type        String?              @default("SYSTEM") @db.VarChar(50) // 'ADMIN'|'SYSTEM'|'OWNER'
-
-  // Display
-  is_featured        Boolean              @default(false)
-  display_order      Int                  @default(0)
-
-  // FAQ fields (chỉ dùng khi type='FAQ')
-  faq_category       FaqCategory?
-
-  // Policy fields (chỉ dùng khi type='POLICY')
-  policy_type        PolicyType?
-  policy_version     String?              @db.VarChar(50)
-  policy_effective_date DateTime?         @db.Timestamp(6)
-  policy_requires_acceptance Boolean?     @default(false)
-
-  // Metadata — escape hatch, không query bên trong
-  metadata           Json?
-
-  // Relations
-  banners            banners?
-  blog_posts         blog_posts?
-  content_tags       content_tags[]
-  files              files?               @relation(fields: [thumbnail_file_id], references: [id])
-  users              users?               @relation(fields: [author_id], references: [id])
-
-  @@index([slug])
-  @@index([type])
-  @@index([status])
-  @@index([published_at])
+  @@index([holiday_date])
+  @@index([is_active])
 }
 
-// banners: content mở rộng cho banner/slider
-// Các field giao diện (impressions, clicks, slide) chỉ banner mới cần
+// lịch sử tìm kiếm — analytics + gợi ý sân phù hợp người dùng
+model search_history {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  user_id      String?   @db.Uuid // null = guest
+  search_query String    @db.VarChar(300)
+  sport_type   String?   @db.VarChar(50)
+  city         String?   @db.VarChar(100)
+  district     String?   @db.VarChar(100)
+  search_date  DateTime? @db.Date
+  result_count Int       @default(0)
+
+  @@index([user_id])
+  @@index([sport_type])
+  @@index([created_at])
+}
+
+// quản lý phiên bản app mobile — force update khi có lỗi nghiêm trọng
+model app_versions {
+  id                    String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  platform              String    @db.VarChar(20)  // 'ios'|'android'|'web'
+  version_number        String    @db.VarChar(20)
+  build_number          Int
+  min_supported_version String?   @db.VarChar(20)
+  is_force_update       Boolean   @default(false)
+  release_notes         String?   @db.Text
+  download_url          String?   @db.VarChar(500)
+  is_active             Boolean   @default(true)
+  released_at           DateTime? @db.Timestamp(6)
+  created_at            DateTime  @default(now()) @db.Timestamp(6)
+
+  @@unique([platform, version_number])
+  @@index([platform, is_active])
+}
+
+// ================================================================
+// SECTION 17 — CONTENT (Banner, FAQ, Policy)
+// ================================================================
+// KHÔNG có blog_posts → thêm sau khi cần
+// KHÔNG có email_templates → dùng Sendgrid/Brevo
+// ContentType enum đảm bảo type-safe (không dùng String)
+
+model contents {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamp(6)
+  updated_at      DateTime      @updatedAt @db.Timestamp(6)
+  deleted_at      DateTime?     @db.Timestamp(6)
+
+  type            ContentType   // BANNER | FAQ | POLICY | PROMOTION_PAGE
+  title           String        @db.VarChar(500)
+  slug            String?       @unique @db.VarChar(500)
+  content         String        @db.Text
+  excerpt         String?
+
+  thumbnail_file_id String?     @db.Uuid
+  thumbnail_url   String?       @db.VarChar(500) // denormalized URL
+
+  seo_title       String?       @db.VarChar(255)
+  seo_description String?       @db.VarChar(500)
+  seo_keywords    String?       @db.VarChar(500)
+
+  status          ContentStatus @default(DRAFT)
+  published_at    DateTime?     @db.Timestamp(6)
+  scheduled_at    DateTime?     @db.Timestamp(6)
+  expired_at      DateTime?     @db.Timestamp(6)
+  author_id       String?       @db.Uuid
+  is_featured     Boolean       @default(false)
+  display_order   Int           @default(0)
+
+  // FAQ fields (chỉ dùng khi type=FAQ)
+  faq_category    FaqCategory?
+
+  // Policy fields (chỉ dùng khi type=POLICY)
+  policy_type                PolicyType?
+  policy_version             String?     @db.VarChar(50)
+  policy_effective_date      DateTime?   @db.Timestamp(6)
+  policy_requires_acceptance Boolean?    @default(false)
+
+  banners   banners?
+  thumbnail files?   @relation(fields: [thumbnail_file_id], references: [id])
+  authors   users?   @relation(fields: [author_id], references: [id])
+
+  @@index([type])
+  @@index([status])
+  @@index([slug])
+}
+
 model banners {
   id                  String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at          DateTime  @default(now()) @db.Timestamp(6)
-  updated_at          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at          DateTime  @updatedAt @db.Timestamp(6)
   content_id          String    @unique @db.Uuid
 
-  // Placement
-  position            String    @db.VarChar(50)   // 'HOME_TOP'|'HOME_MIDDLE'|'VENUE_DETAIL'
-  type                String    @db.VarChar(50)   // 'IMAGE'|'VIDEO'|'HTML'
+  position            String    @db.VarChar(50)  // 'HOME_TOP'|'HOME_MIDDLE'|'VENUE_DETAIL'
+  type                String    @db.VarChar(50)  // 'IMAGE'|'VIDEO'
 
-  // Mobile image (khác desktop thumbnail ở contents)
   mobile_file_id      String?   @db.Uuid
-  mobile_image_url    String?   @db.VarChar(500)   // denormalized URL
+  mobile_image_url    String?   @db.VarChar(500)
 
-  // Action khi click
   action_type         String    @default("NONE") @db.VarChar(50) // 'NONE'|'URL'|'VENUE'|'PROMOTION'
   action_url          String?   @db.VarChar(500)
   action_venue_id     String?   @db.Uuid
   action_promotion_id String?   @db.Uuid
 
-  // Schedule
   start_date          DateTime  @db.Timestamp(6)
   end_date            DateTime? @db.Timestamp(6)
-
-  // Analytics
   impressions         Int       @default(0)
   clicks              Int       @default(0)
-
-  // Slider settings
   auto_slide          Boolean   @default(true)
   slide_duration      Int       @default(5000)
 
-  contents            contents  @relation(fields: [content_id], references: [id])
-  files               files?    @relation(fields: [mobile_file_id], references: [id])
-  banner_pages        banner_pages[]
+  contents     contents   @relation(fields: [content_id], references: [id])
+  mobile_file  files?     @relation(fields: [mobile_file_id], references: [id])
+  banner_pages banner_pages[]
 }
 
-// blog_posts: content mở rộng cho bài viết
-// author/published_at dùng từ contents → không duplicate
-model blog_posts {
-  id                String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at        DateTime                 @default(now()) @db.Timestamp(6)
-  content_id        String                   @unique @db.Uuid
-  category          BlogCategory
-
-  // Blog-specific
-  author            String                   @db.VarChar(255)   // display name (contents.author_id = FK)
-  author_avatar     String?                  @db.VarChar(500)
-  reading_time      Int                      @default(0)        // phút
-  table_of_contents Json?                    // auto-generated TOC
-  canonical_url     String?                  @db.VarChar(500)
-  related_posts     String?                  @db.Text           // JSON string of related post IDs
-  last_edited_at    DateTime?                @db.Timestamp(6)
-
-  contents          contents                 @relation(fields: [content_id], references: [id])
-}
-
-// email_templates: standalone, system-level — không gản với contents
-// (admin dùng để quản lý mẫu email gửi đi, không phải user-facing content)
-model email_templates {
-  id            String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at    DateTime                 @default(now()) @db.Timestamp(6)
-  updated_at    DateTime                 @updatedAt @db.Timestamp(6)
-
-  template_type EmailTemplateType
-  template_name String                   @db.VarChar(255)
-  subject       String                   @db.VarChar(500)
-  html_content  String
-  text_content  String?
-  from_name     String                   @db.VarChar(255)
-  from_email    String                   @db.VarChar(255)
-  reply_to      String?                  @db.VarChar(255)
-  sample_data   Json?                    // dữ liệu mẫu để preview template
-  is_default    Boolean                  @default(false)
-  is_active     Boolean                  @default(true)
-  last_used_at  DateTime?                @db.Timestamp(6)
-
-  @@unique([template_type, is_default])
-  @@index([template_type])
-}
-
-// content_tags: tags của content — dùng model riêng để query, filter, autocomplete
-model content_tags {
-  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  content_id String   @db.Uuid
-  tag        String   @db.VarChar(100)
-
-  contents   contents @relation(fields: [content_id], references: [id], onDelete: Cascade)
-
-  @@unique([content_id, tag])
-  @@index([tag])
-}
-
-// banner_pages: pages mà banner xuất hiện — enum để đảm bảo chỉ dùng page hợp lệ
 model banner_pages {
   id        String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   banner_id String     @db.Uuid
   page      BannerPage
 
-  banners   banners    @relation(fields: [banner_id], references: [id], onDelete: Cascade)
+  banners banners @relation(fields: [banner_id], references: [id], onDelete: Cascade)
 
   @@unique([banner_id, page])
   @@index([page])
-}
-
-// promotion_contents model removed — promotions.content_id is used instead
-
-// ================================================================
-// CONTENT ENUMS
-// ================================================================
-
-enum ContentStatus {
-  DRAFT
-  SCHEDULED
-  PUBLISHED
-  ARCHIVED
-  DELETED
-}
-
-enum EmailTemplateType {
-  WELCOME
-  BOOKING_CONFIRMATION
-  BOOKING_REMINDER
-  PAYMENT_RECEIPT
-  PASSWORD_RESET
-  REVIEW_REQUEST
-  PROMOTION
-  NEWSLETTER
-  MARKETING
-  TRANSACTIONAL
-  SYSTEM
-  CUSTOM
-}
-
-enum FaqCategory {
-  BOOKING
-  PAYMENT
-  CANCELLATION
-  ACCOUNT
-  VENUE
-  GENERAL
-}
-
-enum BlogCategory {
-  NEWS
-  GUIDE
-  TIPS
-  PROMOTION
-  EVENT
-  INTERVIEW
-  REVIEW
-}
-
-enum PolicyType {
-  TERMS_OF_SERVICE
-  PRIVACY_POLICY
-  REFUND_POLICY
-  CANCELLATION_POLICY
-  COOKIE_POLICY
-  COMMUNITY_GUIDELINES
 }

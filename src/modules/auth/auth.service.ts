@@ -33,33 +33,23 @@ export class AuthService {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
-        await this.prisma.users.update({
-            where: { id: user.id },
+        // Create OTP verification record (standard for Schema v6)
+        await this.prisma.otp_verifications.create({
             data: {
-                reset_password_otp: otp,
-                reset_password_expires: expires,
+                user_id: user.id,
+                type: 'RESET_PASSWORD',
+                code_hash: otp,
+                expires_at: expires,
             },
         });
 
-        // Send Email
+        // Send Email (Email templates removed in v6, using direct mail)
         try {
-            const template = await this.prisma.email_templates.findFirst({
-                where: { template_name: 'PASSWORD_RESET' }
-            });
-
-            if (template) {
-                await this.mailService.sendWithTemplate(user.email, template, {
-                    name: user.fullName,
-                    otp: otp,
-                });
-            } else {
-                // Fallback if template not seeded
-                await this.mailService.sendMail(
-                    user.email,
-                    'Mã khôi phục mật khẩu',
-                    `<p>Chào ${user.fullName}, mã OTP khôi phục mật khẩu của bạn là: <b>${otp}</b>. Mã này có hiệu lực trong 15 phút.</p>`
-                );
-            }
+            await this.mailService.sendMail(
+                user.email,
+                'Mã khôi phục mật khẩu',
+                `<p>Chào ${user.fullName}, mã OTP khôi phục mật khẩu của bạn là: <b>${otp}</b>. Mã này có hiệu lực trong 15 phút.</p>`
+            );
         } catch (error) {
             console.error('Failed to send reset email:', error);
         }
@@ -68,16 +58,21 @@ export class AuthService {
     }
 
     async resetPassword(dto: ResetPasswordDto) {
-        const user = await this.prisma.users.findFirst({
+        const otpRecord = await this.prisma.otp_verifications.findFirst({
             where: {
-                reset_password_otp: dto.otp,
-                reset_password_expires: { gt: new Date() },
+                code_hash: dto.otp,
+                type: 'RESET_PASSWORD',
+                expires_at: { gt: new Date() },
+                used_at: null,
             },
+            include: { users: true }
         });
 
-        if (!user) {
+        if (!otpRecord || !otpRecord.users) {
             throw new BadRequestException('Mã OTP không chính xác hoặc đã hết hạn');
         }
+
+        const user = otpRecord.users;
 
         const hashedPassword = await argon2.hash(dto.newPassword, { type: argon2.argon2id });
 
@@ -85,9 +80,13 @@ export class AuthService {
             where: { id: user.id },
             data: {
                 password: hashedPassword,
-                reset_password_otp: null,
-                reset_password_expires: null,
             },
+        });
+
+        // Mark OTP as used
+        await this.prisma.otp_verifications.update({
+            where: { id: otpRecord.id },
+            data: { used_at: new Date() }
         });
 
         return { message: 'Đặt lại mật khẩu thành công' };
@@ -137,7 +136,7 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        if (!user.isActive) {
+        if (user.status !== 'ACTIVE') {
             throw new UnauthorizedException('Account is disabled');
         }
 
@@ -187,11 +186,11 @@ export class AuthService {
 
             // Need to fix this query to match Prisma relation structure
             // refresh_tokens -> users -> roles
-            const storedToken = await this.prisma.refresh_tokens.findUnique({
+            const storedToken = await (this.prisma.refresh_tokens as any).findUnique({
                 where: { token },
                 include: {
                     users: {
-                        include: { roles: true }
+                        include: { role: true } // role (singular) as per compiler
                     }
                 },
             });
@@ -209,16 +208,16 @@ export class AuthService {
 
             // Map user to camelCase for generateTokens
             // Reuse UsersService mapping logic? Or generic manual mapping
-            const { users } = storedToken;
+            // In Schema v6, refresh_tokens relation to users is named 'users' (line 1228)
+            const { users: userEntity } = storedToken as any;
+            if (!userEntity) throw new UnauthorizedException('User not found');
+
             const mappedUser = {
-                ...users,
-                id: users.id,
-                email: users.email,
-                fullName: users.full_name,
-                isActive: users.is_active,
-                role: users.roles ? {
-                    ...users.roles,
-                    slug: users.roles.slug
+                ...userEntity,
+                fullName: userEntity.full_name,
+                role: userEntity.role ? {
+                    ...userEntity.role,
+                    slug: userEntity.role.slug
                 } : undefined
             };
 
