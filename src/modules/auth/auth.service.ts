@@ -158,7 +158,6 @@ export class AuthService {
             expiresIn: (this.configService.get<string>('auth.refreshExpiresIn') as any) || '7d',
         });
 
-        // Store refresh token
         await this.prisma.refresh_tokens.create({
             data: {
                 token: refreshToken,

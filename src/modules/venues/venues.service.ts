@@ -5,7 +5,7 @@ import { VenueFilterDto } from './dto/venue-filter.dto';
 import { VenueStatus } from '../../common/constants/venue-status.constant';
 import { StorageService } from '../../shared/storage/storage.service';
 import { CreateVenueDto, UpdateVenueDto } from './dto/create-venue.dto';
-import { AnalyticsService } from '../analytics/analytics.service';
+import { AuditService } from '../analytics/audit.service';
 import { ActivityType } from '../../common/constants/activity-type.constant';
 import { UsersService } from '../users/users.service';
 import { BookingStatus } from '../../common/constants/booking-status.constant';
@@ -16,7 +16,7 @@ export class VenuesService {
     constructor(
         private prisma: PrismaService,
         private storageService: StorageService,
-        private analyticsService: AnalyticsService,
+        private auditService: AuditService,
         @Inject(forwardRef(() => UsersService))
         private usersService: UsersService,
     ) { }
@@ -178,7 +178,8 @@ export class VenuesService {
         };
     }
 
-    private formatTime(time: Date | string): string {
+    private formatTime(time: Date | string | null | undefined): string {
+        if (!time) return "00:00:00";
         if (typeof time === 'string') return time;
         return time.toTimeString().split(' ')[0];
     }
@@ -363,13 +364,12 @@ export class VenuesService {
         });
 
         if (userId) {
-            await this.analyticsService.logActivity({
+            await this.auditService.log({
                 userId,
-                activityType: status === VenueStatus.APPROVED ? ActivityType.VENUE_APPROVED : ActivityType.VENUE_REJECTED,
-                entityType: 'VENUE',
+                action: status === VenueStatus.APPROVED ? 'VENUE_APPROVED' : 'VENUE_REJECTED',
+                entityName: 'VENUE',
                 entityId: id,
-                description: `${status === VenueStatus.APPROVED ? 'Approved' : 'Rejected'} venue: ${venue.name}${reason ? `. Reason: ${reason}` : ''}`,
-                metadata: { status, reason }
+                newValues: { status, reason }
             });
         }
 

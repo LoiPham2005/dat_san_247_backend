@@ -29,9 +29,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SupportModule } from './modules/support/support.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ContentModule } from './modules/content/content.module';
-import { ChatModule } from './modules/chat/chat.module';
-import { SocialModule } from './modules/social/social.module';
-import { AIModule } from './modules/ai/ai.module';
+
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 
@@ -102,10 +100,10 @@ import { PrismaModule } from './prisma/prisma.module';
         SupportModule,
         SettingsModule,
         ContentModule,
-        ChatModule,
+        // ChatModule,
         SubscriptionsModule,
         LoyaltyModule,
-        SocialModule,
+        // SocialModule,
         // AIModule,
 
 

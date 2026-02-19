@@ -1,22 +1,26 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { AuditService } from './audit.service';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 
-@ApiTags('Admin - Analytics')
-@ApiBearerAuth()
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+@ApiTags('Analytics & Audit')
+@Controller('analytics')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('admin/analytics')
+@ApiBearerAuth()
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) { }
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly auditService: AuditService,
+  ) { }
 
-  @Get('logs')
-  @ApiOperation({ summary: 'Lịch sử hoạt động' })
-  async findLogs(@Query() filter: any) {
-    return this.analyticsService.findActivityLogs(filter);
+  @Get('audit-logs')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Lấy nhật ký kiểm toán (Chỉ dành cho Admin)' })
+  async findAuditLogs(@Query() filter: any) {
+    return this.auditService.findLogs(filter);
   }
 }

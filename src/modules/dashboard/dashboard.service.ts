@@ -86,9 +86,6 @@ export class DashboardService {
             _count: { id: true },
             orderBy: { _count: { id: 'desc' } },
             take: 10,
-            where: {
-                users: { roles: { name: UserRole.CUSTOMER } }
-            }
         });
 
         const userIds = topUsers.map(u => u.customer_id);

@@ -76,7 +76,7 @@ export class ContentService implements OnModuleInit {
         return {
             ...rest,
             contentId: post.content_id,
-            publishedAt: post.published_at,
+            publishedAt: contents?.published_at,
             lastEditedAt: post.last_edited_at,
             readingTime: post.reading_time,
             authorAvatar: post.author_avatar,
@@ -114,11 +114,7 @@ export class ContentService implements OnModuleInit {
         return {
             ...rest,
             contentId: faq.content_id,
-            helpfulCount: faq.helpful_count,
-            notHelpfulCount: faq.not_helpful_count,
-            relatedFaqs: faq.related_faqs,
-            relatedArticles: faq.related_articles,
-            searchKeywords: faq.search_keywords,
+            displayOrder: faq.display_order,
             content: this.mapContent(contents)
         };
     }
@@ -225,16 +221,15 @@ export class ContentService implements OnModuleInit {
             return content;
         });
 
-        this.logger.log(`Banner Created Successfully. Content ID: ${result.id}, Banner ID: ${result.banners?.id}`);
-
         // Map result - treating banners as single object based on type inference
-        const banner = result.banners;
+        const banner = (result as any).banners;
         if (!banner) {
             this.logger.error('Banner creation failed: Content created but no banner relation found.');
             throw new Error('Banner creation failed internally.');
         }
 
-        // Cast to any to avoid strict type checks if inconsistent, but logic holds
+        this.logger.log(`Banner Created Successfully. Content ID: ${result.id}, Banner ID: ${banner.id}`);
+
         return this.mapBanner({ ...banner, contents: result });
     }
 
@@ -312,7 +307,7 @@ export class ContentService implements OnModuleInit {
     async findBlogPosts() {
         const posts = await this.prisma.blog_posts.findMany({
             include: { contents: true },
-            orderBy: { published_at: 'desc' },
+            orderBy: { contents: { published_at: 'desc' } },
         });
         return posts.map(p => this.mapBlogPost(p));
     }
@@ -342,16 +337,16 @@ export class ContentService implements OnModuleInit {
                     status: dto.status || ContentStatus.PUBLISHED,
                     author_id: authorId,
                     thumbnail_url: thumbnailUrl,
+                    published_at: dto.publishedAt ? new Date(dto.publishedAt) : new Date(),
                     blog_posts: {
                         create: {
-                            category: dto.category,
+                            category: dto.category as any,
                             author: dto.author,
                             author_avatar: dto.authorAvatar,
                             reading_time: dto.readingTime,
                             table_of_contents: dto.tableOfContents ? dto.tableOfContents as any : undefined,
                             canonical_url: dto.canonicalUrl,
                             related_posts: dto.relatedPosts ? JSON.stringify(dto.relatedPosts) : undefined,
-                            published_at: dto.publishedAt ? new Date(dto.publishedAt) : new Date(),
                         }
                     }
                 },
@@ -384,20 +379,20 @@ export class ContentService implements OnModuleInit {
                     content: dto.content,
                     status: dto.status,
                     thumbnail_url: thumbnailUrl || undefined,
+                    published_at: dto.publishedAt ? new Date(dto.publishedAt) : undefined,
                 }
             });
 
             const updatedPost = await tx.blog_posts.update({
                 where: { id },
                 data: {
-                    category: dto.category,
+                    category: dto.category as any,
                     author: dto.author,
                     author_avatar: dto.authorAvatar,
                     reading_time: dto.readingTime,
                     table_of_contents: dto.tableOfContents ? dto.tableOfContents as any : undefined,
                     canonical_url: dto.canonicalUrl,
                     related_posts: dto.relatedPosts ? JSON.stringify(dto.relatedPosts) : undefined,
-                    published_at: dto.publishedAt ? new Date(dto.publishedAt) : undefined,
                     last_edited_at: new Date(),
                 },
                 include: { contents: true }
@@ -450,7 +445,7 @@ export class ContentService implements OnModuleInit {
                         create: {
                             template_name: dto.templateName,
                             subject: dto.subject,
-                            templateType: dto.templateType,
+                            templateType: dto.templateType as any,
                             html_content: dto.htmlContent,
                             from_name: dto.fromName,
                             from_email: dto.fromEmail,
@@ -463,7 +458,8 @@ export class ContentService implements OnModuleInit {
             return content;
         });
 
-        return this.mapEmailTemplate({ ...result.email_templates, contents: result });
+        const template = (result as any).email_templates;
+        return this.mapEmailTemplate({ ...template, contents: result });
     }
 
     async updateEmailTemplate(id: string, dto: UpdateEmailTemplateDto) {
@@ -487,7 +483,7 @@ export class ContentService implements OnModuleInit {
                     template_name: dto.templateName,
                     subject: dto.subject,
                     html_content: dto.htmlContent,
-                    templateType: dto.templateType,
+                    templateType: dto.templateType as any,
                     from_name: dto.fromName,
                     from_email: dto.fromEmail,
                     sample_data: dto.sampleData ? dto.sampleData : undefined,

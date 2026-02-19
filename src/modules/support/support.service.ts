@@ -14,7 +14,6 @@ export class SupportService {
             // Map relations
             customer: ticket.users_support_tickets_customer_idTousers,
             assignedTo: ticket.users_support_tickets_assigned_to_idTousers,
-            conversation: ticket.chat_conversations,
             booking: ticket.bookings,
             venue: ticket.venues,
             // Map fields if necessary (snake_case -> camelCase is automatic?)
@@ -24,7 +23,6 @@ export class SupportService {
             assignedToId: ticket.assigned_to_id,
             bookingId: ticket.booking_id,
             venueId: ticket.venue_id,
-            conversationId: ticket.conversation_id,
             ticketNumber: ticket.ticket_number,
             createdAt: ticket.created_at,
             updatedAt: ticket.updated_at,
@@ -59,7 +57,6 @@ export class SupportService {
             include: {
                 users_support_tickets_customer_idTousers: true,
                 users_support_tickets_assigned_to_idTousers: true,
-                chat_conversations: true,
                 bookings: true,
                 venues: true,
             },
