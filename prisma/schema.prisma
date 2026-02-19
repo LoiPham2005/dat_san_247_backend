@@ -1,7 +1,7 @@
 // ================================================================
 // PRISMA SCHEMA - Sports Court Booking Platform v5
 // Production-Ready | PostgreSQL | Final Optimized
-// 53 models | 6 Roles: super_admin, admin, staff, owner, venue_staff, customer
+// 54 models | 6 Roles: super_admin, admin, staff, owner, venue_staff, customer
 //
 // THAY ĐỔI SO VỚI v4:
 //   BỎ venue_social_links       → 4 fields thẳng trong venues
@@ -348,6 +348,7 @@ model users {
 
   // Profile
   profile                      user_profiles?
+  referrals                    user_profiles[]     @relation("user_referrals")
   devices                      user_devices[]
 
   // Venue
@@ -387,8 +388,6 @@ model users {
   fraud_as_reviewer            fraud_detections[]    @relation("fraud_reviewer")
   audit_logs                   audit_logs[]
 
-  @@index([email])
-  @@index([phone])
   @@index([role_id])
   @@index([status])
   @@index([deleted_at])
@@ -433,9 +432,6 @@ model user_profiles {
   users                users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   referred_by          users?    @relation("user_referrals", fields: [referred_by_id], references: [id])
   sport_preferences    user_sport_preferences[]
-
-  @@index([user_id])
-  @@index([referral_code])
 }
 
 model user_sport_preferences {
@@ -685,6 +681,21 @@ model venue_sport_types {
   @@index([sport_type])
 }
 
+// sport_types: bảng tra cứu (lookup) — tạo sẵn các loại phổ biến
+// Chủ sân có thể thêm loại hình mới → is_system=false
+// venue_sport_types.sport_type tham chiếu name ở đây (không FK cứng → linh hoạt)
+model sport_types {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  name       String   @unique @db.VarChar(50) // "FOOTBALL", "BADMINTON", ...
+  label      String   @db.VarChar(100)        // "Bóng đá", "Cầu lông", ...
+  icon       String?  @db.VarChar(100)
+  is_system  Boolean  @default(false)         // true = admin tạo, false = chủ sân tự thêm
+  is_active  Boolean  @default(true)
+  created_by String?  @db.Uuid               // null = system seed, có giá trị = chủ sân tạo
+}
+
 model venue_amenities {
   id       String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   venue_id String  @db.Uuid
@@ -695,7 +706,6 @@ model venue_amenities {
   venues   venues  @relation(fields: [venue_id], references: [id], onDelete: Cascade)
 
   @@unique([venue_id, name])
-  @@index([venue_id])
 }
 
 model venue_operating_hours {
@@ -792,7 +802,6 @@ model venue_staff_permissions {
   venue_staff    venue_staff @relation(fields: [venue_staff_id], references: [id], onDelete: Cascade)
 
   @@unique([venue_staff_id, permission])
-  @@index([venue_staff_id])
 }
 
 // flow: owner/manager invite → nhận email + token link
@@ -819,7 +828,7 @@ model venue_staff_invites {
 
   @@index([venue_id])
   @@index([invite_email])
-  @@index([token])
+  @@index([expires_at])
   @@index([status])
 }
 
@@ -1028,10 +1037,10 @@ model bookings {
 
   @@index([customer_id])
   @@index([court_id])
-  @@index([venue_id])
-  @@index([booking_date])
   @@index([status])
-  @@index([booking_code])
+  @@index([venue_id, booking_date])
+  @@index([venue_id, status])
+  @@index([customer_id, status])
 }
 
 model booking_addons {
@@ -1049,6 +1058,7 @@ model booking_addons {
   venue_services venue_services @relation(fields: [service_id], references: [id])
 
   @@index([booking_id])
+  @@index([service_id])
 }
 
 model booking_status_history {
@@ -1110,6 +1120,7 @@ model recurring_bookings {
 
   @@index([user_id])
   @@index([court_id])
+  @@index([venue_id])
 }
 
 model recurring_booking_days {
@@ -1205,7 +1216,8 @@ model payout_bank_accounts {
   branch         String?  @db.VarChar(255)
   is_default     Boolean  @default(false)
 
-  wallets        wallets  @relation(fields: [wallet_id], references: [id], onDelete: Cascade)
+  wallets         wallets           @relation(fields: [wallet_id], references: [id], onDelete: Cascade)
+  payout_requests payout_requests[]
 
   @@index([wallet_id])
 }
@@ -1221,6 +1233,7 @@ model transactions {
   balance_after    Decimal           @db.Decimal(15, 2)
   status           TransactionStatus @default(PENDING)
   reference_id     String?           @db.Uuid
+  reference_type   String?           @db.VarChar(50) // 'booking' | 'payout' | 'deposit' | 'adjustment'
   description      String?
   payment_provider String?           @db.VarChar(50)
 
@@ -1290,8 +1303,9 @@ model payout_requests {
   processed_at     DateTime?    @db.Timestamp(6)
   processed_by     String?      @db.Uuid
 
-  users     users  @relation("payout_owner", fields: [user_id], references: [id], onDelete: Cascade)
-  processor users? @relation("payout_processor", fields: [processed_by], references: [id])
+  users        users                @relation("payout_owner", fields: [user_id], references: [id], onDelete: Cascade)
+  processor    users?               @relation("payout_processor", fields: [processed_by], references: [id])
+  bank_account payout_bank_accounts @relation(fields: [bank_account_id], references: [id])
 
   @@index([user_id])
   @@index([status])
@@ -1368,8 +1382,8 @@ model promotions {
   promotion_usage     promotion_usage[]
   user_vouchers       user_vouchers[]
 
-  @@index([code])
   @@index([status])
+  @@index([deleted_at])
   @@index([valid_from, valid_to])
 }
 
@@ -1513,6 +1527,7 @@ model support_ticket_messages {
   users   users           @relation(fields: [sender_id], references: [id])
 
   @@index([ticket_id])
+  @@index([sender_id])
 }
 
 // ================================================================
@@ -1602,8 +1617,8 @@ model audit_logs {
   action      String   @db.VarChar(100)
   entity_name String   @db.VarChar(100)
   entity_id   String?  @db.Uuid
-  old_values  String?  @db.Text
-  new_values  String?  @db.Text
+  old_values  Json?
+  new_values  Json?
   ip_address  String?  @db.VarChar(45)
   user_agent  String?  @db.VarChar(500)
 
