@@ -1,29 +1,22 @@
 // ================================================================
-// PRISMA SCHEMA — Sports Court Booking Platform v6
-// Production-Ready | PostgreSQL | Commercial Optimized
-// 57 models | 6 Roles: super_admin, admin, staff, owner, venue_staff, customer
+// PRISMA SCHEMA — Sports Court Booking Platform v7
+// Production-Ready | PostgreSQL | Final Commercial
+// 58 models | 6 Roles: super_admin, admin, staff, owner, venue_staff, customer
 //
-// TỐI ƯU TỪ doc3 (v5 mở rộng):
-//   BỎ  blog_posts          → không cần cho MVP đặt sân
-//   BỎ  content_tags        → phụ thuộc blog_posts
-//   BỎ  email_templates     → dùng Sendgrid/Brevo, thêm sau khi cần
-//   BỎ  time_slots          → trùng logic với bookings + pricing_rules
-//   GỘP venue_sport_types
-//       + court_sport_types → sport_assignments (entity_type VENUE/COURT)
-//   GỘP venue_amenities
-//       + court_amenities   → amenities (entity_type VENUE/COURT)
-//   THÊM holiday_calendar   → lịch ngày lễ + hệ số giá VN
-//   THÊM commission_records → track hoa hồng từng booking
-//   THÊM search_history     → analytics + gợi ý sân
-//   THÊM app_versions       → force update mobile app
-//   FIX  users.is_active    → bỏ (trùng status)
-//   FIX  users reset_password fields → bỏ (dùng otp_verifications)
-//   FIX  files.r2_key       → bỏ (trùng storage_key)
-//   FIX  files.target_type/id → bỏ (đã có media_attachments)
-//   FIX  venues.opening_time/closing_time → bỏ (có venue_operating_hours)
-//   FIX  bookings.platform_fee → bỏ (= commission_amount)
-//   FIX  notifications.data Json → bỏ (reference_id đủ rồi)
-//   FIX  contents.type String → đổi thành enum ContentType
+// TỐI ƯU TỪ v6 (61 models):
+//   BỎ  venue_staff_permissions → 4 role đã đủ cho MVP
+//   BỎ  fraud_detections        → thêm sau khi platform lớn
+//   BỎ  fraud_indicators        → phụ thuộc fraud_detections
+//   BỎ  users.username          → đăng nhập = email/SĐT là đủ ở VN
+//   BỎ  user_profiles: cover_url, latitude, longitude,
+//                      preferred_language, timezone,
+//                      reliability_score, show_email, show_phone
+//   BỎ  courts: width, length, height, parent_court_id
+//   BỎ  reviews.likes_count     → ít dùng trong booking app
+//   FIX  Section 8: bỏ 5 fields ít dùng
+//        wallets.currency, bank_accounts.branch,
+//        transactions.payment_provider,
+//        payout_requests.currency, commission_records.notes
 // ================================================================
 
 generator client {
@@ -303,20 +296,6 @@ enum ReportStatus {
   DISMISSED
 }
 
-enum FraudRiskLevel {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum FraudAction {
-  NONE
-  FLAG
-  BLOCK
-  MANUAL_REVIEW
-}
-
 enum ContentType {
   BANNER
   FAQ
@@ -378,7 +357,6 @@ model users {
   deleted_at        DateTime?  @db.Timestamp(6)
 
   email             String     @unique @db.VarChar(255)
-  username          String?    @unique @db.VarChar(100)
   password          String     @db.VarChar(255)
   full_name         String     @db.VarChar(255)
   phone             String?    @unique @db.VarChar(20)
@@ -414,7 +392,6 @@ model users {
   payout_requests_own          payout_requests[]     @relation("payout_owner")
   payout_requests_proc         payout_requests[]     @relation("payout_processor")
   invoices                     invoices[]
-  referrals                    user_profiles[]       @relation("user_referrals")
   reviews                      reviews[]
   files                        files[]
   favorite_venues              favorite_venues[]
@@ -426,8 +403,6 @@ model users {
   support_ticket_messages      support_ticket_messages[]
   reports_submitted            reports[]             @relation("report_reporter")
   reports_reviewed             reports[]             @relation("report_reviewer")
-  fraud_as_subject             fraud_detections[]    @relation("fraud_subject")
-  fraud_as_reviewer            fraud_detections[]    @relation("fraud_reviewer")
   audit_logs                   audit_logs[]
   contents                     contents[]
 
@@ -445,20 +420,12 @@ model user_profiles {
 
   user_id            String    @unique @db.Uuid
   bio                String?   @db.Text
-  cover_url          String?   @db.VarChar(500)
   address            String?   @db.VarChar(500)
   city               String?   @db.VarChar(100)
   district           String?   @db.VarChar(100)
-  latitude           Decimal?  @db.Decimal(10, 8)
-  longitude          Decimal?  @db.Decimal(11, 8)
   referral_code      String?   @unique @db.VarChar(20)
   referred_by_id     String?   @db.Uuid
-  reliability_score  Int       @default(100)
   is_profile_public  Boolean   @default(true)
-  show_email         Boolean   @default(false)
-  show_phone         Boolean   @default(false)
-  preferred_language String    @default("vi") @db.VarChar(10)
-  timezone           String    @default("Asia/Ho_Chi_Minh") @db.VarChar(50)
 
   // Notification preferences (gộp để tránh JOIN thêm)
   notif_push         Boolean   @default(true)
@@ -643,8 +610,6 @@ model venues {
   city                      String      @db.VarChar(100)
   district                  String      @db.VarChar(100)
   ward                      String?     @db.VarChar(100)
-  latitude                  Decimal?    @db.Decimal(10, 8)
-  longitude                 Decimal?    @db.Decimal(11, 8)
   phone                     String?     @db.VarChar(20)
   email                     String?     @db.VarChar(255)
   thumbnail_url             String?     @db.VarChar(500)
@@ -728,8 +693,8 @@ model sport_assignments {
   entity_id   String          @db.Uuid
   sport_type  String          @db.VarChar(50)
 
-  venues venues? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "sport_assignments_venue_fkey")
-  courts courts? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "sport_assignments_court_fkey")
+  venues venues? @relation(fields: [entity_id], references: [id], onDelete: Cascade)
+  courts courts? @relation(fields: [entity_id], references: [id], onDelete: Cascade)
 
   @@unique([entity_type, entity_id, sport_type])
   @@index([entity_type, entity_id])
@@ -745,8 +710,8 @@ model amenities {
   icon        String?           @db.VarChar(100)
   is_free     Boolean           @default(true)
 
-  venues venues? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "amenities_venue_fkey")
-  courts courts? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "amenities_court_fkey")
+  venues venues? @relation(fields: [entity_id], references: [id], onDelete: Cascade)
+  courts courts? @relation(fields: [entity_id], references: [id], onDelete: Cascade)
 
   @@unique([entity_type, entity_id, name])
   @@index([entity_type, entity_id])
@@ -821,25 +786,12 @@ model venue_staff {
 
   venues      venues                    @relation(fields: [venue_id], references: [id], onDelete: Cascade)
   users       users                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  permissions venue_staff_permissions[]
 
   @@unique([venue_id, user_id])
   @@index([venue_id])
   @@index([user_id])
   @@index([role])
   @@index([is_active])
-}
-
-model venue_staff_permissions {
-  id             String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  venue_staff_id String      @db.Uuid
-  permission     String      @db.VarChar(100) // "bookings:cancel"|"revenue:view_daily"
-  granted_by     String      @db.Uuid
-  granted_at     DateTime    @default(now()) @db.Timestamp(6)
-
-  venue_staff venue_staff @relation(fields: [venue_staff_id], references: [id], onDelete: Cascade)
-
-  @@unique([venue_staff_id, permission])
 }
 
 model venue_staff_invites {
@@ -905,16 +857,10 @@ model courts {
   surface_type    CourtSurfaceType?
   size            String?           @db.VarChar(50)
   is_indoor       Boolean           @default(false)
-  width           Decimal?          @db.Decimal(5, 2)
-  length          Decimal?          @db.Decimal(5, 2)
-  height          Decimal?          @db.Decimal(5, 2)
   is_active       Boolean           @default(true)
   thumbnail_url   String?           @db.VarChar(500)
-  parent_court_id String?           @db.Uuid // sub-court của sân lớn
 
   venues       venues  @relation(fields: [venue_id], references: [id], onDelete: Cascade)
-  parent_court courts? @relation("court_children", fields: [parent_court_id], references: [id])
-  sub_courts   courts[] @relation("court_children")
 
   sport_assignments  sport_assignments[]
   amenities          amenities[]
@@ -1026,7 +972,6 @@ model bookings {
   transactions           transactions[]
   promotion_usage        promotion_usage[]
   support_tickets        support_tickets[]
-  fraud_detections       fraud_detections[]
   commission_records     commission_records[]
 
   @@index([customer_id])
@@ -1186,7 +1131,6 @@ model wallets {
   user_id        String   @unique @db.Uuid
   balance        Decimal  @default(0) @db.Decimal(15, 2)
   locked_balance Decimal  @default(0) @db.Decimal(15, 2)
-  currency       String   @default("VND") @db.VarChar(10)
   is_active      Boolean  @default(true)
   version        Int      @default(0) // optimistic lock
 
@@ -1202,7 +1146,6 @@ model payout_bank_accounts {
   bank_code      String   @db.VarChar(20)
   account_number String   @db.VarChar(50)
   account_name   String   @db.VarChar(255)
-  branch         String?  @db.VarChar(255)
   is_default     Boolean  @default(false)
 
   wallets         wallets          @relation(fields: [wallet_id], references: [id], onDelete: Cascade)
@@ -1223,8 +1166,6 @@ model transactions {
   reference_id     String?           @db.Uuid
   reference_type   String?           @db.VarChar(50) // 'booking'|'payout'|'deposit'
   description      String?
-  payment_provider String?           @db.VarChar(50)
-
   users    users     @relation(fields: [user_id], references: [id])
   bookings bookings? @relation(fields: [reference_id], references: [id])
   invoice  invoices?
@@ -1280,7 +1221,6 @@ model payout_requests {
   updated_at       DateTime     @updatedAt @db.Timestamp(6)
   user_id          String       @db.Uuid
   amount           Decimal      @db.Decimal(15, 2)
-  currency         String       @default("VND") @db.VarChar(10)
   status           PayoutStatus @default(PENDING)
   bank_account_id  String       @db.Uuid
   admin_note       String?
@@ -1310,7 +1250,6 @@ model commission_records {
   owner_receives    Decimal          @db.Decimal(15, 2) // chủ sân nhận
   status            CommissionStatus @default(PENDING)
   paid_at           DateTime?        @db.Timestamp(6)
-  notes             String?
 
   bookings bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
   venues   venues   @relation(fields: [venue_id], references: [id])
@@ -1340,7 +1279,6 @@ model reviews {
   rating_facilities  Int?
   rating_staff       Int?
   comment            String?   @db.Text
-  likes_count        Int       @default(0) // denormalized
 
   response           String?   @db.Text
   responded_by       String?   @db.Uuid
@@ -1566,41 +1504,6 @@ model reports {
 // ================================================================
 // SECTION 15 — FRAUD DETECTION
 // ================================================================
-
-model fraud_detections {
-  id                String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at        DateTime       @default(now()) @db.Timestamp(6)
-  user_id           String?        @db.Uuid
-  booking_id        String?        @db.Uuid
-  risk_level        FraudRiskLevel
-  risk_score        Decimal        @db.Decimal(5, 4)
-  action_taken      FraudAction    @default(NONE)
-  is_false_positive Boolean?
-  reviewed_by       String?        @db.Uuid
-  reviewed_at       DateTime?      @db.Timestamp(6)
-  notes             String?        @db.Text
-
-  users      users?            @relation("fraud_subject", fields: [user_id], references: [id], onDelete: Cascade)
-  bookings   bookings?         @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  reviewers  users?            @relation("fraud_reviewer", fields: [reviewed_by], references: [id])
-  indicators fraud_indicators[]
-
-  @@index([user_id])
-  @@index([booking_id])
-  @@index([risk_level])
-}
-
-model fraud_indicators {
-  id                 String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  fraud_detection_id String           @db.Uuid
-  indicator_type     String           @db.VarChar(100) // "multiple_accounts"|"suspicious_ip"
-  indicator_value    String           @db.VarChar(500)
-  severity           FraudRiskLevel
-
-  fraud_detections fraud_detections @relation(fields: [fraud_detection_id], references: [id], onDelete: Cascade)
-
-  @@index([fraud_detection_id])
-}
 
 // ================================================================
 // SECTION 16 — SYSTEM
