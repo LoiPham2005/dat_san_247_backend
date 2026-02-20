@@ -1,11 +1,9 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { SettingsService } from './settings.service';
-import { Setting } from './entities/setting.entity';
-
+import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
-    imports: [],
+    imports: [PrismaModule],
     controllers: [],
     providers: [SettingsService],
     exports: [SettingsService],

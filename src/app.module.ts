@@ -1,9 +1,8 @@
 // ==========================================
-// 📁 src/app.module.ts - TỐIƯU
+// 📁 src/app.module.ts - TỐIƯU PRISMA
 // ==========================================
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -29,11 +28,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SupportModule } from './modules/support/support.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ContentModule } from './modules/content/content.module';
-
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
-import { LoyaltyModule } from './modules/loyalty/loyalty.module';
-
-
 
 // Shared services
 import { StorageModule } from './shared/storage/storage.module';
@@ -48,7 +43,6 @@ import { createWinstonFormat, createWinstonTransports } from './config/logger.co
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { HttpLoggingInterceptor } from './common/interceptors/http-logging.interceptor';
 import { LoggerModule } from './common/services/logger.module';
-
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -68,18 +62,21 @@ import { PrismaModule } from './prisma/prisma.module';
             },
         ]),
 
+
         // 3. Database
-        TypeOrmModule.forRootAsync({
-            inject: [ConfigService],
-            useFactory: (config: ConfigService) => {
-                const dbConfig = config.get<TypeOrmModuleOptions>('database');
-                if (!dbConfig) {
-                    throw new Error('Database configuration not found');
-                }
-                return dbConfig;
-            },
-        }),
-        PrismaModule, // <--- Added PrismaModule here
+        // TypeOrmModule.forRootAsync({
+        //     inject: [ConfigService],
+        //     useFactory: (config: ConfigService) => {
+        //         const dbConfig = config.get<TypeOrmModuleOptions>('database');
+        //         if (!dbConfig) {
+        //             throw new Error('Database configuration not found');
+        //         }
+        //         return dbConfig;
+        //     },
+        // }),
+
+        // 3. Database (Prisma Only)
+        PrismaModule,
 
         // 4. Feature Modules
         AuthModule,
@@ -100,12 +97,7 @@ import { PrismaModule } from './prisma/prisma.module';
         SupportModule,
         SettingsModule,
         ContentModule,
-        // ChatModule,
         SubscriptionsModule,
-        LoyaltyModule,
-        // SocialModule,
-        // AIModule,
-
 
         // 5. Shared Modules
         StorageModule,
@@ -142,3 +134,4 @@ import { PrismaModule } from './prisma/prisma.module';
     ],
 })
 export class AppModule { }
+

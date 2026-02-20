@@ -7,7 +7,7 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserFilterDto } from './dto/user-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { User } from './entities/user.entity';
+
 
 import { RolesService } from '../roles/roles.service';
 
@@ -24,21 +24,21 @@ export class AdminUsersController {
 
     @Get()
     @ApiOperation({ summary: 'Lấy danh sách người dùng' })
-    @ApiPaginatedResponse(User)
+    @ApiPaginatedResponse(Object)
     async findAll(@Query() filter: UserFilterDto) {
         return this.usersService.findAll(filter);
     }
 
     @Get(':id')
     @ApiOperation({ summary: 'Lấy chi tiết người dùng' })
-    @ApiSuccessResponse(User)
+    @ApiSuccessResponse(Object)
     async findOne(@Param('id') id: string) {
         return this.usersService.findOne(id);
     }
 
     @Post()
     @ApiOperation({ summary: 'Tạo mới người dùng' })
-    @ApiSuccessResponse(User)
+    @ApiSuccessResponse(Object)
     async create(@Body() data: any) {
         if (data.role) {
             const role = await this.rolesService.findBySlug(data.role);

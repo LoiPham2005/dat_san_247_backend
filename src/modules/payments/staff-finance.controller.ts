@@ -5,7 +5,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Payment } from './entities/payment.entity';
+
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Staff - Finance')
@@ -18,7 +18,7 @@ export class StaffFinanceController {
 
     @Get('transactions')
     @ApiOperation({ summary: 'Danh sách giao dịch tài chính' })
-    @ApiPaginatedResponse(Payment)
+    @ApiPaginatedResponse(Object)
     async findAll(@Query() filter: any) {
         return this.paymentsService.findAll(filter);
     }

@@ -1,19 +1,15 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { BookingsService } from './bookings.service';
 import { BookingsController } from './bookings.controller';
 import { OwnerBookingsController } from './owner-bookings.controller';
 import { VenueStaffBookingsController } from './venue-staff-bookings.controller';
-import { Booking } from './entities/booking.entity';
-import { BookingAddon } from './entities/booking-addon.entity';
-import { BookingWaitlist } from './entities/waitlist.entity';
-import { RecurringBooking } from './entities/recurring-booking.entity';
-import { BookingStatusHistory } from './entities/booking-status-history.entity';
 import { VenuesModule } from '../venues/venues.module';
 import { AdminBookingsController } from './admin-bookings.controller';
+import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
   imports: [
+    PrismaModule,
     forwardRef(() => VenuesModule),
   ],
   controllers: [

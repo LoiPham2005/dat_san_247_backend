@@ -11,17 +11,20 @@ import { FacebookStrategy } from './strategies/facebook.strategy';
 import { UsersModule } from '../users/users.module';
 import { RolesModule } from '../roles/roles.module';
 
+import { PrismaModule } from '../../prisma/prisma.module';
+
 @Module({
   imports: [
+    PrismaModule,
     UsersModule,
     RolesModule,
-    PassportModule, // Changed from PassportModule.register({ defaultStrategy: 'jwt' })
-    ConfigModule, // Added ConfigModule directly to imports
+    PassportModule,
+    ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('auth.jwtSecret') || 'super-secret-key', // Corrected syntax and added default
+        secret: configService.get<string>('auth.jwtSecret') || 'super-secret-key',
         signOptions: {
           expiresIn: (configService.get<string>('auth.jwtExpiresIn') as any) || '1d',
         },

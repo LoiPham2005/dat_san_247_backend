@@ -6,8 +6,11 @@ import { VenueStaffDashboardController } from './venue-staff-dashboard.controlle
 import { VenuesModule } from '../venues/venues.module';
 import { AdminDashboardController } from './admin-dashboard.controller';
 
+import { PrismaModule } from '../../prisma/prisma.module';
+
 @Module({
   imports: [
+    PrismaModule,
     forwardRef(() => VenuesModule),
   ],
   controllers: [

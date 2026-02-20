@@ -1,10 +1,8 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { SubscriptionPlan } from './entities/subscription-plan.entity';
-import { UserSubscription } from './entities/user-subscription.entity';
+import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
-    imports: [],
+    imports: [PrismaModule],
     controllers: [],
     providers: [],
     exports: [],

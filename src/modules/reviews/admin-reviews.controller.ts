@@ -6,7 +6,7 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ReviewFilterDto } from './dto/review-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Review } from './entities/review.entity';
+
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Admin - Reviews')
@@ -19,7 +19,7 @@ export class AdminReviewsController {
 
     @Get()
     @ApiOperation({ summary: 'Danh sách đánh giá toàn hệ thống' })
-    @ApiPaginatedResponse(Review)
+    @ApiPaginatedResponse(Object)
     async findAll(@Query() filter: ReviewFilterDto) {
         return this.reviewsService.findAll(filter);
     }

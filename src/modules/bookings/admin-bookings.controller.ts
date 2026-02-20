@@ -6,7 +6,7 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { BookingFilterDto } from './dto/booking-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Booking } from './entities/booking.entity';
+
 import { BookingStatus } from '../../common/constants/booking-status.constant';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
@@ -20,14 +20,14 @@ export class AdminBookingsController {
 
     @Get()
     @ApiOperation({ summary: 'Danh sách tất cả đơn đặt sân' })
-    @ApiPaginatedResponse(Booking)
+    @ApiPaginatedResponse(Object)
     async findAll(@Query() filter: BookingFilterDto) {
         return this.bookingsService.findAll(filter);
     }
 
     @Get(':id')
     @ApiOperation({ summary: 'Chi tiết đơn đặt sân' })
-    @ApiSuccessResponse(Booking)
+    @ApiSuccessResponse(Object)
     async findOne(@Param('id') id: string) {
         return this.bookingsService.findOne(id);
     }

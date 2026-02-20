@@ -6,7 +6,6 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
-import { Venue } from './entities/venue.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Staff - Venue Management')
@@ -19,7 +18,7 @@ export class VenueStaffVenuesController {
 
     @Get()
     @ApiOperation({ summary: 'Danh sách sân được gán' })
-    @ApiSuccessResponse(Venue, true)
+    @ApiSuccessResponse(Object, true)
     async findAll(@CurrentUser('id') staffId: string) {
         const venueIds = await this.venuesService.getAssignedVenueIds(staffId);
         return this.venuesService.findByIds(venueIds);
@@ -27,7 +26,7 @@ export class VenueStaffVenuesController {
 
     @Get(':id')
     @ApiOperation({ summary: 'Chi tiết sân' })
-    @ApiSuccessResponse(Venue)
+    @ApiSuccessResponse(Object)
     async findOne(@CurrentUser('id') staffId: string, @Param('id') id: string) {
         await this.checkPermission(staffId, id);
         return this.venuesService.findOne(id);

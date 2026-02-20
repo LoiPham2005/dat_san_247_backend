@@ -10,7 +10,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { VenueFilterDto } from './dto/venue-filter.dto';
 import { CreateVenueDto, UpdateVenueDto } from './dto/create-venue.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Venue } from './entities/venue.entity';
+
 
 @ApiTags('Owner - Venues')
 @ApiBearerAuth()
@@ -22,7 +22,7 @@ export class OwnerVenuesController {
 
     @Get()
     @ApiOperation({ summary: 'Danh sách sân của chủ sở hữu' })
-    @ApiPaginatedResponse(Venue)
+    @ApiPaginatedResponse(Object)
     async findAll(@CurrentUser('id') ownerId: string, @Query() filter: VenueFilterDto) {
         return this.venuesService.findAllByOwner(ownerId, filter);
     }
@@ -34,7 +34,7 @@ export class OwnerVenuesController {
         { name: 'images', maxCount: 10 },
     ]))
     @ApiOperation({ summary: 'Thêm sân mới' })
-    @ApiSuccessResponse(Venue)
+    @ApiSuccessResponse(Object)
     async create(
         @CurrentUser('id') ownerId: string,
         @Body() data: CreateVenueDto,
@@ -48,7 +48,7 @@ export class OwnerVenuesController {
 
     @Get(':id')
     @ApiOperation({ summary: 'Chi tiết sân của chủ' })
-    @ApiSuccessResponse(Venue)
+    @ApiSuccessResponse(Object)
     async findOne(@CurrentUser('id') ownerId: string, @Param('id') id: string) {
         return this.venuesService.findOneByOwner(ownerId, id);
     }

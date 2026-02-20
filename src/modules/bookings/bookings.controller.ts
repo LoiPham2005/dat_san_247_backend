@@ -4,8 +4,6 @@ import { BookingsService } from './bookings.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { BookingFilterDto } from './dto/booking-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Booking } from './entities/booking.entity';
-import { BookingStatus } from '../../common/constants/booking-status.constant';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Client - Bookings')
@@ -17,21 +15,21 @@ export class BookingsController {
 
   @Get('my')
   @ApiOperation({ summary: 'Lấy danh sách đặt sân của tôi' })
-  @ApiPaginatedResponse(Booking)
+  @ApiPaginatedResponse(Object)
   async getMyBookings(@CurrentUser('id') userId: string, @Query() filter: BookingFilterDto) {
     return this.bookingsService.findAllByUser(userId, filter);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Chi tiết đơn đặt sân' })
-  @ApiSuccessResponse(Booking)
+  @ApiSuccessResponse(Object)
   async findOne(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.bookingsService.findOneByUser(userId, id);
   }
 
   @Post()
   @ApiOperation({ summary: 'Tạo đơn đặt sân mới' })
-  @ApiSuccessResponse(Booking)
+  @ApiSuccessResponse(Object)
   async create(@CurrentUser('id') userId: string, @Body() data: any) {
     return this.bookingsService.createBooking(userId, data);
   }
@@ -45,7 +43,7 @@ export class BookingsController {
 
   @Post(':id/reschedule')
   @ApiOperation({ summary: 'Đổi lịch đặt sân' })
-  @ApiSuccessResponse(Booking)
+  @ApiSuccessResponse(Object)
   async reschedule(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() data: any) {
     return this.bookingsService.rescheduleBooking(userId, id, data);
   }

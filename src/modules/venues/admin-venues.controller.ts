@@ -7,7 +7,6 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { VenueFilterDto } from './dto/venue-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Venue } from './entities/venue.entity';
 import { VenueStatus } from '../../common/constants/venue-status.constant';
 
 @ApiTags('Admin - Venues')
@@ -20,14 +19,14 @@ export class AdminVenuesController {
 
     @Get()
     @ApiOperation({ summary: 'Danh sách sân toàn hệ thống' })
-    @ApiPaginatedResponse(Venue)
+    @ApiPaginatedResponse(Object)
     async findAll(@Query() filter: VenueFilterDto) {
         return this.venuesService.findAll(filter);
     }
 
     @Get('pending')
     @ApiOperation({ summary: 'Danh sách sân chờ duyệt' })
-    @ApiPaginatedResponse(Venue)
+    @ApiPaginatedResponse(Object)
     async findPending(@Query() filter: VenueFilterDto) {
         filter.status = VenueStatus.PENDING;
         return this.venuesService.findAll(filter);
@@ -35,7 +34,7 @@ export class AdminVenuesController {
 
     @Get(':id')
     @ApiOperation({ summary: 'Chi tiết sân' })
-    @ApiSuccessResponse(Venue)
+    @ApiSuccessResponse(Object)
     async findOne(@Param('id') id: string) {
         return this.venuesService.findOne(id);
     }

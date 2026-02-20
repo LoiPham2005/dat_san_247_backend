@@ -119,7 +119,7 @@ export class AuthService {
 
         const user = await this.usersService.create({
             ...registerDto,
-            role,
+            roleId: role.id,
         });
 
         return this.generateTokens(user);
@@ -249,13 +249,8 @@ export class AuthService {
                 email: profile.email,
                 fullName: profile.fullName,
                 avatarUrl: profile.avatarUrl,
-                // Random password
                 password: Math.random().toString(36).slice(-10),
-                // Note: UsersService.create handles hashing. Wait, UsersService.create expects plain password?
-                // UsersService.create V1: Arg data.password -> hash.
-                // AuthService V1: register passes registerDto (plain) -> create hashes.
-                // oauth: passes random string. UsersService will hash it.
-                role,
+                roleId: role.id,
                 isVerified: true,
             });
         }

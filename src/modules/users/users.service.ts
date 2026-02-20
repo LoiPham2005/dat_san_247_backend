@@ -47,17 +47,19 @@ export class UsersService {
     }
 
     async findByEmail(email: string) {
-        return this.prisma.users.findUnique({
+        const user = await this.prisma.users.findUnique({
             where: { email },
             include: { role: true } as any
         });
+        return this.mapUser(user);
     }
 
     async findByPhone(phone: string) {
-        return this.prisma.users.findFirst({
+        const user = await this.prisma.users.findFirst({
             where: { phone },
             include: { role: true } as any
         });
+        return this.mapUser(user);
     }
 
     async create(dto: CreateUserDto) {
@@ -74,7 +76,9 @@ export class UsersService {
                 phone: dto.phone,
                 role_id: dto.roleId,
                 status: 'ACTIVE',
-                avatar_url: dto.avatarUrl
+                avatar_url: dto.avatarUrl,
+                is_email_verified: dto.isVerified || false,
+                email_verified_at: dto.isVerified ? new Date() : null,
             },
             include: { role: true } as any
         });

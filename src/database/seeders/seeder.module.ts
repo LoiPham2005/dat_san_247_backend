@@ -1,14 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { DatabaseSeeder } from './database.seeder';
-import { User } from '../../modules/users/entities/user.entity';
-import { Role } from '../../modules/roles/entities/role.entity';
-import { Permission } from '../../modules/permissions/entities/permission.entity';
 import { PermissionsSeeder } from './permissions.seeder';
 import { RolesSeeder } from './roles.seeder';
 import { UsersSeeder } from './users.seeder';
 import * as configs from '../../config';
+import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
     imports: [
@@ -16,21 +13,7 @@ import * as configs from '../../config';
             isGlobal: true,
             load: Object.values(configs),
         }),
-        TypeOrmModule.forRootAsync({
-            inject: [ConfigService],
-            useFactory: (config: ConfigService) => ({
-                type: 'postgres',
-                host: config.get('database.host'),
-                port: config.get('database.port'),
-                username: config.get('database.username'),
-                password: config.get('database.password'),
-                database: config.get('database.database'),
-                entities: [__dirname + '/../../modules/**/*.entity.{ts,js}'],
-                autoLoadEntities: true,
-                synchronize: false,
-            }),
-        }),
-        TypeOrmModule.forFeature([User, Role, Permission]),
+        PrismaModule,
     ],
     providers: [
         PermissionsSeeder,
@@ -40,3 +23,4 @@ import * as configs from '../../config';
     ],
 })
 export class SeederModule { }
+

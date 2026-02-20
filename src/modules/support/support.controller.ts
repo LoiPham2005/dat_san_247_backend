@@ -4,7 +4,6 @@ import { SupportService } from './support.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
-import { SupportTicket } from './entities/support-ticket.entity';
 
 @ApiTags('Client - Support')
 @Controller('support')
@@ -15,7 +14,7 @@ export class SupportController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Tạo yêu cầu hỗ trợ mới' })
-    @ApiSuccessResponse(SupportTicket)
+    @ApiSuccessResponse(Object)
     async createTicket(@CurrentUser('id') userId: string, @Body() data: any) {
         return this.supportService.createTicket({
             ...data,

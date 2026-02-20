@@ -5,9 +5,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
-// import { Ticket } from './entities/ticket.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { SupportTicket } from './entities/support-ticket.entity';
 
 @ApiTags('Staff - Support')
 @ApiBearerAuth()
@@ -26,14 +24,14 @@ export class StaffSupportController {
 
     @Get('tickets')
     @ApiOperation({ summary: 'Danh sách tickets' })
-    @ApiSuccessResponse(SupportTicket, true)
+    @ApiSuccessResponse(Object, true)
     async findAll(@Query() filter: any) {
         return this.supportService.findAllTickets(filter);
     }
 
     @Get('tickets/:id')
     @ApiOperation({ summary: 'Chi tiết ticket' })
-    @ApiSuccessResponse(SupportTicket)
+    @ApiSuccessResponse(Object)
     async findOne(@Param('id') id: string) {
         return this.supportService.findOneTicket(id);
     }

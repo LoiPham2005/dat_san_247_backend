@@ -6,10 +6,10 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Payment } from './entities/payment.entity';
+
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
-@ApiTags('Admin - Finance') 
+@ApiTags('Admin - Finance')
 @ApiBearerAuth()
 @Roles(UserRole.SUPER_ADMIN)
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -19,7 +19,7 @@ export class AdminPaymentsController {
 
     @Get('transactions')
     @ApiOperation({ summary: 'Danh sách tất cả giao dịch' })
-    @ApiPaginatedResponse(Payment)
+    @ApiPaginatedResponse(Object)
     async findAll(@Query() filter: PaymentFilterDto) {
         return this.paymentsService.findAll(filter);
     }

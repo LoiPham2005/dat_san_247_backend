@@ -6,7 +6,7 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PromotionFilterDto } from './dto/promotion-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Promotion } from './entities/promotion.entity';
+
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Admin - Promotions')
@@ -19,7 +19,7 @@ export class AdminPromotionsController {
 
     @Get()
     @ApiOperation({ summary: 'Danh sách mã giảm giá' })
-    @ApiPaginatedResponse(Promotion)
+    @ApiPaginatedResponse(Object)
     async findAll(@Query() filter: PromotionFilterDto) {
         return this.promotionsService.findAll(filter);
     }

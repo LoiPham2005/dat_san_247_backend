@@ -3,7 +3,6 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { VenuesService } from './venues.service';
 import { VenueFilterDto } from './dto/venue-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Venue } from './entities/venue.entity';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -15,7 +14,7 @@ export class VenuesController {
 
   @Get()
   @ApiOperation({ summary: 'Tìm kiếm và lọc sân' })
-  @ApiPaginatedResponse(Venue)
+  @ApiPaginatedResponse(Object)
   async findAll(@Query() filter: VenueFilterDto) {
     // Chỉ lấy những sân đã được duyệt (APPROVED)
     filter.status = 'APPROVED' as any;
@@ -24,7 +23,7 @@ export class VenuesController {
 
   @Get('featured')
   @ApiOperation({ summary: 'Lấy danh sách sân nổi bật (Home)' })
-  @ApiSuccessResponse(Venue, true)
+  @ApiSuccessResponse(Object, true)
   async findFeatured() {
     return this.venuesService.findFeatured();
   }
@@ -32,7 +31,7 @@ export class VenuesController {
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Chi tiết sân' })
-  @ApiSuccessResponse(Venue)
+  @ApiSuccessResponse(Object)
   async findOne(@Param('id') id: string, @CurrentUser('id') userId?: string) {
     return this.venuesService.findOne(id, userId);
   }
@@ -73,7 +72,7 @@ export class VenuesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Danh sách sân yêu thích của tôi' })
-  @ApiSuccessResponse(Venue, true)
+  @ApiSuccessResponse(Object, true)
   async getMyFavorites(@CurrentUser('id') userId: string) {
     return this.venuesService.findMyFavorites(userId);
   }

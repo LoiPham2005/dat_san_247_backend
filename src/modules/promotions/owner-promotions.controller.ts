@@ -7,7 +7,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PromotionFilterDto } from './dto/promotion-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Promotion } from './entities/promotion.entity';
+
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @ApiTags('Owner - Promotions')
@@ -20,7 +20,7 @@ export class OwnerPromotionsController {
 
     @Get()
     @ApiOperation({ summary: 'Danh sách khuyến mãi của chủ sân' })
-    @ApiPaginatedResponse(Promotion)
+    @ApiPaginatedResponse(Object)
     async findAll(@CurrentUser('id') ownerId: string, @Query() filter: PromotionFilterDto) {
         return this.promotionsService.findAllByOwner(ownerId, filter);
     }

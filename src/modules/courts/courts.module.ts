@@ -6,8 +6,11 @@ import { StorageModule } from '../../shared/storage/storage.module';
 import { VenuesModule } from '../venues/venues.module';
 import { OwnerCourtsController } from './owner-courts.controller';
 
+import { PrismaModule } from '../../prisma/prisma.module';
+
 @Module({
   imports: [
+    PrismaModule,
     forwardRef(() => VenuesModule),
     StorageModule,
   ],

@@ -3,17 +3,18 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
-import { Notification } from './entities/notification.entity';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Client - Notifications')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('notifications')
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) { }
 
   @Get()
   @ApiOperation({ summary: 'Danh sách thông báo của tôi' })
-  @ApiSuccessResponse(Notification, true)
+  @ApiSuccessResponse(Object, true)
   async getMyNotifications(@CurrentUser('id') userId: string) {
     return this.notificationsService.findByUser(userId);
   }

@@ -7,7 +7,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiSuccessResponse } from '../../common/decorators/api-response.decorator';
-import { Court } from './entities/court.entity';
+
 
 @ApiTags('Owner - Courts')
 @ApiBearerAuth()
@@ -19,21 +19,21 @@ export class OwnerCourtsController {
 
     @Get('venue/:venueId')
     @ApiOperation({ summary: 'Danh sách sân nhỏ của một sân lớn' })
-    @ApiSuccessResponse(Court, true)
+    @ApiSuccessResponse(Object, true)
     async findAllByVenue(@Param('venueId') venueId: string) {
         return this.courtsService.findAllByVenue(venueId);
     }
 
     @Post()
     @ApiOperation({ summary: 'Thêm sân nhỏ mới' })
-    @ApiSuccessResponse(Court)
+    @ApiSuccessResponse(Object)
     async create(@CurrentUser('id') ownerId: string, @Body() data: any) {
         return this.courtsService.create(ownerId, data);
     }
 
     @Put(':id')
     @ApiOperation({ summary: 'Cập nhật thông tin sân nhỏ' })
-    @ApiSuccessResponse(Court)
+    @ApiSuccessResponse(Object)
     async update(@CurrentUser('id') ownerId: string, @Param('id') id: string, @Body() data: any) {
         return this.courtsService.update(ownerId, id, data);
     }

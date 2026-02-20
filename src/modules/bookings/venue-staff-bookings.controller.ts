@@ -7,7 +7,7 @@ import { UserRole } from '../../common/constants/role.constant';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Booking } from './entities/booking.entity';
+
 import { BookingStatus } from '../../common/constants/booking-status.constant';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
@@ -24,7 +24,7 @@ export class VenueStaffBookingsController {
 
     @Get()
     @ApiOperation({ summary: 'Danh sách booking của sân được gán' })
-    @ApiPaginatedResponse(Booking)
+    @ApiPaginatedResponse(Object)
     async findAll(@CurrentUser('id') staffId: string, @Query() filter: any) {
         const venueIds = await this.venuesService.getAssignedVenueIds(staffId);
         if (venueIds.length === 0) return { items: [], meta: { total: 0 } };

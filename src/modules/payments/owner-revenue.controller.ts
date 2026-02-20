@@ -7,12 +7,12 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Payment } from './entities/payment.entity';
+
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('Owner - Revenue')
 @ApiBearerAuth()
-@Roles(UserRole.OWNER)  
+@Roles(UserRole.OWNER)
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('owner/revenue')
 export class OwnerRevenueController {
@@ -27,7 +27,7 @@ export class OwnerRevenueController {
 
     @Get('history')
     @ApiOperation({ summary: 'Lịch sử giao dịch tiền về của chủ sân' })
-    @ApiPaginatedResponse(Payment)
+    @ApiPaginatedResponse(Object)
     async getHistory(@CurrentUser('id') ownerId: string, @Query() filter: PaymentFilterDto) {
         return this.paymentsService.findAllByOwner(ownerId, filter);
     }

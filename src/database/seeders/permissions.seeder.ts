@@ -1,15 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Permission } from '../../modules/permissions/entities/permission.entity';
+import { PrismaService } from '../../prisma/prisma.service';
 import { logger } from '@sentry/nestjs';
 
 @Injectable()
 export class PermissionsSeeder {
-    constructor(
-        @InjectRepository(Permission)
-        private permissionsRepository: Repository<Permission>,
-    ) { }
+    constructor(private prisma: PrismaService) { }
 
     async seed() {
         const permissions = [
@@ -68,9 +63,9 @@ export class PermissionsSeeder {
 
         let seededCount = 0;
         for (const p of permissions) {
-            const existing = await this.permissionsRepository.findOne({ where: { slug: p.slug } });
+            const existing = await this.prisma.permissions.findUnique({ where: { slug: p.slug } });
             if (!existing) {
-                await this.permissionsRepository.save(p);
+                await this.prisma.permissions.create({ data: p });
                 seededCount++;
             }
         }
@@ -82,3 +77,4 @@ export class PermissionsSeeder {
         }
     }
 }
+

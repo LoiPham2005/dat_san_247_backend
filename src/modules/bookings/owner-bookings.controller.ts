@@ -7,7 +7,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { BookingFilterDto } from './dto/booking-filter.dto';
 import { ApiSuccessResponse, ApiPaginatedResponse } from '../../common/decorators/api-response.decorator';
-import { Booking } from './entities/booking.entity';
+
 import { BookingStatus } from '../../common/constants/booking-status.constant';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
@@ -21,7 +21,7 @@ export class OwnerBookingsController {
 
     @Get()
     @ApiOperation({ summary: 'Danh sách booking của chủ sân' })
-    @ApiPaginatedResponse(Booking)
+    @ApiPaginatedResponse(Object)
     async findAll(@CurrentUser('id') ownerId: string, @Query() filter: BookingFilterDto) {
         return this.bookingsService.findAllByOwner(ownerId, filter);
     }
