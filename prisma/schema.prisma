@@ -398,6 +398,7 @@ model users {
   user_vouchers                user_vouchers[]
   notifications                notifications[]
   promotion_usage              promotion_usage[]
+  referrals                    user_profiles[]       @relation("user_referrals")
   support_tickets_as_customer  support_tickets[]     @relation("ticket_customer")
   support_tickets_as_agent     support_tickets[]     @relation("ticket_agent")
   support_ticket_messages      support_ticket_messages[]
@@ -693,8 +694,8 @@ model sport_assignments {
   entity_id   String          @db.Uuid
   sport_type  String          @db.VarChar(50)
 
-  venues venues? @relation(fields: [entity_id], references: [id], onDelete: Cascade)
-  courts courts? @relation(fields: [entity_id], references: [id], onDelete: Cascade)
+  venues venues? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "sport_assignments_venue_fkey")
+  courts courts? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "sport_assignments_court_fkey")
 
   @@unique([entity_type, entity_id, sport_type])
   @@index([entity_type, entity_id])
@@ -710,8 +711,8 @@ model amenities {
   icon        String?           @db.VarChar(100)
   is_free     Boolean           @default(true)
 
-  venues venues? @relation(fields: [entity_id], references: [id], onDelete: Cascade)
-  courts courts? @relation(fields: [entity_id], references: [id], onDelete: Cascade)
+  venues venues? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "amenities_venue_fkey")
+  courts courts? @relation(fields: [entity_id], references: [id], onDelete: Cascade, map: "amenities_court_fkey")
 
   @@unique([entity_type, entity_id, name])
   @@index([entity_type, entity_id])
