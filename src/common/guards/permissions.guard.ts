@@ -1,17 +1,15 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+    Injectable,
+    CanActivate,
+    ExecutionContext,
+    ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
-import { AppLoggerService } from '../services/app-logger.service';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-    constructor(
-        private reflector: Reflector,
-        private readonly logger: AppLoggerService
-    ) {
-        this.logger.setContext('PermissionsGuard');
-    }
-
+    constructor(private reflector: Reflector) { }
 
     canActivate(context: ExecutionContext): boolean {
         const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
@@ -19,39 +17,27 @@ export class PermissionsGuard implements CanActivate {
             context.getClass(),
         ]);
 
+        // Nếu API không yêu cầu permissions → bỏ qua check
         if (!requiredPermissions || requiredPermissions.length === 0) {
-            return true; // No permissions required
+            return true;
         }
 
         const { user } = context.switchToHttp().getRequest();
-        if (!user) {
-            this.logger.warn('User not authenticated');
-            throw new ForbiddenException('User not authenticated');
-        }
 
-        if (!user.role) {
-            this.logger.warn(`User ${user.id} has no role assigned`);
-            throw new ForbiddenException('User has no role assigned');
-        }
+        // Dựa trên JWT payload (JwtPayload) → user.permissions: string[]
+        const userPermissions = user?.permissions || [];
 
-        // Check if user's role has the required permissions
-        const userPermissions = user.role.permissions?.map((p) => p.slug) || [];
-
-        // Check for wildcard permission (super admin)
+        // Check platform-wide admin hoặc super_admin có quyền "*"
         if (userPermissions.includes('*')) {
             return true;
         }
 
-        // Check if user has ALL required permissions
-        const hasAllPermissions = requiredPermissions.every((permission) =>
+        const hasPermission = requiredPermissions.every((permission) =>
             userPermissions.includes(permission),
         );
 
-        if (!hasAllPermissions) {
-            this.logger.warn(`User ${user.id} (${user.role.slug}) denied access. Required: [${requiredPermissions.join(', ')}], Possessed: [${userPermissions.join(', ')}]`);
-            throw new ForbiddenException(
-                `You do not have the required permissions: ${requiredPermissions.join(', ')}`,
-            );
+        if (!hasPermission) {
+            throw new ForbiddenException('Required permissions not met: ' + requiredPermissions.join(', '));
         }
 
         return true;

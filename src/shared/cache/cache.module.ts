@@ -11,13 +11,19 @@ import { CacheService } from './cache.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
-        const redisUrl = `redis://:${configService.get<string>('redis.password')}@${configService.get<string>('redis.host')}:${configService.get<number>('redis.port')}/${configService.get<number>('redis.db')}`;
+        const host = configService.get<string>('redis.host');
+        const port = configService.get<number>('redis.port');
+        const password = configService.get<string>('redis.password');
+        const db = configService.get<number>('redis.db');
+        const ttl = configService.get<number>('redis.ttl');
+
+        const redisUrl = `redis://:${password}@${host}:${port}/${db}`;
 
         return {
           stores: [
             new KeyvRedis(redisUrl),
           ],
-          ttl: configService.get<number>('redis.ttl'),
+          ttl,
         };
       },
     }),
@@ -25,4 +31,4 @@ import { CacheService } from './cache.service';
   providers: [CacheService],
   exports: [NestCacheModule, CacheService],
 })
-export class CacheModule {}
+export class CacheModule { }

@@ -16,15 +16,31 @@ import { StorageModule } from './shared/storage/storage.module';
 import { MailModule } from './shared/mail/mail.module';
 import { SmsModule } from './shared/sms/sms.module';
 import { FcmModule } from './shared/fcm/fcm.module';
+import { QueueModule } from './shared/queue/queue.module';
 import { TurnstileModule } from './shared/cloudflare/turnstile.module';
 
 import { AppController } from './app.controller';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
+import { VenuesModule } from './modules/venues/venues.module';
+import { CourtsModule } from './modules/courts/courts.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { SupportModule } from './modules/support/support.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { VenueStaffModule } from './modules/venue-staff/venue-staff.module';
+import { SystemModule } from './modules/system/system.module';
+
 import { WinstonModule } from 'nest-winston';
 import { createWinstonFormat, createWinstonTransports } from './config/logger.config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { HttpLoggingInterceptor } from './common/interceptors/http-logging.interceptor';
 import { LoggerModule } from './common/services/logger.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { CacheModule } from './shared/cache/cache.module';
 
 @Module({
     imports: [
@@ -43,30 +59,30 @@ import { PrismaModule } from './prisma/prisma.module';
             },
         ]),
 
-
-        // 3. Database
-        // TypeOrmModule.forRootAsync({
-        //     inject: [ConfigService],
-        //     useFactory: (config: ConfigService) => {
-        //         const dbConfig = config.get<TypeOrmModuleOptions>('database');
-        //         if (!dbConfig) {
-        //             throw new Error('Database configuration not found');
-        //         }
-        //         return dbConfig;
-        //     },
-        // }),
-
         // 3. Database (Prisma Only)
         PrismaModule,
 
         // 4. Feature Modules
+        AuthModule,
+        UsersModule,
+        RolesModule,
+        VenuesModule,
+        CourtsModule,
+        BookingsModule,
+        PaymentsModule,
+        PromotionsModule,
+        ReviewsModule,
+        SupportModule,
+        NotificationsModule,
+        VenueStaffModule,
+        SystemModule,
 
         // 5. Shared Modules
         StorageModule,
         MailModule,
         SmsModule,
-        // CacheModule,
         // QueueModule,
+        // CacheModule,
         FcmModule,
         LoggerModule,
         TurnstileModule,

@@ -12,11 +12,25 @@ export class TokenService {
         private configService: ConfigService,
     ) { }
 
-    async issueTokens(user: users & { role: { slug: string } | null }) {
+    private async getUserPermissions(roleId: string | null): Promise<string[]> {
+        if (!roleId) return [];
+
+        const rolePermissions = await this.prisma.role_permissions.findMany({
+            where: { role_id: roleId },
+            include: { permissions: true }
+        });
+
+        return rolePermissions.map(rp => rp.permissions.slug);
+    }
+
+    async issueTokens(user: users & { role_id: string | null; role: { slug: string; id: string } | null }) {
+        const permissions = await this.getUserPermissions(user.role_id);
+
         const payload = {
             sub: user.id,
             email: user.email,
             role: user.role?.slug || 'customer',
+            permissions: permissions,
         };
 
         const [access_token, refresh_token] = await Promise.all([

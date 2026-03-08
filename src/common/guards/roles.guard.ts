@@ -1,41 +1,44 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+    Injectable,
+    CanActivate,
+    ExecutionContext,
+    ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { UserRole } from '../constants/role.constant';
-import { AppLoggerService } from '../services/app-logger.service';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-    constructor(
-        private reflector: Reflector,
-        private readonly logger: AppLoggerService
-    ) {
-        this.logger.setContext('RolesGuard');
-    }
+    constructor(private reflector: Reflector) { }
 
     canActivate(context: ExecutionContext): boolean {
-
         const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
             context.getHandler(),
             context.getClass(),
         ]);
-        if (!requiredRoles) {
+
+        // Nếu API không yêu cầu role cụ thể → bỏ qua check
+        if (!requiredRoles || requiredRoles.length === 0) {
             return true;
         }
+
         const { user } = context.switchToHttp().getRequest();
-        if (!user) {
-            this.logger.warn(`No user found in request headers: ${JSON.stringify(context.switchToHttp().getRequest().headers)}`);
-            throw new ForbiddenException('User not found in request');
+
+        // Kiểm tra user model có role property hay không
+        // Giả sử user.role_slug hoặc user.role.slug hoặc user.role
+        // Dựa trên JWT payload (JwtPayload)
+        const userRole = user?.role;
+
+        if (!userRole) {
+            throw new ForbiddenException('User session does not have a role. Please login again');
         }
 
-        const userRole = typeof user.role === 'object' ? user.role?.slug : user.role;
-        // this.logger.debug(`Checking roles: Required=[${requiredRoles.join(', ')}], User=${userRole}`);
-
-        const hasRole = requiredRoles.some((role) => userRole === role);
+        const hasRole = requiredRoles.includes(userRole);
         if (!hasRole) {
-            this.logger.warn(`Forbidden: User ${user.email} with role ${userRole} tried to access ${context.getClass().name}`);
-            throw new ForbiddenException('You do not have permission to access this resource');
+            throw new ForbiddenException('You do not have permission to access this resource (Required: ' + requiredRoles.join('|') + ')');
         }
+
         return true;
     }
 }

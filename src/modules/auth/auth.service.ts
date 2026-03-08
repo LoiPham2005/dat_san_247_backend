@@ -4,7 +4,7 @@ import { TokenService } from './token.service';
 import { OtpService } from './otp.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { OtpType, UserStatus } from '@prisma/client';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -24,7 +24,7 @@ export class AuthService {
 
         if (existingUser) throw new ConflictException('Email already exists');
 
-        const hashedPassword = await bcrypt.hash(dto.password, 10);
+        const hashedPassword = await argon2.hash(dto.password);
         const customerRole = await this.prisma.roles.findUnique({ where: { slug: 'customer' } });
 
         const user = await this.prisma.users.create({
@@ -53,7 +53,7 @@ export class AuthService {
             include: { role: true },
         });
 
-        if (!user || !(await bcrypt.compare(dto.password, user.password))) {
+        if (!user || !(await argon2.verify(user.password, dto.password))) {
             throw new UnauthorizedException('Invalid credentials');
         }
 
@@ -97,7 +97,7 @@ export class AuthService {
         if (!user) throw new BadRequestException('User not found');
 
         await this.otpService.verifyCode(user.id, dto.code, OtpType.RESET_PASSWORD);
-        const hashedPassword = await bcrypt.hash(dto.new_password, 10);
+        const hashedPassword = await argon2.hash(dto.new_password);
 
         await this.prisma.users.update({
             where: { id: user.id },

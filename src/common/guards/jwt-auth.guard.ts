@@ -1,23 +1,33 @@
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+    ExecutionContext,
+    Injectable,
+    UnauthorizedException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { AppLoggerService } from '../services/app-logger.service';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-    constructor(private readonly logger: AppLoggerService) {
+    constructor(private reflector: Reflector) {
         super();
-        this.logger.setContext('JwtAuthGuard');
     }
 
     canActivate(context: ExecutionContext) {
-        // this.logger.debug('Checking authentication...');
+        const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+        if (isPublic) {
+            return true;
+        }
         return super.canActivate(context);
     }
 
     handleRequest(err: any, user: any, info: any) {
+        // Có thể custom logic throw lỗi tại đây
         if (err || !user) {
-            this.logger.warn(`Authentication failed: ${info?.message || 'No user found'}. Info: ${JSON.stringify(info)}`);
-            throw err || new UnauthorizedException('Token is invalid or expired');
+            throw err || new UnauthorizedException('Please authenticate to access this resource');
         }
         return user;
     }

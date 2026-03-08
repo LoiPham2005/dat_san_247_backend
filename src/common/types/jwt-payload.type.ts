@@ -1,5 +1,6 @@
 export type JwtPayload = {
-    sub: string; // userId
+    sub: string;     // userId
     email: string;
-    role: string; // role slug (e.g., 'super_admin', 'admin', 'customer')
+    role: string;    // platform role slug (e.g., 'super_admin', 'admin', 'customer')
+    permissions: string[]; // platform-level permissions (e.g., ['users:read', 'venues:manage'])
 };

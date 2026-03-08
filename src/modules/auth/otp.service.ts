@@ -1,19 +1,19 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OtpType } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { QueueService } from '../../shared/queue/queue.service';
 
 @Injectable()
 export class OtpService {
     constructor(
         private prisma: PrismaService,
-        private queueService: QueueService,
+        // private queueService: QueueService,
     ) { }
 
     async genCode(userId: string, type: OtpType) {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const hash = await bcrypt.hash(code, 10);
+        const hash = await argon2.hash(code);
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
         await this.prisma.otp_verifications.create({
@@ -40,12 +40,15 @@ export class OtpService {
             subject = 'Password Reset Request';
         }
 
+        console.log(`[OTP DEBUG] Code for ${email}: ${code}`);
+        /*
         await this.queueService.addJob('mail', 'send-mail', {
             to: email,
             subject,
             template,
             context: { code, email },
         });
+        */
     }
 
     async verifyCode(userId: string, code: string, type: OtpType) {
@@ -61,7 +64,7 @@ export class OtpService {
 
         if (!otpRecord) throw new BadRequestException('Invalid or expired OTP');
 
-        const isMatch = await bcrypt.compare(code, otpRecord.code_hash);
+        const isMatch = await argon2.verify(otpRecord.code_hash, code);
         if (!isMatch) throw new BadRequestException('Invalid OTP code');
 
         await this.prisma.otp_verifications.update({

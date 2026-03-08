@@ -1,36 +1,43 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+    Injectable,
+    CanActivate,
+    ExecutionContext,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { WsException } from '@nestjs/websockets';
 import { ConfigService } from '@nestjs/config';
-import { Socket } from 'socket.io';
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
     constructor(
-        private jwtService: JwtService,
-        private configService: ConfigService,
+        private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
     ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const client: Socket = context.switchToWs().getClient();
-        const token = this.extractTokenFromHeader(client);
-        if (!token) {
-            throw new UnauthorizedException();
-        }
         try {
-            const payload = await this.jwtService.verifyAsync(token, {
-                secret: this.configService.get<string>('auth.jwtSecret'),
-            });
-            // 💡 We're assigning the payload to the request object here
-            // so that we can access it in our route handlers
-            client.data.user = payload;
-        } catch {
-            throw new UnauthorizedException();
-        }
-        return true;
-    }
+            const client = context.switchToWs().getClient();
 
-    private extractTokenFromHeader(client: Socket): string | undefined {
-        const [type, token] = client.handshake.headers.authorization?.split(' ') ?? [];
-        return type === 'Bearer' ? token : undefined;
+            // JWT thường nằm ở handhsake query hoặc headers
+            const token = client.handshake?.query?.token || client.handshake?.headers?.authorization?.split(' ')[1];
+
+            if (!token) {
+                throw new WsException('Missing web socket token');
+            }
+
+            const payload = await this.jwtService.verifyAsync(token, {
+                secret: this.configService.get<string>('JWT_SECRET'),
+            });
+
+            // Gán thông tin user vào context request của socket
+            context.switchToWs().getData().user = payload;
+
+            // Hoặc gán vào socket client object
+            client.user = payload;
+
+            return true;
+        } catch (error) {
+            throw new WsException('Unauthorized web socket connection');
+        }
     }
 }
