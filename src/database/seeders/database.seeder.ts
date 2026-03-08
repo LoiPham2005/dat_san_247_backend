@@ -1,34 +1,31 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PermissionsSeeder } from './permissions.seeder';
+import { Injectable, Logger } from '@nestjs/common';
 import { RolesSeeder } from './roles.seeder';
+import { PermissionsSeeder } from './permissions.seeder';
+import { SportTypesSeeder } from './sport-types.seeder';
+import { SettingsSeeder } from './settings.seeder';
 import { UsersSeeder } from './users.seeder';
-import { logger } from '@sentry/nestjs';
 
 @Injectable()
-export class DatabaseSeeder implements OnModuleInit {
+export class DatabaseSeeder {
+    private readonly logger = new Logger(DatabaseSeeder.name);
+
     constructor(
-        private readonly permissionsSeeder: PermissionsSeeder,
         private readonly rolesSeeder: RolesSeeder,
+        private readonly permissionsSeeder: PermissionsSeeder,
+        private readonly sportTypesSeeder: SportTypesSeeder,
+        private readonly settingsSeeder: SettingsSeeder,
         private readonly usersSeeder: UsersSeeder,
     ) { }
 
-    async onModuleInit() {
-        logger.info('🌱 Starting database seeding...');
+    async seed() {
+        this.logger.log('Starting seed process...');
 
-        try {
-            // Seed permissions first
-            await this.permissionsSeeder.seed();
+        await this.rolesSeeder.seed();
+        await this.permissionsSeeder.seed();
+        await this.sportTypesSeeder.seed();
+        await this.settingsSeeder.seed();
+        await this.usersSeeder.seed();
 
-            // Seed roles (depends on permissions)
-            await this.rolesSeeder.seed();
-
-            // Seed users (depends on roles)
-            await this.usersSeeder.seed();
-
-            logger.info('✅ Database seeding completed successfully');
-        } catch (error) {
-            logger.error('❌ Database seeding failed:', error);
-            throw error;
-        }
+        this.logger.log('Seed process completed!');
     }
 }

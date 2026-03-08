@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: #ff9800;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .content {
+            padding: 20px;
+            border: 1px solid #eee;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Nhắc lịch tập sắp tới</h1>
+    </div>
+    <div class="content">
+        <p>Chào {{fullName}},</p>
+        <p>Đừng quên bạn có lịch tập vào hôm nay!</p>
+        <div style="background: #fff8e1; padding: 15px; border-radius: 4px; border-left: 4px solid #ff9800;">
+            <p><strong>Sân:</strong> {{venueName}} - {{courtName}}</p>
+            <p><strong>Thời gian:</strong> {{startTime}} - {{endTime}}</p>
+            <p><strong>Địa chỉ:</strong> {{address}}</p>
+        </div>
+        <p style="text-align: center; margin-top: 20px;">
+            <a href="{{appLink}}" class="button">Xem chi tiết trên ứng dụng</a>
+        </p>
+        <p>Chúc bạn có những giờ phút tập luyện vui vẻ!</p>
+    </div>
+    <div class="footer">
+        <p>&copy; 2024 Đặt Sân 247. Mọi quyền được bảo lưu.</p>
+    </div>
+</body>
+
+</html>

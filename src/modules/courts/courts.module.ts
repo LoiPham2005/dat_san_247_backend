@@ -1,21 +1,13 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { CourtsService } from './courts.service';
-import { CourtsController } from './courts.controller';
-import { StorageModule } from '../../shared/storage/storage.module';
-
-import { VenuesModule } from '../venues/venues.module';
-import { OwnerCourtsController } from './owner-courts.controller';
-
-import { PrismaModule } from '../../prisma/prisma.module';
+import { PricingService } from './pricing.service';
+import { MaintenanceService } from './maintenance.service';
+import { PublicController } from './controllers/public.controller';
+import { OwnerController } from './controllers/owner.controller';
 
 @Module({
-  imports: [
-    PrismaModule,
-    forwardRef(() => VenuesModule),
-    StorageModule,
-  ],
-  controllers: [CourtsController, OwnerCourtsController],
-  providers: [CourtsService],
-  exports: [CourtsService],
+    controllers: [PublicController, OwnerController],
+    providers: [CourtsService, PricingService, MaintenanceService],
+    exports: [CourtsService],
 })
 export class CourtsModule { }

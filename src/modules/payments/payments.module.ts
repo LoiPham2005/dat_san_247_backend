@@ -1,22 +1,30 @@
 import { Module } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
-import { PaymentsController } from './payments.controller';
-import { OwnerRevenueController } from './owner-revenue.controller';
-import { WalletController } from './wallet.controller';
-import { AdminPaymentsController } from './admin-payments.controller';
-import { StaffFinanceController } from './staff-finance.controller';
-import { PrismaModule } from '../../prisma/prisma.module';
+import { WalletService } from './wallet.service';
+import { TransactionService } from './transaction.service';
+import { InvoiceService } from './invoice.service';
+import { PayoutService } from './payout.service';
+import { CommissionService } from './commission.service';
+import { CustomerController } from './controllers/customer.controller';
+import { OwnerController } from './controllers/owner.controller';
+import { WebhookController } from './controllers/webhook.controller';
+import { AdminController } from './controllers/admin.controller';
 
 @Module({
-  imports: [PrismaModule],
-  controllers: [
-    PaymentsController,
-    OwnerRevenueController,
-    WalletController,
-    AdminPaymentsController,
-    StaffFinanceController,
-  ],
-  providers: [PaymentsService],
-  exports: [PaymentsService],
+    controllers: [
+        CustomerController,
+        OwnerController,
+        WebhookController,
+        AdminController,
+    ],
+    providers: [
+        PaymentsService,
+        WalletService,
+        TransactionService,
+        InvoiceService,
+        PayoutService,
+        CommissionService,
+    ],
+    exports: [PaymentsService, WalletService],
 })
 export class PaymentsModule { }

@@ -1,5 +1,13 @@
-import { Repository, ObjectLiteral } from 'typeorm';
+import { PrismaService } from '../../prisma/prisma.service';
 
-export abstract class BaseRepository<T extends ObjectLiteral> extends Repository<T> {
-    // Common repository methods can be added here
+/**
+ * Base Repository wrapping Prisma for common operations.
+ * T is the Prisma model delegate (e.g., this.prisma.users)
+ */
+export abstract class BaseRepository<T> {
+    constructor(protected readonly prisma: PrismaService) { }
+
+    // Common methods can be added here as needed
+    // Since Prisma delegates don't share a common base type with all methods easily in TS,
+    // we usually implement specific methods in child repositories.
 }

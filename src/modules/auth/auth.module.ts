@@ -1,38 +1,21 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-
 import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
+import { AuthController } from './controllers/auth.controller';
+import { OtpService } from './otp.service';
+import { TokenService } from './token.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { GoogleStrategy } from './strategies/google.strategy';
-import { FacebookStrategy } from './strategies/facebook.strategy';
-import { UsersModule } from '../users/users.module';
-import { RolesModule } from '../roles/roles.module';
-
-import { PrismaModule } from '../../prisma/prisma.module';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [
-    PrismaModule,
-    UsersModule,
-    RolesModule,
-    PassportModule,
-    ConfigModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('auth.jwtSecret') || 'super-secret-key',
-        signOptions: {
-          expiresIn: (configService.get<string>('auth.jwtExpiresIn') as any) || '1d',
-        },
-      }),
-    }),
-  ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, FacebookStrategy], // Changed providers: removed GoogleStrategy, FacebookStrategy, added LocalStrategy
-  exports: [AuthService, JwtModule], // Removed PassportModule from exports
+    imports: [
+        PassportModule,
+        JwtModule.register({}),
+        ConfigModule,
+    ],
+    controllers: [AuthController],
+    providers: [AuthService, OtpService, TokenService, JwtStrategy],
+    exports: [AuthService],
 })
 export class AuthModule { }

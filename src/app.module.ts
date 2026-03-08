@@ -10,25 +10,6 @@ import { APP_GUARD } from '@nestjs/core';
 import * as configs from './config';
 
 // Feature modules
-import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
-import { VenuesModule } from './modules/venues/venues.module';
-import { CourtsModule } from './modules/courts/courts.module';
-import { BookingsModule } from './modules/bookings/bookings.module';
-import { TimeSlotsModule } from './modules/time-slots/time-slots.module';
-import { PaymentsModule } from './modules/payments/payments.module';
-import { ReviewsModule } from './modules/reviews/reviews.module';
-import { PromotionsModule } from './modules/promotions/promotions.module';
-import { NotificationsModule } from './modules/notifications/notifications.module';
-import { UploadsModule } from './modules/uploads/uploads.module';
-import { RolesModule } from './modules/roles/roles.module';
-import { PermissionsModule } from './modules/permissions/permissions.module';
-import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { DashboardModule } from './modules/dashboard/dashboard.module';
-import { SupportModule } from './modules/support/support.module';
-import { SettingsModule } from './modules/settings/settings.module';
-import { ContentModule } from './modules/content/content.module';
-import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 
 // Shared services
 import { StorageModule } from './shared/storage/storage.module';
@@ -79,25 +60,6 @@ import { PrismaModule } from './prisma/prisma.module';
         PrismaModule,
 
         // 4. Feature Modules
-        AuthModule,
-        UsersModule,
-        RolesModule,
-        PermissionsModule,
-        VenuesModule,
-        CourtsModule,
-        BookingsModule,
-        TimeSlotsModule,
-        PaymentsModule,
-        ReviewsModule,
-        PromotionsModule,
-        NotificationsModule,
-        AnalyticsModule,
-        DashboardModule,
-        UploadsModule,
-        SupportModule,
-        SettingsModule,
-        ContentModule,
-        SubscriptionsModule,
 
         // 5. Shared Modules
         StorageModule,

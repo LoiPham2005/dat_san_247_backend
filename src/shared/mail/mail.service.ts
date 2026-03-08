@@ -51,7 +51,7 @@ export class MailService {
         });
     }
 
-    async sendWithTemplate(to: string, template: any, variables: Record<string, any> = {}) {
+    async sendTemplate(to: string, template: any, variables: Record<string, any> = {}) {
         const htmlContent = template.html_content || template.htmlContent;
         const textContent = template.text_content || template.textContent;
         const fromName = template.from_name || template.fromName;

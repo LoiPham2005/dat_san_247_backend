@@ -1,260 +1,118 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as argon2 from 'argon2';
-import { ConfigService } from '@nestjs/config';
-
-import { UsersService } from '../users/users.service';
-import { RolesService } from '../roles/roles.service';
+import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { TokenService } from './token.service';
+import { OtpService } from './otp.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { PrismaService } from '../../prisma/prisma.service';
-import { MailService } from '../../shared/mail/mail.service';
-import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
+import * as bcrypt from 'bcrypt';
+import { OtpType, UserStatus } from '@prisma/client';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
     constructor(
-        private usersService: UsersService,
-        private rolesService: RolesService,
-        private jwtService: JwtService,
-        private configService: ConfigService,
         private prisma: PrismaService,
-        private mailService: MailService,
+        private tokenService: TokenService,
+        private otpService: OtpService,
     ) { }
 
-    async forgotPassword(dto: ForgotPasswordDto) {
-        const user = await this.usersService.findByEmail(dto.email);
-        if (!user) {
-            // Don't reveal if user exists for security, but we can return success
-            return { message: 'Nếu email tồn tại, mã OTP đã được gửi' };
-        }
+    async register(dto: RegisterDto) {
+        const existingUser = await this.prisma.users.findUnique({
+            where: { email: dto.email },
+        });
 
-        // Generate 6 digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+        if (existingUser) throw new ConflictException('Email already exists');
 
-        // Create OTP verification record (standard for Schema v6)
-        await this.prisma.otp_verifications.create({
+        const hashedPassword = await bcrypt.hash(dto.password, 10);
+        const customerRole = await this.prisma.roles.findUnique({ where: { slug: 'customer' } });
+
+        const user = await this.prisma.users.create({
             data: {
-                user_id: user.id,
-                type: 'RESET_PASSWORD',
-                code_hash: otp,
-                expires_at: expires,
+                email: dto.email,
+                password: hashedPassword,
+                full_name: dto.full_name,
+                phone: dto.phone,
+                role_id: customerRole?.id,
+                profile: { create: {} },
             },
         });
 
-        // Send Email (Email templates removed in v6, using direct mail)
-        try {
-            await this.mailService.sendMail(
-                user.email,
-                'Mã khôi phục mật khẩu',
-                `<p>Chào ${user.fullName}, mã OTP khôi phục mật khẩu của bạn là: <b>${otp}</b>. Mã này có hiệu lực trong 15 phút.</p>`
-            );
-        } catch (error) {
-            console.error('Failed to send reset email:', error);
-        }
+        const code = await this.otpService.genCode(user.id, OtpType.EMAIL_VERIFY);
+        await this.otpService.sendOTP(user.email, code, OtpType.EMAIL_VERIFY);
 
-        return { message: 'Mã OTP đã được gửi tới email của bạn' };
+        return {
+            message: 'Registration successful. Please verify your email.',
+            userId: user.id,
+        };
     }
 
-    async resetPassword(dto: ResetPasswordDto) {
-        const otpRecord = await this.prisma.otp_verifications.findFirst({
-            where: {
-                code_hash: dto.otp,
-                type: 'RESET_PASSWORD',
-                expires_at: { gt: new Date() },
-                used_at: null,
-            },
-            include: { users: true }
+    async login(dto: LoginDto) {
+        const user = await this.prisma.users.findUnique({
+            where: { email: dto.email },
+            include: { role: true },
         });
 
-        if (!otpRecord || !otpRecord.users) {
-            throw new BadRequestException('Mã OTP không chính xác hoặc đã hết hạn');
+        if (!user || !(await bcrypt.compare(dto.password, user.password))) {
+            throw new UnauthorizedException('Invalid credentials');
         }
 
-        const user = otpRecord.users;
-
-        const hashedPassword = await argon2.hash(dto.newPassword, { type: argon2.argon2id });
+        if (user.status !== UserStatus.ACTIVE) {
+            throw new UnauthorizedException(`Account is ${user.status.toLowerCase()}`);
+        }
 
         await this.prisma.users.update({
             where: { id: user.id },
-            data: {
-                password: hashedPassword,
-            },
+            data: { last_login_at: new Date() },
         });
 
-        // Mark OTP as used
-        await this.prisma.otp_verifications.update({
-            where: { id: otpRecord.id },
-            data: { used_at: new Date() }
-        });
-
-        return { message: 'Đặt lại mật khẩu thành công' };
+        return this.tokenService.issueTokens(user as any);
     }
 
-    async register(registerDto: RegisterDto) {
-        if (registerDto.password !== registerDto.confirmPassword) {
-            throw new BadRequestException('Mật khẩu xác nhận không khớp');
-        }
+    async verifyEmail(dto: VerifyOtpDto) {
+        const user = await this.prisma.users.findUnique({ where: { email: dto.email } });
+        if (!user) throw new BadRequestException('User not found');
 
-        const existingUser = await this.usersService.findByEmail(registerDto.email);
-        if (existingUser) {
-            throw new ConflictException('Email already exists');
-        }
-
-        if (registerDto.phone) {
-            const existingPhone = await this.usersService.findByPhone(registerDto.phone);
-            if (existingPhone) {
-                throw new ConflictException('Số điện thoại này đã được sử dụng');
-            }
-        }
-
-        // Find default role if not provided
-        let role;
-        if (registerDto.role) {
-            role = await this.rolesService.findBySlug(registerDto.role.toLowerCase());
-        } else {
-            role = await this.rolesService.getDefaultCustomerRole();
-        }
-
-        const user = await this.usersService.create({
-            ...registerDto,
-            roleId: role.id,
+        await this.otpService.verifyCode(user.id, dto.code, dto.type);
+        await this.prisma.users.update({
+            where: { id: user.id },
+            data: { is_email_verified: true, email_verified_at: new Date() },
         });
 
-        return this.generateTokens(user);
+        return { message: 'Email verified successfully' };
     }
 
-    async login(loginDto: LoginDto) {
-        const user = await this.usersService.findByEmail(loginDto.email);
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
+    async forgotPassword(email: string) {
+        const user = await this.prisma.users.findUnique({ where: { email } });
+        if (!user) return { message: 'Success' };
 
-        const isPasswordValid = await argon2.verify(user.password, loginDto.password);
-        if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
+        const code = await this.otpService.genCode(user.id, OtpType.RESET_PASSWORD);
+        await this.otpService.sendOTP(user.email, code, OtpType.RESET_PASSWORD);
 
-        if (user.status !== 'ACTIVE') {
-            throw new UnauthorizedException('Account is disabled');
-        }
-
-        return this.generateTokens(user);
+        return { message: 'Reset code sent' };
     }
 
-    async generateTokens(user: any) {
-        const payload = {
-            email: user.email,
-            sub: user.id,
-            role: user.role?.slug
-        };
+    async resetPassword(dto: ResetPasswordDto) {
+        const user = await this.prisma.users.findUnique({ where: { email: dto.email } });
+        if (!user) throw new BadRequestException('User not found');
 
-        const accessToken = this.jwtService.sign(payload);
+        await this.otpService.verifyCode(user.id, dto.code, OtpType.RESET_PASSWORD);
+        const hashedPassword = await bcrypt.hash(dto.new_password, 10);
 
-        const refreshToken = this.jwtService.sign(payload, {
-            secret: this.configService.get<string>('auth.refreshSecret'),
-            expiresIn: (this.configService.get<string>('auth.refreshExpiresIn') as any) || '7d',
+        await this.prisma.users.update({
+            where: { id: user.id },
+            data: { password: hashedPassword },
         });
 
-        await this.prisma.refresh_tokens.create({
-            data: {
-                token: refreshToken,
-                user_id: user.id,
-                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Match config
-                is_revoked: false
-            }
-        });
-
-        return {
-            accessToken,
-            refreshToken,
-            user: {
-                id: user.id,
-                email: user.email,
-                fullName: user.fullName,
-                role: user.role?.slug,
-            }
-        };
-    }
-
-    async refreshTokens(token: string) {
-        try {
-            const payload = this.jwtService.verify(token, {
-                secret: this.configService.get<string>('auth.refreshSecret'),
-            });
-
-            // Need to fix this query to match Prisma relation structure
-            // refresh_tokens -> users -> roles
-            const storedToken = await (this.prisma.refresh_tokens as any).findUnique({
-                where: { token },
-                include: {
-                    users: {
-                        include: { role: true } // role (singular) as per compiler
-                    }
-                },
-            });
-
-            if (!storedToken || storedToken.is_revoked || storedToken.expires_at < new Date()) {
-                throw new UnauthorizedException('Invalid refresh token');
-            }
-
-            // Revoke old token (optional: delete?)
-            // storedToken.isRevoked = true;
-            await this.prisma.refresh_tokens.update({
-                where: { id: storedToken.id },
-                data: { is_revoked: true }
-            });
-
-            // Map user to camelCase for generateTokens
-            // Reuse UsersService mapping logic? Or generic manual mapping
-            // In Schema v6, refresh_tokens relation to users is named 'users' (line 1228)
-            const { users: userEntity } = storedToken as any;
-            if (!userEntity) throw new UnauthorizedException('User not found');
-
-            const mappedUser = {
-                ...userEntity,
-                fullName: userEntity.full_name,
-                role: userEntity.role ? {
-                    ...userEntity.role,
-                    slug: userEntity.role.slug
-                } : undefined
-            };
-
-            return this.generateTokens(mappedUser);
-        } catch (e) {
-            console.error(e);
-            throw new UnauthorizedException('Invalid refresh token');
-        }
+        return { message: 'Password reset successfully' };
     }
 
     async logout(token: string) {
-        // Find token first to ensure it exists, or updateMany/findUnique
-        try {
-            await this.prisma.refresh_tokens.update({
-                where: { token },
-                data: { is_revoked: true }
-            });
-        } catch (e) {
-            // Token might not exist or already revoked/deleted
-        }
+        await this.tokenService.revokeToken(token);
+        return { message: 'Logged out' };
     }
 
-    async validateOAuthUser(profile: { email: string; fullName: string; avatarUrl?: string }) {
-        let user = await this.usersService.findByEmail(profile.email);
-
-        if (!user) {
-            const role = await this.rolesService.getDefaultCustomerRole();
-            user = await this.usersService.create({
-                email: profile.email,
-                fullName: profile.fullName,
-                avatarUrl: profile.avatarUrl,
-                password: Math.random().toString(36).slice(-10),
-                roleId: role.id,
-                isVerified: true,
-            });
-        }
-
-        return this.generateTokens(user);
+    async refresh(token: string) {
+        return this.tokenService.rotateRefresh(token);
     }
 }

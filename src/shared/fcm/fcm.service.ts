@@ -42,7 +42,7 @@ export class FcmService implements OnModuleInit {
         }
     }
 
-    async sendPushNotification(token: string, title: string, body: string, data?: any) {
+    async sendToDevice(token: string, title: string, body: string, data?: any) {
         if (!token) return;
 
         const message: admin.messaging.Message = {

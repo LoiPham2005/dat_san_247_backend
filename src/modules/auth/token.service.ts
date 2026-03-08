@@ -1,0 +1,78 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../prisma/prisma.service';
+import { users } from '@prisma/client';
+
+@Injectable()
+export class TokenService {
+    constructor(
+        private prisma: PrismaService,
+        private jwtService: JwtService,
+        private configService: ConfigService,
+    ) { }
+
+    async issueTokens(user: users & { role: { slug: string } | null }) {
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            role: user.role?.slug || 'customer',
+        };
+
+        const [access_token, refresh_token] = await Promise.all([
+            this.jwtService.signAsync(payload, {
+                secret: this.configService.get<string>('JWT_SECRET'),
+                expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') as any,
+            }),
+            this.jwtService.signAsync(payload, {
+                secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+                expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') as any,
+            }),
+        ]);
+
+        // Parse expires_in to Date object (simplified)
+        const expiresDays = parseInt(this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7') || 7;
+        const expiresAt = new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000);
+
+        await this.prisma.refresh_tokens.create({
+            data: {
+                user_id: user.id,
+                token: refresh_token,
+                expires_at: expiresAt,
+            },
+        });
+
+        return { access_token, refresh_token };
+    }
+
+    async rotateRefresh(oldToken: string) {
+        const refreshTokenRecord = await this.prisma.refresh_tokens.findUnique({
+            where: { token: oldToken },
+            include: { users: { include: { role: true } } },
+        });
+
+        if (
+            !refreshTokenRecord ||
+            refreshTokenRecord.is_revoked ||
+            refreshTokenRecord.expires_at < new Date()
+        ) {
+            throw new UnauthorizedException('Invalid or expired refresh token');
+        }
+
+        // Revoke old token
+        await this.prisma.refresh_tokens.update({
+            where: { id: refreshTokenRecord.id },
+            data: { is_revoked: true },
+        });
+
+        // Issue new tokens
+        return this.issueTokens(refreshTokenRecord.users);
+    }
+
+    async revokeToken(token: string) {
+        await this.prisma.refresh_tokens.updateMany({
+            where: { token },
+            data: { is_revoked: true },
+        });
+    }
+}

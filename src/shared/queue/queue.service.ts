@@ -39,7 +39,27 @@ export class QueueService {
                 type: 'fixed',
                 delay: 10000,
             },
+        });
+    }
+
+    async addJob(queueName: 'mail' | 'sms' | 'notifications', jobName: string, data: any, options: any = {}) {
+        const queueMap = {
+            mail: this.mailQueue,
+            sms: this.smsQueue,
+            notifications: this.notificationQueue,
+        };
+
+        const queue = queueMap[queueName];
+        if (!queue) throw new Error(`Queue ${queueName} not found`);
+
+        return await queue.add(jobName, data, {
+            attempts: 3,
+            backoff: {
+                type: 'fixed',
+                delay: 5000,
+            },
             removeOnComplete: true,
+            ...options,
         });
     }
 }

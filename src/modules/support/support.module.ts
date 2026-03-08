@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { SupportService } from './support.service';
-import { StaffSupportController } from './staff-support.controller';
-import { SupportController } from './support.controller';
+import { TicketsService } from './tickets.service';
+import { ReportsService } from './reports.service';
+import { CustomerController } from './controllers/customer.controller';
+import { AdminController } from './controllers/admin.controller';
 
 @Module({
-    imports: [],
-    controllers: [StaffSupportController, SupportController],
-    providers: [SupportService],
-    exports: [SupportService],
+    controllers: [CustomerController, AdminController],
+    providers: [TicketsService, ReportsService],
+    exports: [TicketsService, ReportsService],
 })
 export class SupportModule { }

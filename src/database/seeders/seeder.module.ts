@@ -1,26 +1,21 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { DatabaseSeeder } from './database.seeder';
-import { PermissionsSeeder } from './permissions.seeder';
-import { RolesSeeder } from './roles.seeder';
-import { UsersSeeder } from './users.seeder';
-import * as configs from '../../config';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { DatabaseSeeder } from './database.seeder';
+import { RolesSeeder } from './roles.seeder';
+import { PermissionsSeeder } from './permissions.seeder';
+import { SportTypesSeeder } from './sport-types.seeder';
+import { SettingsSeeder } from './settings.seeder';
+import { UsersSeeder } from './users.seeder';
 
 @Module({
-    imports: [
-        ConfigModule.forRoot({
-            isGlobal: true,
-            load: Object.values(configs),
-        }),
-        PrismaModule,
-    ],
+    imports: [PrismaModule],
     providers: [
-        PermissionsSeeder,
-        RolesSeeder,
-        UsersSeeder,
         DatabaseSeeder,
+        RolesSeeder,
+        PermissionsSeeder,
+        SportTypesSeeder,
+        SettingsSeeder,
+        UsersSeeder,
     ],
 })
 export class SeederModule { }
-

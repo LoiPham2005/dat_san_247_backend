@@ -8,7 +8,7 @@ export class SmsService {
 
     constructor(private configService: ConfigService) { }
 
-    async sendSms(phone: string, message: string) {
+    async send(phone: string, message: string) {
         const provider = this.configService.get<string>('sms.provider');
 
         switch (provider) {

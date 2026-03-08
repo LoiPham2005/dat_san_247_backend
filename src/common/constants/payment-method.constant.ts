@@ -1,1 +1,0 @@
-export enum PaymentMethod { CASH = 'CASH', VNPAY = 'VNPAY', MOMO = 'MOMO', ZALOPAY = 'ZALOPAY', BANK_TRANSFER = 'BANK_TRANSFER' }
