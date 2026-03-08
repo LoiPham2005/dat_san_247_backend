@@ -50,7 +50,7 @@ export class ResponseUtil {
         page: number,
         limit: number,
         message: string = 'Data retrieved successfully',
-    ): ApiResponse<PaginatedResponse<T>> {
+    ): PaginatedResponse<T> {
         // Validate inputs
         page = Math.max(1, Number(page) || 1);
         limit = Math.max(1, Number(limit) || 10);
@@ -62,6 +62,7 @@ export class ResponseUtil {
             page,
             limit,
             total,
+            lastPage: totalPages,
             totalPages,
             hasNextPage: page < totalPages,
             hasPreviousPage: page > 1,
@@ -71,10 +72,8 @@ export class ResponseUtil {
             success: true,
             statusCode: HttpStatus.OK,
             message,
-            data: {
-                items,
-                meta,
-            },
+            data: items,
+            meta,
             timestamp: new Date().toISOString(),
         };
     }

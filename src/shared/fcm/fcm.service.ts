@@ -105,4 +105,8 @@ export class FcmService implements OnModuleInit {
             throw error;
         }
     }
+
+    async sendPushNotification(tokens: string[], title: string, body: string, data?: any) {
+        return this.sendMulticast(tokens, title, body, data);
+    }
 }

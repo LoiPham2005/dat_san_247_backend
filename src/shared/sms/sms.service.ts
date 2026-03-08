@@ -9,6 +9,7 @@ export class SmsService {
     constructor(private configService: ConfigService) { }
 
     async send(phone: string, message: string) {
+        // ... (existing send logic)
         const provider = this.configService.get<string>('sms.provider');
 
         switch (provider) {
@@ -21,6 +22,10 @@ export class SmsService {
                 this.logger.log(`[MOCK SMS] To: ${phone}, Message: ${message}`);
                 return { success: true, messageId: 'mock-id' };
         }
+    }
+
+    async sendSms(phone: string, message: string) {
+        return this.send(phone, message);
     }
 
     private async sendViaSpeedSms(phone: string, message: string) {
