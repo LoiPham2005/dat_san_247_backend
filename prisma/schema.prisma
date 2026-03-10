@@ -300,6 +300,41 @@ enum BannerPage {
   PROFILE
 }
 
+enum NotificationReferenceType {
+  BOOKING
+  PAYMENT
+  REVIEW
+  PROMOTION
+  SUPPORT_TICKET
+  SYSTEM
+}
+
+enum ReportAction {
+  WARN
+  BAN
+  SUSPEND
+  REFUND
+  DISMISS
+  OTHER
+}
+
+enum ActorRole {
+  CUSTOMER
+  OWNER        // chủ sân (venue owner)
+  VENUE_STAFF  // nhân viên sân
+  STAFF        // nhân viên platform (admin team)
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ServiceUnit {
+  UNIT // cái
+  HOUR // giờ
+  SESSION // buổi
+  PERSON // người
+  SET // bộ
+}
+
 enum BannerType {
   IMAGE
   VIDEO
@@ -407,6 +442,8 @@ model users {
   invoices                     invoices[]
   reviews                      reviews[]
   files                        files[]
+  search_history               search_history[]
+  booking_addons_added         booking_addons[]      @relation("addon_added_by")
   favorite_venues              favorite_venues[]
   user_vouchers                user_vouchers[]
   notifications                notifications[]
@@ -701,6 +738,7 @@ model venues {
   support_tickets           support_tickets[]
   promotion_venues          promotion_venues[]
   commission_records        commission_records[]
+  banners                   banners[]                 @relation("banner_venue")
 
   @@index([owner_id])
   @@index([status])
@@ -874,12 +912,13 @@ model venue_services {
   name            String           @db.VarChar(255)
   description     String?
   price           Decimal          @db.Decimal(15, 2)
-  unit            String           @default("unit") @db.VarChar(50)
+  unit            ServiceUnit      @default(UNIT)
   type            VenueServiceType @default(SERVICE)
   category        String?          @db.VarChar(100)
   is_available    Boolean          @default(true)
   track_inventory Boolean          @default(false)
-  stock_quantity  Int              @default(0)
+  stock_quantity  Int              @default(0) // chỉ có nghĩa khi track_inventory = true
+  // SQL: ALTER TABLE venue_services ADD CONSTRAINT chk_inventory CHECK (track_inventory = true OR stock_quantity = 0);
 
   venues         venues           @relation(fields: [venue_id], references: [id], onDelete: Cascade)
   booking_addons booking_addons[]
@@ -959,6 +998,7 @@ model pricing_rules {
   courts courts @relation(fields: [court_id], references: [id], onDelete: Cascade)
 
   @@index([court_id])
+  @@index([day_of_week])
   @@index([is_active])
   // SQL: ALTER TABLE pricing_rules ADD CONSTRAINT chk_pricing_time CHECK (start_time < end_time);
 }
@@ -1050,6 +1090,7 @@ model booking_addons {
 
   bookings       bookings       @relation(fields: [booking_id], references: [id], onDelete: Cascade)
   venue_services venue_services @relation(fields: [service_id], references: [id])
+  added_by_user  users?         @relation("addon_added_by", fields: [added_by], references: [id])
 
   @@index([booking_id])
 }
@@ -1060,7 +1101,7 @@ model booking_status_history {
   booking_id String        @db.Uuid
   status     BookingStatus
   changed_by String?       @db.Uuid
-  actor_role String?       @db.VarChar(50) // 'customer'|'venue_staff'|'admin'|'system'
+  actor_role ActorRole?
   note       String?
 
   bookings bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
@@ -1103,7 +1144,7 @@ model recurring_bookings {
   start_time          DateTime      @db.Time(6)
   end_time            DateTime      @db.Time(6)
   start_date          DateTime      @db.Date
-  end_date            DateTime?     @db.Date
+  end_date            DateTime?     @db.Date // null = lặp vô hạn đến khi is_active = false
   is_active           Boolean       @default(true)
   last_generated_date DateTime?     @db.Date
 
@@ -1116,6 +1157,7 @@ model recurring_bookings {
   @@index([user_id])
   @@index([court_id])
   @@index([venue_id])
+  @@index([is_active])
 }
 
 model recurring_booking_days {
@@ -1238,7 +1280,7 @@ model invoices {
   id             String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at     DateTime      @default(now()) @db.Timestamp(6)
   invoice_number String        @unique @db.VarChar(50)
-  booking_id     String?       @unique @db.Uuid
+  booking_id     String        @unique @db.Uuid
   transaction_id String        @unique @db.Uuid
   customer_id    String        @db.Uuid
   amount         Decimal       @db.Decimal(15, 2)
@@ -1247,7 +1289,7 @@ model invoices {
   issued_at      DateTime      @default(now()) @db.Timestamp(6)
   pdf_url        String?       @db.VarChar(500)
 
-  bookings      bookings?     @relation(fields: [booking_id], references: [id])
+  bookings      bookings      @relation(fields: [booking_id], references: [id])
   transactions  transactions  @relation(fields: [transaction_id], references: [id])
   customers     users         @relation(fields: [customer_id], references: [id])
   invoice_items invoice_items[]
@@ -1315,7 +1357,9 @@ model commission_records {
 
   @@index([booking_id])
   @@index([venue_id])
+  @@index([owner_id])
   @@index([status])
+  @@index([paid_at])
 }
 
 // ================================================================
@@ -1391,6 +1435,7 @@ model promotions {
   promotion_usage  promotion_usage[]
   user_vouchers    user_vouchers[]
   bookings         bookings[]
+  banners          banners[]             @relation("banner_promotion")
 
   @@index([status])
   @@index([deleted_at])
@@ -1441,6 +1486,7 @@ model user_vouchers {
 
   @@unique([user_id, promotion_id])
   @@index([status])
+  @@index([expires_at])
 }
 
 // ================================================================
@@ -1453,11 +1499,11 @@ model notifications {
   user_id        String              @db.Uuid
   type           NotificationType
   channel        NotificationChannel
-  title          String              @db.VarChar(255)
-  message        String              @db.Text
-  reference_id   String?             @db.Uuid  // FK mềm → booking/payment/review...
-  reference_type String?             @db.VarChar(50)
-  is_read        Boolean             @default(false)
+  title          String                   @db.VarChar(255)
+  message        String                   @db.Text
+  reference_id   String?                  @db.Uuid // FK mềm → booking/payment/review...
+  reference_type NotificationReferenceType?
+  is_read        Boolean                  @default(false)
   read_at        DateTime?           @db.Timestamp(6)
 
   users users @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -1551,7 +1597,7 @@ model reports {
   status          ReportStatus     @default(PENDING)
   reviewed_by     String?          @db.Uuid
   reviewed_at     DateTime?        @db.Timestamp(6)
-  action_taken    String?          // 'WARN'|'BAN'|'REFUND'|'DISMISS'...
+  action_taken    ReportAction?
   action_note     String?          // thay cho resolution_note
 
   reporters users  @relation("report_reporter", fields: [reporter_id], references: [id], onDelete: Cascade)
@@ -1560,6 +1606,7 @@ model reports {
   @@index([reporter_id])
   @@index([target_type, target_id])
   @@index([status])
+  @@index([reviewed_at])
 }
 
 // ================================================================
@@ -1574,7 +1621,7 @@ model audit_logs {
   id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at  DateTime @default(now()) @db.Timestamp(6)
   user_id     String?  @db.Uuid
-  actor_role  String?  @db.VarChar(50)
+  actor_role  ActorRole?
   action      String   @db.VarChar(100)
   entity_name String   @db.VarChar(100)
   entity_id   String?  @db.Uuid
@@ -1634,6 +1681,8 @@ model search_history {
   search_date  DateTime? @db.Date
   result_count Int       @default(0)
 
+  users users? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
   @@index([user_id])
   @@index([sport_type])
   @@index([created_at])
@@ -1682,7 +1731,7 @@ model policies {
   id                  String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at          DateTime   @default(now()) @db.Timestamp(6)
   updated_at          DateTime   @updatedAt @db.Timestamp(6)
-  type                PolicyType @unique // mỗi loại chỉ có 1 bản active
+  type                PolicyType @unique // chỉ lưu bản active, không lưu lịch sử version
   title               String     @db.VarChar(255)
   content             String     @db.Text
   version             String     @db.VarChar(50)
@@ -1721,6 +1770,8 @@ model banners {
 
   desktop_file files?         @relation("banner_desktop_file", fields: [desktop_file_id], references: [id])
   mobile_file  files?         @relation("banner_mobile_file", fields: [mobile_file_id], references: [id])
+  action_venue     venues?     @relation("banner_venue", fields: [action_venue_id], references: [id])
+  action_promotion promotions? @relation("banner_promotion", fields: [action_promotion_id], references: [id])
   banner_pages banner_pages[]
 
   @@index([is_active])
