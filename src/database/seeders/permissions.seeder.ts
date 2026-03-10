@@ -28,7 +28,7 @@ export class PermissionsSeeder {
                     resource,
                     action,
                     description: `Can ${action} ${resource}`,
-                    scope: resource === 'venue-staff' || resource === 'courts' ? 'venue' : 'platform',
+                    scope: resource === 'venue-staff' || resource === 'courts' ? 'VENUE' : 'PLATFORM',
                 },
             });
         }

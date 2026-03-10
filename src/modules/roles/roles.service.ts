@@ -21,14 +21,14 @@ export class RolesService {
                     resource: p.resource,
                     action: p.action,
                     description: p.description,
-                    scope: p.scope || 'platform'
+                    scope: (p.scope?.toUpperCase() as any) || 'PLATFORM'
                 },
                 create: {
                     slug: p.slug,
                     resource: p.resource,
                     action: p.action,
                     description: p.description,
-                    scope: p.scope || 'platform'
+                    scope: (p.scope?.toUpperCase() as any) || 'PLATFORM'
                 }
             }))
         );

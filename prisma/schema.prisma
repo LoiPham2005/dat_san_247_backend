@@ -204,6 +204,7 @@ enum CommissionStatus {
   PENDING
   APPROVED
   PAID
+  CANCELLED
 }
 
 enum PromotionDiscountType {
@@ -830,6 +831,7 @@ model venue_schedule_exceptions {
 }
 
 model venue_verifications {
+  // SQL: CREATE UNIQUE INDEX idx_one_pending_verification ON venue_verifications(venue_id) WHERE status = 'PENDING';
   id                   String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at           DateTime           @default(now()) @db.Timestamp(6)
   updated_at           DateTime           @updatedAt @db.Timestamp(6)
@@ -873,6 +875,7 @@ model venue_staff {
   deactivator_user users?                    @relation("staff_deactivator", fields: [deactivated_by], references: [id])
   inviter          users?                    @relation("staff_inviter", fields: [invited_by], references: [id])
 
+  // GHI CHÚ: Khi re-invite staff cũ cho cùng venue, nên UPDATE record cũ (is_active=true) thay vì INSERT mới để tránh vướng @@unique
   @@unique([venue_id, user_id])
   @@index([venue_id])
   @@index([user_id])
@@ -1028,6 +1031,8 @@ model bookings {
   end_time              DateTime      @db.Time(6)
   status                BookingStatus @default(PENDING)
   payment_status        PaymentStatus @default(PENDING) // denormalized for fast query
+  payment_method        PaymentMethod? // denormalized, set khi thanh toán thành công
+  paid_at               DateTime?     @db.Timestamp(6) // denormalized, set khi payment_status = PAID
 
   total_hours           Decimal       @db.Decimal(4, 2)
   price_per_hour        Decimal       @db.Decimal(10, 2)
@@ -1079,6 +1084,7 @@ model bookings {
   @@index([venue_id, booking_date])
   @@index([venue_id, status])
   @@index([customer_id, status])
+  @@index([deleted_at])
   // SQL: ALTER TABLE bookings ADD CONSTRAINT chk_booking_time CHECK (start_time < end_time);
 }
 
@@ -1154,8 +1160,8 @@ model recurring_bookings {
   last_generated_date DateTime?     @db.Date
 
   users          users                    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  venues         venues                   @relation(fields: [venue_id], references: [id])
-  courts         courts                   @relation(fields: [court_id], references: [id])
+  venues         venues                   @relation(fields: [venue_id], references: [id], onDelete: Restrict)
+  courts         courts                   @relation(fields: [court_id], references: [id], onDelete: Restrict)
   bookings       bookings[]
   recurring_days recurring_booking_days[]
 
@@ -1194,6 +1200,7 @@ model refund_policies {
   refund_rules refund_rules[]
 
   @@index([venue_id])
+  // SQL: CREATE UNIQUE INDEX idx_one_platform_default_policy ON refund_policies(is_default) WHERE venue_id IS NULL AND is_default = true;
 }
 
 model refund_rules {
@@ -1222,12 +1229,15 @@ model payments {
   payment_method   PaymentMethod
   status           PaymentStatus @default(PENDING)
   paid_at          DateTime?     @db.Timestamp(6)
+  refund_amount    Decimal?      @default(0) @db.Decimal(10, 2)
+  refunded_at      DateTime?     @db.Timestamp(6)
   gateway_response String?       @db.Text
 
   bookings bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
 
   @@index([booking_id])
   @@index([status])
+  @@index([created_at])
 }
 
 model wallets {
@@ -1280,6 +1290,7 @@ model transactions {
   @@index([type])
   @@index([status])
   @@index([booking_id])
+  @@index([created_at])
 }
 
 model invoices {
@@ -1341,6 +1352,7 @@ model payout_requests {
 
   @@index([user_id])
   @@index([status])
+  @@index([created_at])
 }
 
 // track hoa hồng từng booking — cần cho kế toán và đối soát cuối tháng
@@ -1356,6 +1368,7 @@ model commission_records {
   owner_receives    Decimal          @db.Decimal(15, 2) // chủ sân nhận
   status            CommissionStatus @default(PENDING)
   paid_at           DateTime?        @db.Timestamp(6)
+  cancelled_at      DateTime?        @db.Timestamp(6)
 
   bookings bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
   venues   venues   @relation(fields: [venue_id], references: [id])
@@ -1410,6 +1423,7 @@ model reviews {
   @@index([venue_id])
   @@index([user_id])
   @@index([rating])
+  @@index([created_at])
 }
 
 // ================================================================
@@ -1741,7 +1755,8 @@ model policies {
   id                  String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at          DateTime   @default(now()) @db.Timestamp(6)
   updated_at          DateTime   @updatedAt @db.Timestamp(6)
-  type                PolicyType @unique // chỉ lưu bản active, không lưu lịch sử version
+  type                PolicyType
+  is_current          Boolean    @default(true)
   title               String     @db.VarChar(255)
   content             String     @db.Text
   version             String     @db.VarChar(50)
@@ -1752,6 +1767,8 @@ model policies {
   author users? @relation(fields: [author_id], references: [id])
 
   @@index([type])
+  @@index([type, is_current])
+  // SQL: CREATE UNIQUE INDEX idx_one_current_policy ON policies(type) WHERE is_current = true;
 }
 
 model banners {
@@ -1775,6 +1792,7 @@ model banners {
   display_order       Int              @default(0)
   impressions         Int              @default(0)
   clicks              Int              @default(0)
+  // TODO: tách analytics sang bảng riêng (banner_analytics) nếu traffic cao
   auto_slide          Boolean          @default(true)
   slide_duration      Int              @default(5000)
 
