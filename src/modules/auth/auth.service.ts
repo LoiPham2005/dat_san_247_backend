@@ -115,4 +115,16 @@ export class AuthService {
     async refresh(token: string) {
         return this.tokenService.rotateRefresh(token);
     }
+
+    async getMe(userId: string) {
+        const user = await this.prisma.users.findUnique({
+            where: { id: userId },
+            include: {
+                role: true,
+                profile: true,
+            },
+        });
+        if (!user) throw new BadRequestException('User not found');
+        return user;
+    }
 }

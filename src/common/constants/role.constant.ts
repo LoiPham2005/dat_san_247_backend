@@ -8,12 +8,10 @@ export enum UserRole {
     ADMIN = 'admin',
     STAFF = 'staff',
     OWNER = 'owner',
+    VENUE_STAFF = 'venue_staff',
     CUSTOMER = 'customer',
-    // Lưu ý: VENUE_STAFF không phải platform role
-    // → họ có role=CUSTOMER + record trong bảng venue_staff
 }
 
-// Venue-level role (bảng venue_staff)
 export enum VenueStaffRole {
     OWNER = 'OWNER',
     MANAGER = 'MANAGER',
@@ -21,8 +19,6 @@ export enum VenueStaffRole {
     RECEPTIONIST = 'RECEPTIONIST',
 }
 
-// Default permissions per platform role
-// Dùng trong: permissions.seeder.ts, permissions.guard.ts
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     [UserRole.SUPER_ADMIN]: ['*'],
     [UserRole.ADMIN]: ['*'],
@@ -41,6 +37,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
         'venue-staff:manage',
         'promotions:read',
         'analytics:view',
+    ],
+    [UserRole.VENUE_STAFF]: [
+        'bookings:read', 'bookings:check-in',
+        'venues:read-own',
+        'addons:manage',
     ],
     [UserRole.CUSTOMER]: [
         'bookings:create', 'bookings:read-own',

@@ -35,6 +35,12 @@ export class RolesSeeder {
                 is_system: true,
             },
             {
+                name: 'Venue Staff',
+                slug: UserRole.VENUE_STAFF,
+                description: 'Staff assigned to specific venues',
+                is_system: true,
+            },
+            {
                 name: 'Customer',
                 slug: UserRole.CUSTOMER,
                 description: 'End user / player',

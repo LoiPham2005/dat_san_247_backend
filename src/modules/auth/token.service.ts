@@ -35,12 +35,12 @@ export class TokenService {
 
         const [access_token, refresh_token] = await Promise.all([
             this.jwtService.signAsync(payload, {
-                secret: this.configService.get<string>('JWT_SECRET'),
-                expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') as any,
+                secret: this.configService.get('auth.jwtSecret') || this.configService.get('JWT_SECRET'),
+                expiresIn: this.configService.get('auth.jwtExpiresIn') || this.configService.get('JWT_EXPIRES_IN') || '1d',
             }),
             this.jwtService.signAsync(payload, {
-                secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-                expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') as any,
+                secret: this.configService.get('auth.refreshSecret') || this.configService.get('JWT_REFRESH_SECRET'),
+                expiresIn: this.configService.get('auth.refreshExpiresIn') || this.configService.get('JWT_REFRESH_EXPIRES_IN') || '7d',
             }),
         ]);
 
@@ -56,7 +56,17 @@ export class TokenService {
             },
         });
 
-        return { access_token, refresh_token };
+        return {
+            access_token,
+            refresh_token,
+            user: {
+                id: user.id,
+                email: user.email,
+                full_name: user.full_name,
+                avatar_url: user.avatar_url,
+                role: user.role,
+            },
+        };
     }
 
     async rotateRefresh(oldToken: string) {

@@ -1,4 +1,5 @@
-import { Controller, Get, Patch, Body, Post, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Post, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from '../users.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { ResponseMessage } from '../../../common/decorators/response-message.decorator';
@@ -6,11 +7,16 @@ import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { UpdatePasswordDto } from '../dto/update-password.dto';
 import { UpdateNotificationSettingsDto } from '../dto/update-notification-settings.dto';
 import { UpsertSportPreferenceDto } from '../dto/upsert-sport-preference.dto';
+import { StorageService } from '../../../shared/storage/storage.service';
+import { ResponseUtil } from '../../../common/utils/response.util';
 
 @Controller('users/me')
 @UseGuards(JwtAuthGuard)
 export class MeController {
-    constructor(private readonly usersService: UsersService) { }
+    constructor(
+        private readonly usersService: UsersService,
+        private readonly storageService: StorageService
+    ) { }
 
     @Get()
     @ResponseMessage('Profile retrieved successfully')
@@ -40,5 +46,15 @@ export class MeController {
     @ResponseMessage('Sport preferences updated successfully')
     async upsertSportPreference(@Req() req, @Body() dto: UpsertSportPreferenceDto) {
         return this.usersService.upsertSportPreference(req.user.id, dto);
+    }
+
+    @Post('upload')
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadFile(@UploadedFile() file: any) {
+        if (!file) {
+            throw new BadRequestException('Không tìm thấy tệp đính kèm');
+        }
+        const url = await this.storageService.upload(file, 'profiles');
+        return ResponseUtil.success({ url }, 'Đã tải lên tệp thành công');
     }
 }
