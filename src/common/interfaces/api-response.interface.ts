@@ -30,7 +30,7 @@ export interface ValidationError {
 export interface ResponseMeta {
     total: number;
     page: number;
-    lastPage: number;
+    // lastPage: number;
     limit: number;
     hasNextPage: boolean;
     hasPreviousPage: boolean;

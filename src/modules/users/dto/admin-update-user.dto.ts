@@ -1,5 +1,5 @@
 import { IsEmail, IsString, IsOptional, IsEnum, IsBoolean } from 'class-validator';
-import { UserStatus } from '@prisma/client';
+import { UserStatus, KycStatus } from '@prisma/client';
 
 export class AdminUpdateUserDto {
     @IsOptional()
@@ -17,6 +17,10 @@ export class AdminUpdateUserDto {
     @IsOptional()
     @IsEnum(UserStatus)
     status?: UserStatus;
+
+    @IsOptional()
+    @IsEnum(KycStatus)
+    kyc_status?: KycStatus;
 
     @IsOptional()
     @IsBoolean()

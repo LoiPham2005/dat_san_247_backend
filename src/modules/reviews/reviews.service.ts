@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReplyReviewDto } from './dto/reply-review.dto';
+import * as path from 'path';
 
 @Injectable()
 export class ReviewsService {
@@ -34,6 +35,16 @@ export class ReviewsService {
                     select: {
                         id: true,
                         name: true
+                    }
+                },
+                media_attachments: {
+                    include: {
+                        files: {
+                            select: {
+                                public_url: true,
+                                mime_type: true
+                            }
+                        }
                     }
                 }
             },
@@ -107,16 +118,32 @@ export class ReviewsService {
     private async handleMediaAttachments(reviewId: string, mediaUrls: string[]) {
         if (mediaUrls.length === 0) return;
 
-        // Find existing files by URLs
-        const files = await this.prisma.files.findMany({
-            where: { public_url: { in: mediaUrls } }
-        });
+        const attachments: any[] = [];
 
-        const attachments = files.map((file, index) => ({
-            review_id: reviewId,
-            file_id: file.id,
-            display_order: index
-        }));
+        for (const [index, url] of mediaUrls.entries()) {
+            let file = await this.prisma.files.findFirst({
+                where: { public_url: url }
+            });
+
+            if (!file) {
+                // Tự động tạo bản ghi file nếu chưa có (phòng trường hợp controller upload không lưu vào DB)
+                file = await this.prisma.files.create({
+                    data: {
+                        original_name: path.basename(url),
+                        file_name: path.basename(url),
+                        file_size: 0,
+                        mime_type: url.toLowerCase().match(/\.(mp4|mov|avi|wmv|webm)$/) ? 'video/mp4' : 'image/jpeg',
+                        public_url: url
+                    }
+                });
+            }
+
+            attachments.push({
+                review_id: reviewId,
+                file_id: file.id,
+                display_order: index
+            });
+        }
 
         if (attachments.length > 0) {
             await this.prisma.media_attachments.createMany({
@@ -213,6 +240,37 @@ export class ReviewsService {
 
         return this.prisma.reviews.delete({
             where: { id }
+        });
+    }
+
+    async getAllReviewsForAdmin() {
+        const reviews = await this.prisma.reviews.findMany({
+            include: {
+                users: {
+                    select: {
+                        full_name: true
+                    }
+                },
+                venues: {
+                    select: {
+                        name: true
+                    }
+                }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+
+        return reviews.map(r => ({
+            ...r,
+            customer_name: r.users.full_name,
+            venue_name: r.venues.name
+        }));
+    }
+
+    async toggleReviewVisibility(id: string, isVisible: boolean) {
+        return this.prisma.reviews.update({
+            where: { id },
+            data: { is_visible: isVisible }
         });
     }
 }

@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-// import { ContentService } from './content.service';
-// import { BannerService } from './banner.service';
-// import { PublicController } from './controllers/public.controller';
-// import { AdminController } from './controllers/admin.controller';
+import { BannerService } from './banner.service';
+import { AdminController } from './controllers/admin.controller';
+import { ContentService } from './content.service';
 
 @Module({
-    // controllers: [PublicController, AdminController],
-    // providers: [ContentService, BannerService],
-    // exports: [ContentService, BannerService],
+    controllers: [AdminController],
+    providers: [BannerService, ContentService],
+    exports: [BannerService, ContentService],
 })
 export class ContentModule { }

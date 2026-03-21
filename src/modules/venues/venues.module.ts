@@ -3,6 +3,7 @@ import { VenuesService } from './venues.service';
 import { VenuesQueryService } from './venues-query.service';
 import { VenuesAdminService } from './venues-admin.service';
 import { OwnerCourtService } from './owner-courts.service';
+import { DashboardService } from './dashboard.service';
 // import { VenuesScheduleService } from './venues-schedule.service';
 // import { VenuesRefundService } from './venues-refund.service';
 import { PublicController } from './controllers/public.controller';
@@ -19,9 +20,10 @@ import { PrismaModule } from '../../prisma/prisma.module';
         VenuesQueryService,
         VenuesAdminService,
         OwnerCourtService,
+        DashboardService,
         // VenuesScheduleService,
         // VenuesRefundService,
     ],
-    exports: [VenuesService, VenuesAdminService, OwnerCourtService, VenuesQueryService],
+    exports: [VenuesService, VenuesAdminService, OwnerCourtService, VenuesQueryService, DashboardService],
 })
 export class VenuesModule { }

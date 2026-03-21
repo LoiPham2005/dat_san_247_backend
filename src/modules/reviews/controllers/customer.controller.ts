@@ -6,22 +6,38 @@ import { UpdateReviewDto } from '../dto/update-review.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { ResponseUtil } from '../../../common/utils/response.util';
 import { StorageService } from '../../../shared/storage/storage.service';
+import { PrismaService } from '../../../prisma/prisma.service';
+import * as path from 'path';
 
 @Controller('customer/reviews')
 export class CustomerController {
     constructor(
         private readonly reviewsService: ReviewsService,
-        private readonly storageService: StorageService
+        private readonly storageService: StorageService,
+        private readonly prisma: PrismaService
     ) {}
 
     @Post('upload')
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('file'))
-    async uploadFile(@UploadedFile() file: any) {
+    async uploadFile(@UploadedFile() file: any, @Req() req: any) {
         if (!file) {
             throw new BadRequestException('Không tìm thấy tệp đính kèm');
         }
         const url = await this.storageService.upload(file, 'reviews');
+
+        // Save file info to Database
+        await this.prisma.files.create({
+            data: {
+                user_id: req.user.id,
+                original_name: file.originalname,
+                file_name: path.basename(url),
+                file_size: BigInt(file.size || 0),
+                mime_type: file.mimetype,
+                public_url: url
+            }
+        });
+
         return ResponseUtil.success({ url }, 'Đã tải lên tệp thành công');
     }
 

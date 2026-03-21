@@ -62,7 +62,7 @@ export class ResponseUtil {
             page,
             limit,
             total,
-            lastPage: totalPages,
+            // lastPage: totalPages,
             totalPages,
             hasNextPage: page < totalPages,
             hasPreviousPage: page > 1,

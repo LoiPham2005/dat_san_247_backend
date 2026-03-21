@@ -26,9 +26,10 @@ export class PermissionsGuard implements CanActivate {
 
         // Dựa trên JWT payload (JwtPayload) → user.permissions: string[]
         const userPermissions = user?.permissions || [];
+        const userRole = user?.role;
 
         // Check platform-wide admin hoặc super_admin có quyền "*"
-        if (userPermissions.includes('*')) {
+        if (userPermissions.includes('*') || userRole === 'super_admin' || userRole === 'admin') {
             return true;
         }
 

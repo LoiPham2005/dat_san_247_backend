@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Patch, Delete, Query, UseGuards } f
 import { UsersAdminService } from '../users-admin.service';
 import { QueryUsersDto } from '../dto/query-users.dto';
 import { AdminUpdateUserDto } from '../dto/admin-update-user.dto';
+import { AdminCreateUserDto } from '../dto/admin-create-user.dto';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 import { UserRole } from '../../../common/constants/role.constant';
@@ -16,6 +17,13 @@ import { ResponseUtil } from '../../../common/utils/response.util';
 @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
 export class AdminController {
     constructor(private readonly usersAdminService: UsersAdminService) { }
+
+    @Post()
+    @Permissions('users:manage')
+    @ResponseMessage('User created successfully')
+    async create(@Body() dto: AdminCreateUserDto) {
+        return this.usersAdminService.create(dto);
+    }
 
     @Get()
     @Permissions('users:read')

@@ -3,10 +3,80 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateRecurringDto } from './dto/create-recurring.dto';
 import { BookingStatus, PaymentStatus, PaymentMethod, DayOfWeek, RecurringType } from '@prisma/client';
+import { QueryBookingsDto } from './dto/query-bookings.dto';
 
 @Injectable()
 export class BookingsService {
     constructor(private prisma: PrismaService) { }
+
+    async getAdminBookings(query: QueryBookingsDto) {
+        const { page = 1, limit = 10, search, status, payment_status, venue_id, start_date, end_date } = query;
+        const skip = (page - 1) * limit;
+
+        const where: any = {
+            ...(status && { status }),
+            ...(payment_status && { payment_status }),
+            ...(venue_id && { venue_id }),
+            ...((start_date || end_date) && {
+                booking_date: {
+                    ...(start_date && { gte: new Date(start_date) }),
+                    ...(end_date && { lte: new Date(end_date) })
+                }
+            }),
+            ...(search && {
+                OR: [
+                    { booking_code: { contains: search, mode: 'insensitive' } },
+                    { customers: { full_name: { contains: search, mode: 'insensitive' } } },
+                    { venues: { name: { contains: search, mode: 'insensitive' } } }
+                ]
+            })
+        };
+
+        const [items, total] = await Promise.all([
+            this.prisma.bookings.findMany({
+                where,
+                skip,
+                take: limit,
+                include: {
+                    customers: true,
+                    venues: true,
+                    courts: true,
+                    booking_addons: {
+                        include: { venue_services: true }
+                    }
+                },
+                orderBy: { created_at: 'desc' }
+            }),
+            this.prisma.bookings.count({ where })
+        ]);
+
+        return {
+            items: items.map(b => ({
+                id: b.id,
+                booking_code: b.booking_code,
+                customer_name: b.customers.full_name,
+                customer_email: b.customers.email,
+                customer_phone: b.customers.phone || 'N/A',
+                venue_name: b.venues.name,
+                court_name: b.courts.name,
+                booking_date: b.booking_date.toISOString().split('T')[0],
+                start_time: b.start_time.toISOString().substring(11, 16),
+                end_time: b.end_time.toISOString().substring(11, 16),
+                total_amount: Number(b.total_amount),
+                status: b.status,
+                payment_status: b.payment_status,
+                payment_method: b.payment_method,
+                created_at: b.created_at,
+                addons: b.booking_addons.map(a => ({
+                    id: a.id,
+                    name: a.venue_services.name,
+                    quantity: a.quantity,
+                    price: Number(a.total_price)
+                }))
+            })),
+            total
+        };
+    }
 
     async createRecurringBooking(userId: string, data: CreateRecurringDto) {
         // 1. Verify venue & court
@@ -387,5 +457,19 @@ export class BookingsService {
             end_time: r.end_time.toISOString().substring(11, 16),
             is_active: r.is_active
         }));
+    }
+
+    async adminUpdateBookingStatus(bookingId: string, status: BookingStatus) {
+        const booking = await this.prisma.bookings.findUnique({
+            where: { id: bookingId }
+        });
+
+        if (!booking) throw new NotFoundException('Không tìm thấy đơn hàng');
+
+        return await this.prisma.bookings.update({
+            where: { id: bookingId },
+            data: { status },
+            include: { customers: true, venues: true, courts: true }
+        });
     }
 }

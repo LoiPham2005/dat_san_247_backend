@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Req, HttpStatus, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { VenuesService } from '../venues.service';
+import { DashboardService } from '../dashboard.service';
 import { CreateVenueDto } from '../dto/create-venue.dto';
 import { UpdateVenueDto } from '../dto/update-venue.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -16,8 +17,15 @@ import { StorageService } from '../../../shared/storage/storage.service';
 export class OwnerController {
     constructor(
         private venuesService: VenuesService,
+        private dashboardService: DashboardService,
         private storageService: StorageService
     ) { }
+
+    @Get('dashboard/stats')
+    async getDashboardStats(@Req() req: any) {
+        const stats = await this.dashboardService.getOwnerDashboardStats(req.user.id);
+        return ResponseUtil.success(stats, 'Thống kê bảng điều khiển');
+    }
 
     @Get()
     async getMyVenues(@Req() req: any) {

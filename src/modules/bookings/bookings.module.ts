@@ -15,7 +15,7 @@ import { AdminController } from './controllers/admin.controller';
         CustomerController,
         // VenueStaffController,
         OwnerController,
-        // AdminController,
+        AdminController,
     ],
     providers: [
         BookingsService,
