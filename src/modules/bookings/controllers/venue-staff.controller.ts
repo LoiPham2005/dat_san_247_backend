@@ -16,9 +16,14 @@ export class VenueStaffController {
     @Roles(UserRole.VENUE_STAFF, UserRole.STAFF, UserRole.ADMIN, UserRole.SUPER_ADMIN)
     async getSchedule(
         @CurrentUser('id') userId: string,
-        @Query('venue_id') venueId: string
+        @Query('venue_id') venueId?: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+        @Query('search') search?: string,
+        @Query('status') status?: BookingStatus,
+        @Query('date') date?: string,
     ) {
-        return this.bookingsService.getVenueStaffSchedule(userId, venueId);
+        return this.bookingsService.getVenueStaffSchedule(userId, venueId, Number(page) || 1, Number(limit) || 10, search, status, date);
     }
 
     @Patch(':id/status')

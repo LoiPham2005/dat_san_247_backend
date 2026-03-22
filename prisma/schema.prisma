@@ -13,6 +13,7 @@ model users {
   updated_at                   DateTime                  @updatedAt @db.Timestamp(6)
   deleted_at                   DateTime?                 @db.Timestamp(6)
   email                        String                    @unique @db.VarChar(255)
+  username                     String?                   @unique @db.VarChar(50)
   password                     String                    @db.VarChar(255)
   full_name                    String                    @db.VarChar(255)
   phone                        String?                   @unique @db.VarChar(20)
@@ -90,6 +91,12 @@ model user_profiles {
   address           String?                  @db.VarChar(500)
   city              String?                  @db.VarChar(100)
   district          String?                  @db.VarChar(100)
+  cover_url         String?                  @db.VarChar(500)
+  latitude          Float?
+  longitude         Float?
+  reliability_score Int                      @default(100)
+  show_email        Boolean                  @default(false)
+  show_phone        Boolean                  @default(false)
   referral_code     String?                  @unique @db.VarChar(20)
   referred_by_id    String?                  @db.Uuid
   is_profile_public Boolean                  @default(true)

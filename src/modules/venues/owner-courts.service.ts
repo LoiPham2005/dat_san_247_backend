@@ -5,31 +5,63 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class OwnerCourtService {
     constructor(private prisma: PrismaService) { }
 
-    // Helper to check ownership
-    private async checkVenueOwnership(venueId: string, ownerId: string) {
+    // Helper to check ownership or staff access
+    private async checkVenueAccess(venueId: string, userId: string) {
+        let finalVenueId = venueId;
+        
+        if (finalVenueId === 'VN-1') {
+            const staffRecord = await this.prisma.venue_staff.findFirst({
+                where: { user_id: userId, is_active: true }
+            });
+            if (staffRecord) {
+                finalVenueId = staffRecord.venue_id;
+            } else {
+                throw new BadRequestException('Bạn không được gán cho bất kỳ cơ sở nào trong hệ thống.');
+            }
+        }
+
         const venue = await this.prisma.venues.findUnique({
-            where: { id: venueId, owner_id: ownerId }
+            where: { id: finalVenueId }
         });
-        if (!venue) throw new ForbiddenException("Bạn không có quyền hoặc venue không tồn tại");
+
+        if (!venue) throw new NotFoundException("Cơ sở không tồn tại");
+
+        // If owner or admin
+        if (venue.owner_id === userId) return venue;
+
+        // Check if staff
+        const isStaff = await this.prisma.venue_staff.findFirst({
+            where: { venue_id: finalVenueId, user_id: userId, is_active: true }
+        });
+
+        if (!isStaff) {
+             const user = await this.prisma.users.findUnique({ where: { id: userId }, include: { role: true } });
+             if (user?.role?.slug !== 'admin' && user?.role?.slug !== 'super_admin' && user?.role?.slug !== 'staff') {
+                 throw new ForbiddenException("Bạn không có quyền truy cập cơ sở này");
+             }
+        }
+        
         return venue;
     }
 
-    private async checkCourtOwnership(courtId: string, ownerId: string) {
+    private async checkCourtAccess(courtId: string, userId: string) {
         const court = await this.prisma.courts.findUnique({
             where: { id: courtId },
             include: { venues: true }
         });
-        if (!court || court.venues.owner_id !== ownerId) {
-            throw new ForbiddenException("Bạn không có quyền hoặc court không tồn tại");
-        }
+
+        if (!court) throw new NotFoundException("Sân không tồn tại");
+
+        await this.checkVenueAccess(court.venue_id, userId);
+        
         return court;
     }
 
     // COURTS
-    async getCourtsByVenue(venueId: string, ownerId: string) {
-        await this.checkVenueOwnership(venueId, ownerId);
+    async getCourtsByVenue(venueId: string, userId: string) {
+        const venue = await this.checkVenueAccess(venueId, userId);
         const courts = await this.prisma.courts.findMany({
-            where: { venue_id: venueId, deleted_at: null },
+            where: { venue_id: venue.id, deleted_at: null },
             orderBy: { display_order: 'asc' }
         });
 
@@ -39,14 +71,14 @@ export class OwnerCourtService {
         }));
     }
 
-    async createCourt(venueId: string, ownerId: string, data: any) {
-        await this.checkVenueOwnership(venueId, ownerId);
+    async createCourt(venueId: string, userId: string, data: any) {
+        const venue = await this.checkVenueAccess(venueId, userId);
         
-        const count = await this.prisma.courts.count({ where: { venue_id: venueId, deleted_at: null } });
+        const count = await this.prisma.courts.count({ where: { venue_id: venue.id, deleted_at: null } });
 
         const court = await this.prisma.courts.create({
             data: {
-                venue_id: venueId,
+                venue_id: venue.id,
                 name: data.name,
                 description: data.description,
                 price_per_hour: data.price_per_hour,
@@ -60,8 +92,8 @@ export class OwnerCourtService {
         return { ...court, price_per_hour: Number(court.price_per_hour) };
     }
 
-    async updateCourt(courtId: string, ownerId: string, data: any) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async updateCourt(courtId: string, userId: string, data: any) {
+        await this.checkCourtAccess(courtId, userId);
         const court = await this.prisma.courts.update({
             where: { id: courtId },
             data: {
@@ -78,8 +110,8 @@ export class OwnerCourtService {
         return { ...court, price_per_hour: Number(court.price_per_hour) };
     }
 
-    async deleteCourt(courtId: string, ownerId: string) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async deleteCourt(courtId: string, userId: string) {
+        await this.checkCourtAccess(courtId, userId);
         return this.prisma.courts.update({
             where: { id: courtId },
             data: { deleted_at: new Date() }
@@ -87,8 +119,8 @@ export class OwnerCourtService {
     }
 
     // PRICING RULES
-    async getPricingRules(courtId: string, ownerId: string) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async getPricingRules(courtId: string, userId: string) {
+        await this.checkCourtAccess(courtId, userId);
         const rules = await this.prisma.pricing_rules.findMany({
             where: { court_id: courtId, is_active: true },
             orderBy: { start_time: 'asc' }
@@ -101,8 +133,8 @@ export class OwnerCourtService {
         }));
     }
 
-    async createPricingRule(courtId: string, ownerId: string, data: any) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async createPricingRule(courtId: string, userId: string, data: any) {
+        await this.checkCourtAccess(courtId, userId);
         
         if (data.price === undefined || data.price === null) {
             throw new BadRequestException("Giá (price) là bắt buộc và hợp lệ.");
@@ -134,21 +166,21 @@ export class OwnerCourtService {
         };
     }
 
-    async deletePricingRule(id: string, courtId: string, ownerId: string) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async deletePricingRule(id: string, courtId: string, userId: string) {
+        await this.checkCourtAccess(courtId, userId);
         return this.prisma.pricing_rules.delete({ where: { id } });
     }
 
     // MAINTENANCE
-    async getMaintenances(courtId: string, ownerId: string) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async getMaintenances(courtId: string, userId: string) {
+        await this.checkCourtAccess(courtId, userId);
         return this.prisma.court_maintenance.findMany({
             where: { court_id: courtId }
         });
     }
 
-    async createMaintenance(courtId: string, ownerId: string, data: any) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async createMaintenance(courtId: string, userId: string, data: any) {
+        await this.checkCourtAccess(courtId, userId);
 
         if (!data.start_at || !data.end_at) {
             throw new BadRequestException("Vui lòng cung cấp start_at và end_at hợp lệ.");
@@ -161,26 +193,26 @@ export class OwnerCourtService {
                 end_at: new Date(data.end_at),
                 reason: data.reason,
                 is_emergency: data.is_emergency || false,
-                created_by: ownerId
+                created_by: userId
             }
         });
     }
 
-    async deleteMaintenance(id: string, courtId: string, ownerId: string) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async deleteMaintenance(id: string, courtId: string, userId: string) {
+        await this.checkCourtAccess(courtId, userId);
         return this.prisma.court_maintenance.delete({ where: { id } });
     }
 
     // AMENITIES
-    async getAmenities(courtId: string, ownerId: string) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async getAmenities(courtId: string, userId: string) {
+        await this.checkCourtAccess(courtId, userId);
         return this.prisma.amenities.findMany({
             where: { court_id: courtId }
         });
     }
 
-    async createAmenity(courtId: string, ownerId: string, data: any) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async createAmenity(courtId: string, userId: string, data: any) {
+        await this.checkCourtAccess(courtId, userId);
         return this.prisma.amenities.create({
             data: {
                 court_id: courtId,
@@ -191,21 +223,21 @@ export class OwnerCourtService {
         });
     }
 
-    async deleteAmenity(id: string, courtId: string, ownerId: string) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async deleteAmenity(id: string, courtId: string, userId: string) {
+        await this.checkCourtAccess(courtId, userId);
         return this.prisma.amenities.delete({ where: { id } });
     }
 
     // SPORTS
-    async getSports(courtId: string, ownerId: string) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async getSports(courtId: string, userId: string) {
+        await this.checkCourtAccess(courtId, userId);
         return this.prisma.sport_assignments.findMany({
             where: { court_id: courtId }
         });
     }
 
-    async createSport(courtId: string, ownerId: string, data: any) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async createSport(courtId: string, userId: string, data: any) {
+        await this.checkCourtAccess(courtId, userId);
         
         // Prevent duplicate sport for the same court
         const existing = await this.prisma.sport_assignments.findUnique({
@@ -229,8 +261,8 @@ export class OwnerCourtService {
         });
     }
 
-    async deleteSport(id: string, courtId: string, ownerId: string) {
-        await this.checkCourtOwnership(courtId, ownerId);
+    async deleteSport(id: string, courtId: string, userId: string) {
+        await this.checkCourtAccess(courtId, userId);
         return this.prisma.sport_assignments.delete({ where: { id } });
     }
 }

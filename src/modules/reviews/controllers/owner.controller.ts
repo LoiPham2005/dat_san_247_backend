@@ -9,7 +9,7 @@ import { ResponseUtil } from '../../../common/utils/response.util';
 
 @Controller('owner/reviews')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.OWNER, UserRole.SUPER_ADMIN)
+@Roles(UserRole.OWNER, UserRole.SUPER_ADMIN, UserRole.VENUE_STAFF)
 export class OwnerController {
     constructor(private readonly reviewsService: ReviewsService) {}
 

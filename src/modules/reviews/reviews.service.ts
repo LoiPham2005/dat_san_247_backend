@@ -9,12 +9,58 @@ import * as path from 'path';
 export class ReviewsService {
     constructor(private prisma: PrismaService) {}
 
-    async getOwnerReviews(ownerId: string, venueId?: string) {
+    private async _verifyVenueAccess(userId: string, venueId: string) {
+        let finalVenueId = venueId;
+        
+        // Handle Mock VN-1
+        if (venueId === 'VN-1') {
+            const staffRecord = await this.prisma.venue_staff.findFirst({
+                where: { user_id: userId, is_active: true }
+            });
+            if (staffRecord) {
+                finalVenueId = staffRecord.venue_id;
+            } else {
+                 const ownedVenue = await this.prisma.venues.findFirst({
+                    where: { owner_id: userId, deleted_at: null }
+                });
+                if (ownedVenue) {
+                    finalVenueId = ownedVenue.id;
+                } else {
+                    throw new NotFoundException('Bạn không được gán cho bất kỳ cơ sở nào trong hệ thống.');
+                }
+            }
+        }
+
+        const venue = await this.prisma.venues.findUnique({
+            where: { id: finalVenueId }
+        });
+
+        if (!venue) throw new NotFoundException('Không tìm thấy cơ sở');
+
+        if (venue.owner_id !== userId) {
+            const isStaff = await this.prisma.venue_staff.findFirst({
+                where: { venue_id: finalVenueId, user_id: userId, is_active: true }
+            });
+            if (!isStaff) {
+                throw new ForbiddenException('Bạn không có quyền truy cập cơ sở này');
+            }
+        }
+
+        return { ...venue, id: finalVenueId };
+    }
+
+    async getOwnerReviews(userId: string, venueId?: string) {
+        let finalVenueId = venueId;
+        
+        if (venueId) {
+            const venue = await this._verifyVenueAccess(userId, venueId);
+            finalVenueId = venue.id;
+        }
+
         return this.prisma.reviews.findMany({
             where: {
                 venues: {
-                    owner_id: ownerId,
-                    ...(venueId ? { id: venueId } : {})
+                    ...(finalVenueId ? { id: finalVenueId } : { owner_id: userId })
                 }
             },
             include: {
@@ -54,23 +100,21 @@ export class ReviewsService {
         });
     }
 
-    async replyToReview(ownerId: string, reviewId: string, data: ReplyReviewDto) {
+    async replyToReview(userId: string, reviewId: string, data: ReplyReviewDto) {
         const review = await this.prisma.reviews.findUnique({
-            where: { id: reviewId },
-            include: { venues: true }
+            where: { id: reviewId }
         });
 
         if (!review) throw new NotFoundException('Không tìm thấy đánh giá');
-        if (review.venues.owner_id !== ownerId) {
-            throw new ForbiddenException('Bạn không có quyền phản hồi đánh giá này');
-        }
+        
+        await this._verifyVenueAccess(userId, review.venue_id);
 
         return this.prisma.reviews.update({
             where: { id: reviewId },
             data: {
                 response: data.reply_comment,
                 responded_at: new Date(),
-                responded_by: ownerId
+                responded_by: userId
             }
         });
     }

@@ -8,7 +8,7 @@ import { ResponseUtil } from '../../../common/utils/response.util';
 
 @Controller('owner/venues/:venueId/courts')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.OWNER, UserRole.SUPER_ADMIN)
+@Roles(UserRole.OWNER, UserRole.SUPER_ADMIN, UserRole.VENUE_STAFF, UserRole.STAFF)
 export class OwnerCourtsController {
     constructor(private courtService: OwnerCourtService) { }
 

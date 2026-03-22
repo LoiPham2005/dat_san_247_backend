@@ -7,19 +7,51 @@ import * as crypto from 'crypto';
 export class VenueStaffService {
     constructor(private prisma: PrismaService) { }
 
-    private async validateVenueOwner(venueId: string, ownerId: string) {
-        const venue = await this.prisma.venues.findFirst({
-            where: { id: venueId, owner_id: ownerId }
+    private async validateVenueAccess(venueId: string, userId: string) {
+        let finalVenueId = venueId;
+        
+        // Handle VN-1
+        if (venueId === 'VN-1') {
+            const staffRecord = await this.prisma.venue_staff.findFirst({
+                where: { user_id: userId, is_active: true }
+            });
+            if (staffRecord) {
+                finalVenueId = staffRecord.venue_id;
+            } else {
+                 const ownedVenue = await this.prisma.venues.findFirst({
+                    where: { owner_id: userId, deleted_at: null }
+                });
+                if (ownedVenue) {
+                    finalVenueId = ownedVenue.id;
+                } else {
+                    throw new NotFoundException('Bạn không được gán cho bất kỳ cơ sở nào trong hệ thống.');
+                }
+            }
+        }
+
+        const venue = await this.prisma.venues.findUnique({
+            where: { id: finalVenueId }
         });
-        if (!venue) throw new ForbiddenException('Bạn không có quyền quản lý cơ sở này');
-        return venue;
+
+        if (!venue) throw new NotFoundException('Không tìm thấy cơ sở');
+
+        if (venue.owner_id !== userId) {
+            const isStaff = await this.prisma.venue_staff.findFirst({
+                where: { venue_id: finalVenueId, user_id: userId, is_active: true }
+            });
+            if (!isStaff) {
+                throw new ForbiddenException('Bạn không có quyền quản lý cơ sở này');
+            }
+        }
+
+        return { ...venue, id: finalVenueId };
     }
 
-    async getStaffByVenue(venueId: string, ownerId: string) {
-        await this.validateVenueOwner(venueId, ownerId);
+    async getStaffByVenue(venueId: string, userId: string) {
+        const venue = await this.validateVenueAccess(venueId, userId);
 
         const staff = await this.prisma.venue_staff.findMany({
-            where: { venue_id: venueId },
+            where: { venue_id: venue.id },
             include: {
                 users: {
                     select: {
@@ -46,14 +78,13 @@ export class VenueStaffService {
         }));
     }
 
-    async updateStaffRole(staffId: string, role: VenueStaffRole, ownerId: string) {
+    async updateStaffRole(staffId: string, role: VenueStaffRole, userId: string) {
         const staff = await this.prisma.venue_staff.findUnique({
-            where: { id: staffId },
-            include: { venues: true }
+            where: { id: staffId }
         });
 
         if (!staff) throw new NotFoundException('Không tìm thấy nhân viên');
-        if (staff.venues.owner_id !== ownerId) throw new ForbiddenException('Bạn không có quyền');
+        await this.validateVenueAccess(staff.venue_id, userId);
 
         return await this.prisma.venue_staff.update({
             where: { id: staffId },
@@ -61,32 +92,34 @@ export class VenueStaffService {
         });
     }
 
-    async toggleStaffStatus(staffId: string, is_active: boolean, ownerId: string) {
+    async toggleStaffStatus(staffId: string, is_active: boolean, userId: string) {
         const staff = await this.prisma.venue_staff.findUnique({
-            where: { id: staffId },
-            include: { venues: true }
+            where: { id: staffId }
         });
 
         if (!staff) throw new NotFoundException('Không tìm thấy nhân viên');
-        if (staff.venues.owner_id !== ownerId) throw new ForbiddenException('Bạn không có quyền');
+        await this.validateVenueAccess(staff.venue_id, userId);
 
         return await this.prisma.venue_staff.update({
             where: { id: staffId },
             data: { 
                 is_active,
-                deactivated_at: is_active ? null : new Date(),
-                deactivated_by: is_active ? null : ownerId
+                deactivated_at: !is_active ? new Date() : null,
+                deactivated_by: !is_active ? userId : null
             }
         });
     }
 
-    async inviteStaff(data: { venue_id: string, email: string, role: VenueStaffRole }, ownerId: string) {
-        await this.validateVenueOwner(data.venue_id, ownerId);
+    async inviteStaff(data: { venue_id: string, email: string, role: VenueStaffRole }, userId: string) {
+        const venue = await this.validateVenueAccess(data.venue_id, userId);
+        
+        // Use resolved venue ID
+        const finalVenueId = venue.id;
 
         // Check if already staff
         const existingStaff = await this.prisma.venue_staff.findFirst({
             where: {
-                venue_id: data.venue_id,
+                venue_id: finalVenueId,
                 users: { email: data.email }
             }
         });
@@ -95,7 +128,7 @@ export class VenueStaffService {
         // Check active invites
         const existingInvite = await this.prisma.venue_staff_invites.findFirst({
             where: {
-                venue_id: data.venue_id,
+                venue_id: finalVenueId,
                 invite_email: data.email,
                 status: VenueStaffInviteStatus.PENDING,
                 expires_at: { gt: new Date() }
@@ -109,8 +142,8 @@ export class VenueStaffService {
 
         return await this.prisma.venue_staff_invites.create({
             data: {
-                venue_id: data.venue_id,
-                sender_id: ownerId,
+                venue_id: finalVenueId,
+                sender_id: userId,
                 invite_email: data.email,
                 role: data.role,
                 token,
@@ -120,23 +153,23 @@ export class VenueStaffService {
         });
     }
 
-    async getInvitesByVenue(venueId: string, ownerId: string) {
-        await this.validateVenueOwner(venueId, ownerId);
+    async getInvitesByVenue(venueId: string, userId: string) {
+        const venue = await this.validateVenueAccess(venueId, userId);
 
         return await this.prisma.venue_staff_invites.findMany({
-            where: { venue_id: venueId },
+            where: { venue_id: venue.id },
             orderBy: { created_at: 'desc' }
         });
     }
 
-    async revokeInvite(inviteId: string, ownerId: string) {
+    async revokeInvite(inviteId: string, userId: string) {
         const invite = await this.prisma.venue_staff_invites.findUnique({
-            where: { id: inviteId },
-            include: { venues: true }
+            where: { id: inviteId }
         });
 
         if (!invite) throw new NotFoundException('Không tìm thấy lời mời');
-        if (invite.venues.owner_id !== ownerId) throw new ForbiddenException('Bạn không có quyền');
+        await this.validateVenueAccess(invite.venue_id, userId);
+
         if (invite.status !== VenueStaffInviteStatus.PENDING) throw new BadRequestException('Chỉ có thể thu hồi lời mời đang chờ');
 
         return await this.prisma.venue_staff_invites.update({
@@ -219,14 +252,13 @@ export class VenueStaffService {
         });
     }
 
-    async forceAcceptInvite(inviteId: string, ownerId: string) {
+    async forceAcceptInvite(inviteId: string, userId: string) {
         const invite = await this.prisma.venue_staff_invites.findUnique({
-            where: { id: inviteId },
-            include: { venues: true }
+            where: { id: inviteId }
         });
 
         if (!invite) throw new NotFoundException('Lời mời không tìm thấy');
-        if (invite.venues.owner_id !== ownerId) throw new BadRequestException('Bạn không sở hữu cơ sở này');
+        await this.validateVenueAccess(invite.venue_id, userId);
 
         // Tìm user theo email của lời mời để lấy ID chính xác
         const user = await this.prisma.users.findUnique({

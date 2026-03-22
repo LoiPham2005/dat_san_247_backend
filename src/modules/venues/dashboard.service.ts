@@ -125,4 +125,106 @@ export class DashboardService {
             recentBookings
         };
     }
+
+    async getStaffDashboardStats(userId: string, venueId: string = 'VN-1') {
+        let finalVenueId = venueId;
+
+        // Resolve VN-1 Mocking
+        if (finalVenueId === 'VN-1') {
+            const staffRecord = await this.prisma.venue_staff.findFirst({
+                where: { user_id: userId, is_active: true }
+            });
+            if (staffRecord) {
+                finalVenueId = staffRecord.venue_id;
+            } else {
+                // If not staff, check if they are owner
+                const ownedVenue = await this.prisma.venues.findFirst({
+                    where: { owner_id: userId, deleted_at: null }
+                });
+                if (ownedVenue) {
+                    finalVenueId = ownedVenue.id;
+                } else {
+                    return null; // No venue assigned
+                }
+            }
+        }
+
+        const today = new Date();
+        const startOfToday = startOfDay(today);
+        const endOfToday = endOfDay(today);
+
+        // 1. Get Venue Info
+        const venue = await this.prisma.venues.findUnique({
+            where: { id: finalVenueId },
+            select: { id: true, name: true, auto_accept_bookings: true }
+        });
+
+        if (!venue) return null;
+
+        // 2. Statistics
+        // Today's Revenue (Calculated based on CONFIRMED/CHECKED_IN/COMPLETED bookings today)
+        const revenueResult = await this.prisma.bookings.aggregate({
+            where: {
+                venue_id: finalVenueId,
+                booking_date: { gte: startOfToday, lte: endOfToday },
+                status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.COMPLETED] },
+                deleted_at: null
+            },
+            _sum: { total_amount: true }
+        });
+
+        // Pending Bookings
+        const pendingCount = await this.prisma.bookings.count({
+            where: {
+                venue_id: finalVenueId,
+                status: BookingStatus.PENDING,
+                deleted_at: null
+            }
+        });
+
+        // Checked-in / Active Bookings
+        const checkedInCount = await this.prisma.bookings.count({
+            where: {
+                venue_id: finalVenueId,
+                status: BookingStatus.CHECKED_IN,
+                deleted_at: null
+            }
+        });
+
+        // Waitlist Count
+        const waitlistCount = await this.prisma.booking_waitlist.count({
+            where: { courts: { venue_id: finalVenueId } }
+        });
+
+        // Recent Pending Bookings (top 3 for shortcut)
+        const recentPending = await this.prisma.bookings.findMany({
+            where: {
+                venue_id: finalVenueId,
+                status: BookingStatus.PENDING,
+                deleted_at: null
+            },
+            take: 3,
+            orderBy: { created_at: 'desc' },
+            include: {
+                courts: { select: { name: true } },
+                customers: { select: { full_name: true, phone: true } }
+            }
+        });
+
+        return {
+            venueName: venue.name,
+            autoAccept: venue.auto_accept_bookings,
+            todayRevenue: Number(revenueResult._sum.total_amount || 0),
+            pendingCount,
+            checkedInCount,
+            waitlistCount,
+            recentPending: recentPending.map(b => ({
+                id: b.id,
+                time: `${b.start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${b.end_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+                courtName: b.courts.name,
+                customerName: b.customers.full_name,
+                customerPhone: b.customers.phone
+            }))
+        };
+    }
 }

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUrl, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsUrl, IsNotEmpty, IsBoolean, IsNumber } from 'class-validator';
 
 export class CreateVenueDto {
     @IsString()
@@ -40,4 +40,44 @@ export class CreateVenueDto {
     @IsOptional()
     @IsUrl({}, { message: 'Link Instagram không hợp lệ' })
     instagram_url?: string;
+
+    @IsOptional()
+    @IsString()
+    zalo_url?: string;
+
+    @IsOptional()
+    @IsString()
+    youtube_url?: string;
+
+    @IsOptional()
+    @IsString()
+    thumbnail_url?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    auto_accept_bookings?: boolean;
+
+    @IsOptional()
+    @IsNumber()
+    min_booking_hours?: number;
+
+    @IsOptional()
+    @IsNumber()
+    max_booking_hours?: number;
+
+    @IsOptional()
+    @IsNumber()
+    min_booking_before_hours?: number;
+
+    @IsOptional()
+    @IsNumber()
+    cancellation_before_hours?: number;
+
+    @IsOptional()
+    @IsNumber()
+    vat_rate?: number;
+
+    @IsOptional()
+    @IsNumber()
+    commission_rate?: number;
 }

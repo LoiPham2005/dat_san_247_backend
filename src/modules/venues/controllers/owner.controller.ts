@@ -13,7 +13,7 @@ import { StorageService } from '../../../shared/storage/storage.service';
 
 @Controller('owner/venues')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.OWNER, UserRole.SUPER_ADMIN)
+@Roles(UserRole.OWNER, UserRole.SUPER_ADMIN, UserRole.VENUE_STAFF)
 export class OwnerController {
     constructor(
         private venuesService: VenuesService,
@@ -23,6 +23,10 @@ export class OwnerController {
 
     @Get('dashboard/stats')
     async getDashboardStats(@Req() req: any) {
+        if (req.user.role === UserRole.VENUE_STAFF) {
+            const stats = await this.dashboardService.getStaffDashboardStats(req.user.id);
+            return ResponseUtil.success(stats, 'Thống kê cơ sở (Nhân viên)');
+        }
         const stats = await this.dashboardService.getOwnerDashboardStats(req.user.id);
         return ResponseUtil.success(stats, 'Thống kê bảng điều khiển');
     }
@@ -31,6 +35,12 @@ export class OwnerController {
     async getMyVenues(@Req() req: any) {
         const venues = await this.venuesService.getMyVenues(req.user.id);
         return ResponseUtil.success(venues, 'Mạng lưới sân bãi của bạn');
+    }
+
+    @Get(':id')
+    async getVenueDetail(@Req() req: any, @Param('id') id: string) {
+        const venue = await this.venuesService.getVenueDetail(id, req.user.id);
+        return ResponseUtil.success(venue, 'Chi tiết cơ sở');
     }
 
     @Post()

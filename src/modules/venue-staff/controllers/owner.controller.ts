@@ -9,65 +9,65 @@ import { VenueStaffRole } from '@prisma/client';
 
 @Controller('venue-staff/owner')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.OWNER)
+@Roles(UserRole.OWNER, UserRole.VENUE_STAFF)
 export class OwnerController {
     constructor(private readonly venueStaffService: VenueStaffService) { }
 
     @Get(':venueId')
     async getStaff(
-        @CurrentUser('id') ownerId: string,
+        @CurrentUser('id') userId: string,
         @Param('venueId') venueId: string
     ) {
-        return this.venueStaffService.getStaffByVenue(venueId, ownerId);
+        return this.venueStaffService.getStaffByVenue(venueId, userId);
     }
 
     @Patch(':staffId/role')
     async updateRole(
-        @CurrentUser('id') ownerId: string,
+        @CurrentUser('id') userId: string,
         @Param('staffId') staffId: string,
         @Body('role') role: VenueStaffRole
     ) {
-        return this.venueStaffService.updateStaffRole(staffId, role, ownerId);
+        return this.venueStaffService.updateStaffRole(staffId, role, userId);
     }
 
     @Patch(':staffId/status')
     async toggleStatus(
-        @CurrentUser('id') ownerId: string,
+        @CurrentUser('id') userId: string,
         @Param('staffId') staffId: string,
         @Body('is_active') is_active: boolean
     ) {
-        return this.venueStaffService.toggleStaffStatus(staffId, is_active, ownerId);
+        return this.venueStaffService.toggleStaffStatus(staffId, is_active, userId);
     }
 
     @Post('invite')
     async invite(
-        @CurrentUser('id') ownerId: string,
+        @CurrentUser('id') userId: string,
         @Body() body: { venue_id: string, email: string, role: VenueStaffRole }
     ) {
-        return this.venueStaffService.inviteStaff(body, ownerId);
+        return this.venueStaffService.inviteStaff(body, userId);
     }
 
     @Get(':venueId/invites')
     async getInvites(
-        @CurrentUser('id') ownerId: string,
+        @CurrentUser('id') userId: string,
         @Param('venueId') venueId: string
     ) {
-        return this.venueStaffService.getInvitesByVenue(venueId, ownerId);
+        return this.venueStaffService.getInvitesByVenue(venueId, userId);
     }
 
     @Delete('invite/:inviteId')
     async revokeInvite(
-        @CurrentUser('id') ownerId: string,
+        @CurrentUser('id') userId: string,
         @Param('inviteId') inviteId: string
     ) {
-        return this.venueStaffService.revokeInvite(inviteId, ownerId);
+        return this.venueStaffService.revokeInvite(inviteId, userId);
     }
 
     @Post('invite/:inviteId/force-accept')
     async forceAccept(
-        @CurrentUser('id') ownerId: string,
+        @CurrentUser('id') userId: string,
         @Param('inviteId') inviteId: string
     ) {
-        return this.venueStaffService.forceAcceptInvite(inviteId, ownerId);
+        return this.venueStaffService.forceAcceptInvite(inviteId, userId);
     }
 }
