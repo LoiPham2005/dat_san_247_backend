@@ -9,7 +9,7 @@ import { BookingStatus } from '@prisma/client';
 
 @Controller('owner/bookings')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.OWNER, UserRole.SUPER_ADMIN)
+@Roles(UserRole.OWNER, UserRole.SUPER_ADMIN, UserRole.VENUE_STAFF)
 export class OwnerController {
     constructor(private readonly bookingsService: BookingsService) {}
 

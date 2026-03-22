@@ -23,6 +23,7 @@ model users {
   kyc_status                   KycStatus                 @default(UNVERIFIED)
   is_email_verified            Boolean                   @default(false)
   is_phone_verified            Boolean                   @default(false)
+  is_venue_staff               Boolean                   @default(false)
   email_verified_at            DateTime?                 @db.Timestamp(6)
   phone_verified_at            DateTime?                 @db.Timestamp(6)
   last_login_at                DateTime?                 @db.Timestamp(6)

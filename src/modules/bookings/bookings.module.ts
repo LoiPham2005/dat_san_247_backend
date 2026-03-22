@@ -6,14 +6,14 @@ import { BookingsService } from './bookings.service';
 // import { RecurringService } from './recurring.service';
 // import { VenueServicesService } from './venue-services.service';
 import { CustomerController } from './controllers/customer.controller';
-// import { VenueStaffController } from './controllers/venue-staff.controller';
+import { VenueStaffController } from './controllers/venue-staff.controller';
 import { OwnerController } from './controllers/owner.controller';
 import { AdminController } from './controllers/admin.controller';
 
 @Module({
     controllers: [
         CustomerController,
-        // VenueStaffController,
+        VenueStaffController,
         OwnerController,
         AdminController,
     ],

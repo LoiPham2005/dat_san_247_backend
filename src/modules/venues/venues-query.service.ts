@@ -87,6 +87,16 @@ export class VenuesQueryService {
                         },
                         amenities: true
                     }
+                },
+                reviews: {
+                    where: { is_visible: true, deleted_at: null },
+                    include: {
+                        users: {
+                            select: { full_name: true }
+                        }
+                    },
+                    take: 10,
+                    orderBy: { created_at: 'desc' }
                 }
             }
         });
@@ -115,6 +125,13 @@ export class VenuesQueryService {
             sports: venue.sport_assignments.map(s => s.sport_type),
             thumbnail_url: venue.thumbnail_url || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=600',
             is_verified: true,
+            reviews: venue.reviews.map(r => ({
+                id: r.id,
+                customer_name: (r as any).users.full_name,
+                rating: r.rating,
+                comment: r.comment,
+                created_at: r.created_at
+            }))
         };
     }
 

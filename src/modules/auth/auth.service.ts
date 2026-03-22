@@ -125,6 +125,10 @@ export class AuthService {
             },
         });
         if (!user) throw new BadRequestException('User not found');
-        return user;
+
+        return {
+            ...user,
+            is_venue_staff: (user as any).is_venue_staff === true
+        };
     }
 }

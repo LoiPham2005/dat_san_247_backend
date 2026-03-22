@@ -33,6 +33,7 @@ import { SupportModule } from './modules/support/support.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { VenueStaffModule } from './modules/venue-staff/venue-staff.module';
 import { SystemModule } from './modules/system/system.module';
+import { LookupModule } from './modules/lookup/lookup.module';
 
 import { WinstonModule } from 'nest-winston';
 import { createWinstonFormat, createWinstonTransports } from './config/logger.config';
@@ -76,6 +77,7 @@ import { CacheModule } from './shared/cache/cache.module';
         NotificationsModule,
         VenueStaffModule,
         SystemModule,
+        LookupModule,
 
         // 5. Shared Modules
         StorageModule,

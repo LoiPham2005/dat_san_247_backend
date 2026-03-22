@@ -25,11 +25,14 @@ export class TokenService {
 
     async issueTokens(user: users & { role_id: string | null; role: { slug: string; id: string } | null }) {
         const permissions = await this.getUserPermissions(user.role_id);
+        
+        const is_venue_staff = (user as any).is_venue_staff === true;
 
         const payload = {
             sub: user.id,
             email: user.email,
             role: user.role?.slug || 'customer',
+            is_venue_staff: is_venue_staff,
             permissions: permissions,
         };
 
@@ -65,6 +68,7 @@ export class TokenService {
                 full_name: user.full_name,
                 avatar_url: user.avatar_url,
                 role: user.role,
+                is_venue_staff: is_venue_staff,
             },
         };
     }

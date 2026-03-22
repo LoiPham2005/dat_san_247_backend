@@ -26,15 +26,21 @@ export class RolesGuard implements CanActivate {
         const { user } = context.switchToHttp().getRequest();
 
         // Kiểm tra user model có role property hay không
-        // Giả sử user.role_slug hoặc user.role.slug hoặc user.role
         // Dựa trên JWT payload (JwtPayload)
         const userRole = user?.role;
+        const isVenueStaff = user?.is_venue_staff === true;
 
         if (!userRole) {
             throw new ForbiddenException('User session does not have a role. Please login again');
         }
 
-        const hasRole = requiredRoles.includes(userRole);
+        // Tạo danh sách role hiệu quả (Nếu isVenueStaff = true thì thêm role venue_staff)
+        const userRoles: string[] = [userRole];
+        if (isVenueStaff && !userRoles.includes(UserRole.VENUE_STAFF)) {
+            userRoles.push(UserRole.VENUE_STAFF);
+        }
+
+        const hasRole = requiredRoles.some(role => userRoles.includes(role));
         if (!hasRole) {
             throw new ForbiddenException('You do not have permission to access this resource (Required: ' + requiredRoles.join('|') + ')');
         }

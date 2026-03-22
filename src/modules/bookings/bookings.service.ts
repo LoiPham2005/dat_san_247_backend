@@ -129,7 +129,7 @@ export class BookingsService {
 
         for (const courtId in itemsByCourt) {
             const items = itemsByCourt[courtId].sort((a, b) => a.start_time.localeCompare(b.start_time));
-            
+
             let current = { ...items[0] };
             for (let i = 1; i < items.length; i++) {
                 const next = items[i];
@@ -156,7 +156,7 @@ export class BookingsService {
 
                 const startAt = new Date(`1970-01-01T${item.start_time}:00Z`);
                 const endAt = new Date(`1970-01-01T${item.end_time}:00Z`);
-                
+
                 const overlap = await tx.bookings.findFirst({
                     where: {
                         court_id: item.court_id,
@@ -362,10 +362,19 @@ export class BookingsService {
     // --- OWNER METHODS ---
 
     async getOwnerBookings(userId: string, venueId: string) {
+        // 1. Verify that user is OWNER of this venue OR a STAFF at this venue
         const venue = await this.prisma.venues.findFirst({
             where: { id: venueId, owner_id: userId }
         });
-        if (!venue) throw new NotFoundException('Không tìm thấy cơ sở hoặc bạn không có quyền');
+
+        if (!venue) {
+            const isStaff = await this.prisma.venue_staff.findFirst({
+                where: { venue_id: venueId, user_id: userId, is_active: true }
+            });
+            if (!isStaff) {
+                throw new NotFoundException('Không tìm thấy cơ sở hoặc bạn không có quyền');
+            }
+        }
 
         const bookings = await this.prisma.bookings.findMany({
             where: { venue_id: venueId },
@@ -398,7 +407,15 @@ export class BookingsService {
         });
 
         if (!booking) throw new NotFoundException('Không tìm thấy đơn hàng');
-        if (booking.venues.owner_id !== userId) throw new BadRequestException('Bạn không có quyền cập nhật đơn hàng này');
+
+        if (booking.venues.owner_id !== userId) {
+            const isStaff = await this.prisma.venue_staff.findFirst({
+                where: { venue_id: booking.venue_id, user_id: userId, is_active: true }
+            });
+            if (!isStaff) {
+                throw new BadRequestException('Bạn không có quyền cập nhật đơn hàng này');
+            }
+        }
 
         return await this.prisma.bookings.update({
             where: { id: bookingId },
@@ -407,10 +424,19 @@ export class BookingsService {
     }
 
     async getOwnerWaitlist(userId: string, venueId: string) {
-        const venue = await this.prisma.venues.findFirst({
-            where: { id: venueId, owner_id: userId }
+        const venue = await this.prisma.venues.findUnique({
+            where: { id: venueId }
         });
-        if (!venue) throw new NotFoundException('Không tìm thấy cơ sở hoặc bạn không có quyền');
+        if (!venue) throw new NotFoundException('Không tìm thấy cơ sở');
+
+        if (venue.owner_id !== userId) {
+            const isStaff = await this.prisma.venue_staff.findFirst({
+                where: { venue_id: venueId, user_id: userId, is_active: true }
+            });
+            if (!isStaff) {
+                throw new NotFoundException('Bạn không có quyền truy cập thông tin của cơ sở này');
+            }
+        }
 
         const waitlists = await this.prisma.booking_waitlist.findMany({
             where: { courts: { venue_id: venueId } },
@@ -433,10 +459,19 @@ export class BookingsService {
     }
 
     async getOwnerRecurringBookings(userId: string, venueId: string) {
-        const venue = await this.prisma.venues.findFirst({
-            where: { id: venueId, owner_id: userId }
+        const venue = await this.prisma.venues.findUnique({
+            where: { id: venueId }
         });
-        if (!venue) throw new NotFoundException('Không tìm thấy cơ sở hoặc bạn không có quyền');
+        if (!venue) throw new NotFoundException('Không tìm thấy cơ sở');
+
+        if (venue.owner_id !== userId) {
+            const isStaff = await this.prisma.venue_staff.findFirst({
+                where: { venue_id: venueId, user_id: userId, is_active: true }
+            });
+            if (!isStaff) {
+                throw new NotFoundException('Bạn không có quyền truy cập thông tin của cơ sở này');
+            }
+        }
 
         const recurring = await this.prisma.recurring_bookings.findMany({
             where: { venue_id: venueId },
@@ -470,6 +505,92 @@ export class BookingsService {
             where: { id: bookingId },
             data: { status },
             include: { customers: true, venues: true, courts: true }
+        });
+    }
+
+    async getVenueStaffSchedule(userId: string, venueId?: string) {
+        let finalVenueId = venueId?.trim();
+        console.log(`>>> [SCHEDULE DEBUG] User: ${userId}, Input VenueId: ${venueId}`);
+
+        // If no venueId provided or it's our mock VN-1, find it for this staff
+        if (!finalVenueId || finalVenueId === 'VN-1') {
+             const staffRecord = await this.prisma.venue_staff.findFirst({
+                 where: { user_id: userId, is_active: true }
+             });
+             if (staffRecord) {
+                 finalVenueId = staffRecord.venue_id;
+                 console.log(`>>> [SCHEDULE DEBUG] Auto-resolved to VenueId: ${finalVenueId}`);
+             } else {
+                 console.warn(`>>> [SCHEDULE DEBUG] User ${userId} is not assigned to any venue.`);
+                 throw new BadRequestException('Bạn không được gán cho bất kỳ cơ sở nào trong hệ thống.');
+             }
+        }
+
+        // 1. Verify that user is staff at this venue OR is a platform staff/admin
+        const isVenueStaff = await this.prisma.venue_staff.findFirst({
+            where: { venue_id: finalVenueId, user_id: userId, is_active: true }
+        });
+
+        // Check if user has global staff role (optional logic based on permission requirements)
+        // If not isVenueStaff, we should check global role, but typically venue-staff screens are for venue-staff
+        if (!isVenueStaff) {
+             const user = await this.prisma.users.findUnique({ where: { id: userId }, include: { role: true } });
+             if (user?.role?.slug !== 'staff' && user?.role?.slug !== 'admin' && user?.role?.slug !== 'super_admin') {
+                 throw new BadRequestException('Bạn không có quyền truy cập lịch trình của cơ sở này.');
+             }
+        }
+
+        const bookings = await this.prisma.bookings.findMany({
+            where: { venue_id: finalVenueId },
+            include: { customers: true, courts: true },
+            orderBy: { start_time: 'asc' }
+        });
+
+        return bookings.map(b => ({
+            id: b.id,
+            booking_code: b.booking_code,
+            court_name: b.courts.name,
+            customer_name: b.customers.full_name,
+            customer_phone: b.customers.phone || 'N/A',
+            booking_date: b.booking_date.toISOString().split('T')[0],
+            start_time: b.start_time.toISOString().substring(11, 16),
+            end_time: b.end_time.toISOString().substring(11, 16),
+            total_amount: Number(b.total_amount),
+            status: b.status,
+            payment_status: b.payment_status,
+            payment_method: b.payment_method
+        }));
+    }
+
+    async venueStaffUpdateStatus(userId: string, bookingId: string, status: BookingStatus) {
+        const booking = await this.prisma.bookings.findUnique({
+            where: { id: bookingId },
+            include: { venues: true }
+        });
+
+        if (!booking) throw new NotFoundException('Không tìm thấy đơn hàng');
+
+        // Check permission: Is user staff of this venue?
+        const isStaff = await this.prisma.venue_staff.findFirst({
+            where: { venue_id: booking.venue_id, user_id: userId, is_active: true }
+        });
+
+        if (!isStaff) {
+            const user = await this.prisma.users.findUnique({ where: { id: userId }, include: { role: true } });
+            if (user?.role?.slug !== 'staff' && user?.role?.slug !== 'admin' && user?.role?.slug !== 'super_admin') {
+                throw new BadRequestException('Bạn không có quyền cập nhật đơn hàng này');
+            }
+        }
+
+        const updateData: any = { status };
+        if (status === BookingStatus.CHECKED_IN) {
+            updateData.checked_in_at = new Date();
+            updateData.checked_in_by = userId;
+        }
+
+        return await this.prisma.bookings.update({
+            where: { id: bookingId },
+            data: updateData
         });
     }
 }
