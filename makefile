@@ -28,3 +28,13 @@ npx.cmd prisma introspect
 câu lệnh push db lên cloud:
 npx prisma db push
 
+Để Test QUA INTERNET (Công khai ra ngoài tạm thời):
+npx localtunnel --port 3001
+
+Để lấy IP Public của máy:
+https://ipv4.icanhazip.com/
+
+Để Test QUA INTERNET (Công khai ra ngoài tạm thời):
+ssh -R 80:localhost:3001 nokey@localhost.run
+hoặc
+ssh -R 80:127.0.0.1:3001 nokey@localhost.run
