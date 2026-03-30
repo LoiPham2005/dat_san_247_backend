@@ -370,8 +370,10 @@ export class BookingsService {
     private async _verifyVenueAccess(userId: string, venueId: string) {
         let finalVenueId = venueId;
         
-        // Handle Mock VN-1
-        if (venueId === 'VN-1') {
+        // Handle Mock patterns (v1, VN-1, vId, etc.) OR non-UUID strings
+        const isUuid = /^[0-9a-fA-F-]{36}$/.test(venueId);
+
+        if (!isUuid || venueId === 'VN-1') {
             const staffRecord = await this.prisma.venue_staff.findFirst({
                 where: { user_id: userId, is_active: true }
             });
@@ -412,25 +414,49 @@ export class BookingsService {
 
         const bookings = await this.prisma.bookings.findMany({
             where: { venue_id: venue.id },
-            include: { customers: true, courts: true },
+            include: {
+                customers: true,
+                courts: true,
+                booking_addons: {
+                    include: { venue_services: true }
+                }
+            },
             orderBy: { created_at: 'desc' }
         });
 
         return bookings.map(b => ({
             id: b.id,
             booking_code: b.booking_code,
+            check_in_code: b.check_in_code,
             venue_id: b.venue_id,
             court_id: b.court_id,
             court_name: b.courts.name,
+            customer_id: b.customer_id,
             customer_name: b.customers.full_name,
             customer_phone: b.customers.phone || 'N/A',
+            customer_avatar: b.customers.avatar_url,
             booking_date: b.booking_date.toISOString().split('T')[0],
             start_time: b.start_time.toISOString().substring(11, 16),
             end_time: b.end_time.toISOString().substring(11, 16),
-            total_amount: Number(b.total_amount),
             status: b.status,
+            total_hours: Number(b.total_hours),
+            price_per_hour: Number(b.price_per_hour),
+            sub_total: Number(b.sub_total),
+            discount_amount: Number(b.discount_amount),
+            vat_amount: Number(b.vat_amount),
+            total_amount: Number(b.total_amount),
+            commission_amount: Number(b.commission_amount),
+            note: b.note,
+            promotion_code: b.promotion_code,
             payment_status: b.payment_status,
-            created_at: b.created_at
+            created_at: b.created_at,
+            addons: b.booking_addons.map(a => ({
+                id: a.id,
+                service_name: a.venue_services.name,
+                quantity: a.quantity,
+                price_per_unit: Number(a.price_per_unit),
+                total_price: Number(a.total_price)
+            }))
         }));
     }
 

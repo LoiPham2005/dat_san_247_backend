@@ -31,6 +31,38 @@ export class OwnerController {
         return ResponseUtil.success(stats, 'Thống kê bảng điều khiển');
     }
 
+    // SCHEDULE EXCEPTIONS (Moved up for precedence)
+    @Get(':id/exceptions')
+    async getScheduleExceptions(@Req() req: any, @Param('id') id: string) {
+        const result = await this.venuesService.getScheduleExceptions(id, req.user.id);
+        return ResponseUtil.success(result, 'Lấy danh sách ngày đặc biệt thành công');
+    }
+
+    @Post(':id/exceptions')
+    async createScheduleException(@Req() req: any, @Param('id') id: string, @Body() body: any) {
+        const result = await this.venuesService.createScheduleException(id, req.user.id, body);
+        return ResponseUtil.created(result, 'Thêm ngày đặc biệt thành công');
+    }
+
+    @Delete(':id/exceptions/:exceptionId')
+    async deleteScheduleException(@Req() req: any, @Param('id') id: string, @Param('exceptionId') exceptionId: string) {
+        await this.venuesService.deleteScheduleException(id, exceptionId, req.user.id);
+        return ResponseUtil.success(null, 'Đã xóa ngày đặc biệt');
+    }
+
+    // OPERATING HOURS
+    @Get(':id/operating-hours')
+    async getOperatingHours(@Req() req: any, @Param('id') id: string) {
+        const hours = await this.venuesService.getOperatingHours(id, req.user.id);
+        return ResponseUtil.success(hours, 'Giờ hoạt động của cơ sở');
+    }
+
+    @Patch(':id/operating-hours')
+    async updateOperatingHours(@Req() req: any, @Param('id') id: string, @Body() body: { hours: any[] }) {
+        const result = await this.venuesService.updateOperatingHours(id, req.user.id, body.hours);
+        return ResponseUtil.success(result, 'Cập nhật lịch hoạt động thành công');
+    }
+
     @Get()
     async getMyVenues(@Req() req: any) {
         const venues = await this.venuesService.getMyVenues(req.user.id);
@@ -73,16 +105,53 @@ export class OwnerController {
         return ResponseUtil.created(verification, 'Đã gửi hồ sơ xét duyệt');
     }
 
-    @Get(':id/operating-hours')
-    async getOperatingHours(@Req() req: any, @Param('id') id: string) {
-        const hours = await this.venuesService.getOperatingHours(id, req.user.id);
-        return ResponseUtil.success(hours, 'Giờ hoạt động của cơ sở');
+    @Get(':id/amenities')
+    async getVenueAmenities(@Req() req: any, @Param('id') id: string) {
+        const result = await this.venuesService.getVenueAmenities(id, req.user.id);
+        return ResponseUtil.success(result, 'Lấy danh sách tiện ích thành công');
     }
 
-    @Patch(':id/operating-hours')
-    async updateOperatingHours(@Req() req: any, @Param('id') id: string, @Body() body: { hours: any[] }) {
-        const result = await this.venuesService.updateOperatingHours(id, req.user.id, body.hours);
-        return ResponseUtil.success(result, 'Cập nhật lịch hoạt động thành công');
+    @Post(':id/amenities')
+    async createVenueAmenity(@Req() req: any, @Param('id') id: string, @Body() body: any) {
+        const result = await this.venuesService.createVenueAmenity(id, req.user.id, body);
+        return ResponseUtil.created(result, 'Thêm tiện ích thành công');
+    }
+
+    @Delete(':id/amenities/:amenityId')
+    async deleteVenueAmenity(@Req() req: any, @Param('id') id: string, @Param('amenityId') amenityId: string) {
+        await this.venuesService.deleteVenueAmenity(id, amenityId, req.user.id);
+        return ResponseUtil.success(null, 'Đã xóa tiện ích');
+    }
+
+    @Patch(':id/amenities/:amenityId')
+    async updateVenueAmenity(@Req() req: any, @Param('id') id: string, @Param('amenityId') amenityId: string, @Body() body: any) {
+        const result = await this.venuesService.updateVenueAmenity(id, amenityId, req.user.id, body);
+        return ResponseUtil.success(result, 'Cập nhật tiện ích thành công');
+    }
+
+    // MEDIA
+    @Get(':id/media')
+    async getMediaAttachments(@Req() req: any, @Param('id') id: string) {
+        const result = await this.venuesService.getMediaAttachments(id, req.user.id);
+        return ResponseUtil.success(result, 'Lấy danh sách ảnh venue thành công');
+    }
+
+    @Post(':id/media')
+    async createMediaAttachment(@Req() req: any, @Param('id') id: string, @Body() body: any) {
+        const result = await this.venuesService.createMediaAttachment(id, req.user.id, body);
+        return ResponseUtil.created(result, 'Tải ảnh lên thành công');
+    }
+
+    @Delete(':id/media/:mediaId')
+    async deleteMediaAttachment(@Req() req: any, @Param('id') id: string, @Param('mediaId') mediaId: string) {
+        await this.venuesService.deleteMediaAttachment(id, mediaId, req.user.id);
+        return ResponseUtil.success(null, 'Đã xóa ảnh venue');
+    }
+
+    @Patch(':id/media/:mediaId/cover')
+    async setCoverMedia(@Req() req: any, @Param('id') id: string, @Param('mediaId') mediaId: string) {
+        const result = await this.venuesService.setCoverMedia(id, mediaId, req.user.id);
+        return ResponseUtil.success(result, 'Đã đặt làm ảnh bìa');
     }
 
     @Post('upload')
@@ -93,5 +162,30 @@ export class OwnerController {
         }
         const url = await this.storageService.upload(file, 'verifications');
         return ResponseUtil.success({ url }, 'Đã tải lên tệp thành công');
+    }
+
+    // SERVICES
+    @Get(':id/services')
+    async getVenueServices(@Req() req: any, @Param('id') id: string) {
+        const result = await this.venuesService.getVenueServices(id, req.user.id);
+        return ResponseUtil.success(result, 'Lấy danh sách dịch vụ thành công');
+    }
+
+    @Post(':id/services')
+    async createVenueService(@Req() req: any, @Param('id') id: string, @Body() body: any) {
+        const result = await this.venuesService.createVenueService(id, req.user.id, body);
+        return ResponseUtil.created(result, 'Thêm dịch vụ thành công');
+    }
+
+    @Patch(':id/services/:serviceId')
+    async updateVenueService(@Req() req: any, @Param('id') id: string, @Param('serviceId') serviceId: string, @Body() body: any) {
+        const result = await this.venuesService.updateVenueService(id, serviceId, req.user.id, body);
+        return ResponseUtil.success(result, 'Cập nhật dịch vụ thành công');
+    }
+
+    @Delete(':id/services/:serviceId')
+    async deleteVenueService(@Req() req: any, @Param('id') id: string, @Param('serviceId') serviceId: string) {
+        await this.venuesService.deleteVenueService(id, serviceId, req.user.id);
+        return ResponseUtil.success(null, 'Đã xóa dịch vụ');
     }
 }

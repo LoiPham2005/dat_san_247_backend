@@ -88,4 +88,8 @@ export class CreateVenueDto {
     @IsOptional()
     @IsNumber()
     longitude?: number;
+
+    @IsOptional()
+    @IsString({ each: true })
+    sport_types?: string[];
 }

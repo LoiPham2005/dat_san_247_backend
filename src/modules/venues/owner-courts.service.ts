@@ -9,14 +9,22 @@ export class OwnerCourtService {
     private async checkVenueAccess(venueId: string, userId: string) {
         let finalVenueId = venueId;
         
-        if (finalVenueId === 'VN-1') {
+        const isUuid = /^[0-9a-fA-F-]{36}$/.test(venueId);
+        if (!isUuid || finalVenueId === 'VN-1') {
             const staffRecord = await this.prisma.venue_staff.findFirst({
                 where: { user_id: userId, is_active: true }
             });
             if (staffRecord) {
                 finalVenueId = staffRecord.venue_id;
             } else {
-                throw new BadRequestException('Bạn không được gán cho bất kỳ cơ sở nào trong hệ thống.');
+                 const ownedVenue = await this.prisma.venues.findFirst({
+                    where: { owner_id: userId, deleted_at: null }
+                });
+                if (ownedVenue) {
+                    finalVenueId = ownedVenue.id;
+                } else {
+                    throw new BadRequestException('Bạn không được gán cho bất kỳ cơ sở nào trong hệ thống.');
+                }
             }
         }
 
