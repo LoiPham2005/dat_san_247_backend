@@ -11,8 +11,12 @@ export class VenuesQueryService {
         const where: any = {
             deleted_at: null,
             status: 'APPROVED',
-            is_active: true
+            is_active: params.is_active === 'true' || params.is_active === true || true
         };
+
+        if (params.is_featured === 'true' || params.is_featured === true) {
+            where.is_featured = true;
+        }
 
         if (keyword) {
             where.OR = [
@@ -52,11 +56,12 @@ export class VenuesQueryService {
             orderBy: { rating: 'desc' }
         });
 
-        return venues.map(v => {
-            const prices = v.courts.map(c => Number(c.price_per_hour));
+        return venues.map((v: any) => {
+            const prices = v.courts.map((c: any) => Number(c.price_per_hour));
             const min_price = prices.length > 0 ? Math.min(...prices) : 0;
             return {
                 id: v.id,
+                owner_id: v.owner_id,
                 slug: v.slug,
                 name: v.name,
                 description: v.description,
@@ -64,18 +69,28 @@ export class VenuesQueryService {
                 city: v.city,
                 district: v.district,
                 thumbnail_url: v.thumbnail_url || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=600',
-                average_rating: Number(v.rating) || 0,
-                review_count: v.total_reviews || 0,
+                rating: Number(v.rating) || 0,
+                total_reviews: v.total_reviews || 0,
+                is_active: v.is_active,
+                is_featured: v.is_featured,
                 is_verified: true,
-                sports: v.sport_assignments.map(s => s.sport_type),
+                sports: v.sport_assignments.map((s: any) => s.sport_type),
                 min_price: min_price,
+                latitude: v.latitude ? Number(v.latitude) : null,
+                longitude: v.longitude ? Number(v.longitude) : null,
             };
         });
     }
 
-    async getVenueDetail(slug: string) {
+    async getVenueDetail(slugOrId: string) {
+        // Regex check if slugOrId is a UUID
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+
         const venue = await this.prisma.venues.findFirst({
-            where: { slug, deleted_at: null },
+            where: {
+                OR: isUuid ? [{ id: slugOrId }, { slug: slugOrId }] : [{ slug: slugOrId }],
+                deleted_at: null
+            },
             include: {
                 sport_assignments: true,
                 amenities: true,

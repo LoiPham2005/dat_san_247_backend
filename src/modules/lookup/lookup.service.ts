@@ -104,4 +104,11 @@ export class LookupService {
 
         return { items, total };
     }
+
+    async getSportTypes() {
+        return this.prisma.sport_types.findMany({
+            where: { is_active: true },
+            orderBy: { name: 'asc' }
+        });
+    }
 }

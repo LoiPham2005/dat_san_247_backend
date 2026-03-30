@@ -269,6 +269,8 @@ model venues {
   instagram_url             String?                     @db.VarChar(500)
   zalo_url                  String?                     @db.VarChar(500)
   youtube_url               String?                     @db.VarChar(500)
+  latitude                  Float?
+  longitude                 Float?
   status                    VenueStatus                 @default(PENDING)
   rejection_reason          String?
   is_active                 Boolean                     @default(true)

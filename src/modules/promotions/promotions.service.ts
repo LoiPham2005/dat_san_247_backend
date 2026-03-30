@@ -250,4 +250,46 @@ export class PromotionsService {
             data: { deleted_at: new Date() }
         });
     }
+
+    async getPublicPromotions(query: { page?: any; limit?: any; status?: PromotionStatus; is_public?: any }) {
+        const page = Number(query.page) || 1;
+        const limit = Number(query.limit) || 10;
+        const status = query.status || 'ACTIVE';
+        const is_public = query.is_public === 'true' || query.is_public === true || query.is_public === undefined;
+
+        const skip = (page - 1) * limit;
+
+        const where: any = {
+            deleted_at: null,
+            status,
+            is_public,
+            valid_from: { lte: new Date() },
+            valid_to: { gte: new Date() }
+        };
+
+        const [data, total] = await Promise.all([
+            this.prisma.promotions.findMany({
+                where,
+                skip,
+                take: Number(limit),
+                orderBy: { created_at: 'desc' }
+            }),
+            this.prisma.promotions.count({ where })
+        ]);
+
+        return {
+            data: data.map(p => ({
+                ...p,
+                discount_value: Number(p.discount_value),
+                max_discount_amount: p.max_discount_amount ? Number(p.max_discount_amount) : null,
+                min_booking_amount: p.min_booking_amount ? Number(p.min_booking_amount) : 0,
+            })),
+            meta: {
+                total,
+                page: Number(page),
+                limit: Number(limit),
+                totalPages: Math.ceil(total / Number(limit))
+            }
+        };
+    }
 }

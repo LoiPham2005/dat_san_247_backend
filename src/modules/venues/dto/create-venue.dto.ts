@@ -80,4 +80,12 @@ export class CreateVenueDto {
     @IsOptional()
     @IsNumber()
     commission_rate?: number;
+
+    @IsOptional()
+    @IsNumber()
+    latitude?: number;
+
+    @IsOptional()
+    @IsNumber()
+    longitude?: number;
 }

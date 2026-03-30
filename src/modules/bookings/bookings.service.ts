@@ -219,6 +219,9 @@ export class BookingsService {
             include: {
                 venues: true,
                 courts: true,
+                reviews: {
+                    select: { id: true }
+                },
                 booking_addons: {
                     include: {
                         venue_services: true
@@ -237,6 +240,9 @@ export class BookingsService {
             include: {
                 venues: true,
                 courts: true,
+                reviews: {
+                    select: { id: true }
+                },
                 booking_addons: {
                     include: {
                         venue_services: true
@@ -269,6 +275,7 @@ export class BookingsService {
             payment_status: b.payment_status,
             cancellation_reason: b.cancellation_reason,
             created_at: b.created_at,
+            has_review: b.reviews && b.reviews.length > 0,
             addons: (b.booking_addons || []).map(a => ({
                 id: a.id,
                 service_name: a.venue_services.name,

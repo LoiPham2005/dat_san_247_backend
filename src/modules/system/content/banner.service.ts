@@ -23,6 +23,21 @@ export class BannerService {
         }));
     }
 
+    async getPublicBanners(position?: any, page?: any) {
+        const where: any = { is_active: true };
+        if (position) where.position = position;
+        if (page) {
+            where.banner_pages = {
+                some: { page: page }
+            };
+        }
+
+        return this.prisma.banners.findMany({
+            where,
+            orderBy: { display_order: 'asc' }
+        });
+    }
+
     async toggleActive(id: string, is_active: boolean) {
         const banner = await this.prisma.banners.findUnique({
             where: { id }
