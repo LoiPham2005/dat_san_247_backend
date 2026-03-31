@@ -594,7 +594,14 @@ export class BookingsService {
         const [bookings, total] = await Promise.all([
             this.prisma.bookings.findMany({
                 where,
-                include: { customers: true, courts: true },
+                include: { 
+                    customers: true, 
+                    courts: true, 
+                    venues: true,
+                    booking_addons: {
+                        include: { venue_services: true }
+                    }
+                },
                 orderBy: { start_time: 'asc' },
                 skip,
                 take: limit
@@ -606,16 +613,43 @@ export class BookingsService {
             data: bookings.map(b => ({
                 id: b.id,
                 booking_code: b.booking_code,
-                court_name: b.courts.name,
-                customer_name: b.customers.full_name,
-                customer_phone: b.customers.phone || 'N/A',
-                booking_date: b.booking_date.toISOString().split('T')[0],
-                start_time: b.start_time.toISOString().substring(11, 16),
-                end_time: b.end_time.toISOString().substring(11, 16),
+                check_in_code: b.check_in_code,
+                court_id: b.court_id,
+                courts: {
+                    name: b.courts.name,
+                    is_indoor: b.courts.is_indoor
+                },
+                venues: {
+                    name: b.venues.name,
+                    address: b.venues.address
+                },
+                customers: {
+                    id: b.customers.id,
+                    full_name: b.customers.full_name,
+                    phone: b.customers.phone,
+                    avatar_url: b.customers.avatar_url
+                },
+                customer_id: b.customer_id,
+                booking_date: b.booking_date,
+                start_time: b.start_time,
+                end_time: b.end_time,
                 total_amount: Number(b.total_amount),
                 status: b.status,
                 payment_status: b.payment_status,
-                payment_method: b.payment_method
+                payment_method: b.payment_method,
+                booking_addons: b.booking_addons.map(a => ({
+                    id: a.id,
+                    booking_id: a.booking_id,
+                    service_id: a.service_id,
+                    venue_services: {
+                        name: a.venue_services.name,
+                        category: a.venue_services.category
+                    },
+                    quantity: a.quantity,
+                    price_per_unit: Number(a.price_per_unit),
+                    total_price: Number(a.total_price),
+                    note: a.note
+                }))
             })),
             meta: {
                 total,

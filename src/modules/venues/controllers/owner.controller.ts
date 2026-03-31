@@ -31,6 +31,13 @@ export class OwnerController {
         return ResponseUtil.success(stats, 'Thống kê bảng điều khiển');
     }
 
+    @Get('dashboard/staff-stats')
+    async getStaffDashboardStatsForAnyRole(@Req() req: any) {
+        // Luôn trả về dữ liệu kiểu Nhân viên (Staff View), dùng cho Staff Dashboard Page
+        const stats = await this.dashboardService.getStaffDashboardStats(req.user.id);
+        return ResponseUtil.success(stats, 'Thống kê cơ sở (Chi tiết)');
+    }
+
     // SCHEDULE EXCEPTIONS (Moved up for precedence)
     @Get(':id/exceptions')
     async getScheduleExceptions(@Req() req: any, @Param('id') id: string) {
