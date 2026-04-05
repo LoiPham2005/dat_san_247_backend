@@ -2,13 +2,16 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OtpType } from '@prisma/client';
 import * as argon2 from 'argon2';
-import { QueueService } from '../../shared/queue/queue.service';
+import { MailService } from '../../shared/mail/mail.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class OtpService {
     constructor(
         private prisma: PrismaService,
         // private queueService: QueueService,
+         private mailService: MailService,
     ) { }
 
     async genCode(userId: string, type: OtpType) {
@@ -41,18 +44,25 @@ export class OtpService {
         }
 
         console.log(`[OTP DEBUG] Code for ${email}: ${code}`);
-        /*
-        await this.queueService.addJob('mail', 'send-mail', {
-            to: email,
-            subject,
-            template,
-            context: { code, email },
-        });
-        */
+        
+        try {
+            const templatePath = path.join(process.cwd(), 'src/shared/mail/templates', `${template}.html`);
+            const htmlContent = fs.readFileSync(templatePath, 'utf8');
+            
+            const html = this.mailService.renderTemplate(htmlContent, {
+                otp: code,
+                name: email,
+            });
+
+            await this.mailService.sendMail(email, subject, html);
+            console.log(`[MAIL SUCCESS] OTP sent directly to ${email}`);
+        } catch (error) {
+            console.error(`[MAIL ERROR] Failed to send OTP to ${email}:`, error.message);
+        }
     }
 
-    async verifyCode(userId: string, code: string, type: OtpType) {
-        const otpRecord = await this.prisma.otp_verifications.findFirst({
+    async verifyCode(userId: string, code: string, type: OtpType, consume: boolean = true) {
+        const otpRecords = await this.prisma.otp_verifications.findMany({
             where: {
                 user_id: userId,
                 type,
@@ -62,15 +72,38 @@ export class OtpService {
             orderBy: { created_at: 'desc' },
         });
 
-        if (!otpRecord) throw new BadRequestException('Invalid or expired OTP');
+        if (otpRecords.length === 0) {
+            console.warn(`[OTP VERIFY] No valid OTP records found for user ${userId} and type ${type}`);
+            throw new BadRequestException('Invalid or expired OTP');
+        }
 
-        const isMatch = await argon2.verify(otpRecord.code_hash, code);
-        if (!isMatch) throw new BadRequestException('Invalid OTP code');
+        console.log(`[OTP VERIFY] Found ${otpRecords.length} valid OTP records for user ${userId}. Comparing hashes...`);
 
-        await this.prisma.otp_verifications.update({
-            where: { id: otpRecord.id },
-            data: { is_used: true, used_at: new Date() },
-        });
+        let matchedRecord: any = null;
+        for (const record of otpRecords) {
+            const isMatch = await argon2.verify(record.code_hash, code);
+            if (isMatch) {
+                matchedRecord = record;
+                break;
+            }
+        }
+
+        if (!matchedRecord) {
+            console.error(`[OTP VERIFY] Hash mismatch for user ${userId}. Entered code: ${code}`);
+            throw new BadRequestException('Invalid OTP code');
+        }
+
+        console.log(`[OTP VERIFY] Successfully matched OTP record ID: ${matchedRecord.id}`);
+
+        if (consume) {
+            await this.prisma.otp_verifications.update({
+                where: { id: matchedRecord.id },
+                data: { is_used: true, used_at: new Date() },
+            });
+            console.log(`[OTP CONSUME] Record marked as used: ${matchedRecord.id}`);
+        } else {
+            console.log(`[OTP PEEK] Record verified but NOT consumed: ${matchedRecord.id}`);
+        }
 
         return true;
     }

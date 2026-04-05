@@ -38,3 +38,9 @@ https://ipv4.icanhazip.com/
 ssh -R 80:localhost:3001 nokey@localhost.run
 hoặc
 ssh -R 80:127.0.0.1:3001 nokey@localhost.run
+
+câu lệch chạy redis docker:
+docker run -d --name dat-san-redis -p 6379:6379 redis:alpine
+
+câu lệnh tắt node:
+taskkill /F /IM node.exe

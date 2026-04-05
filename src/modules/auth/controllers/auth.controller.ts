@@ -1,4 +1,5 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException, Get } from '@nestjs/common';
+import { OtpType } from '@prisma/client';
 import { AuthService } from '../auth.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
@@ -39,6 +40,20 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     async verifyEmail(@Body() dto: VerifyOtpDto) {
         return this.authService.verifyEmail(dto);
+    }
+
+    @Public()
+    @Post('verify-otp')
+    @HttpCode(HttpStatus.OK)
+    async verifyOtp(@Body() dto: VerifyOtpDto) {
+        return this.authService.verifyOtp(dto);
+    }
+
+    @Public()
+    @Post('resend-otp')
+    @HttpCode(HttpStatus.OK)
+    async resendOtp(@Body() dto: { email: string, type: string }) {
+        return this.authService.resendOtp(dto.email, dto.type as OtpType);
     }
 
     @Public()

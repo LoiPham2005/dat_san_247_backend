@@ -82,6 +82,17 @@ model users {
   @@index([deleted_at])
 }
 
+model pending_registrations {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  email      String   @unique @db.VarChar(255)
+  full_name  String   @db.VarChar(255)
+  password   String   @db.VarChar(255)
+  phone      String?  @db.VarChar(20)
+  code_hash  String   @db.VarChar(255)
+  expires_at DateTime @db.Timestamp(6)
+}
+
 model user_profiles {
   id                String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   created_at        DateTime                 @default(now()) @db.Timestamp(6)
@@ -773,6 +784,7 @@ model payout_bank_accounts {
   bank_code       String            @db.VarChar(20)
   account_number  String            @db.VarChar(50)
   account_name    String            @db.VarChar(255)
+  qr_code_url     String?           @db.VarChar(500)
   is_default      Boolean           @default(false)
   wallets         wallets           @relation(fields: [wallet_id], references: [id], onDelete: Cascade)
   payout_requests payout_requests[]

@@ -1,22 +1,25 @@
-import { Module } from '@nestjs/common';
-// import { NotificationsService } from './notifications.service';
-// import { CustomerController } from './controllers/customer.controller';
-// import { BookingListener } from './listeners/booking.listener';
-// import { PaymentListener } from './listeners/payment.listener';
-// import { ReviewListener } from './listeners/review.listener';
-// import { PayoutListener } from './listeners/payout.listener';
-// import { StaffListener } from './listeners/staff.listener';
+import { Global, Module } from '@nestjs/common';
+import { NotificationsService } from './notifications.service';
+import { NotificationGateway } from './gateways/notification.gateway';
+import { PrismaModule } from '../../prisma/prisma.module';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
 
+import { CustomerController } from './controllers/customer.controller';
+import { AdminController } from './controllers/admin.controller';
+
+@Global()
 @Module({
-    // controllers: [CustomerController],
-    // providers: [
-    //     NotificationsService,
-    //     BookingListener,
-    //     PaymentListener,
-    //     ReviewListener,
-    //     PayoutListener,
-    //     StaffListener,
-    // ],
-    // exports: [NotificationsService],
+  imports: [
+    PrismaModule,
+    JwtModule.register({}),
+    ConfigModule,
+  ],
+  controllers: [CustomerController, AdminController],
+  providers: [
+    NotificationsService,
+    NotificationGateway,
+  ],
+  exports: [NotificationsService, NotificationGateway],
 })
-export class NotificationsModule { }
+export class NotificationsModule {}
