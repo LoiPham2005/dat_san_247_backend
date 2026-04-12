@@ -292,4 +292,45 @@ export class PromotionsService {
             }
         };
     }
+
+    async collectPromotion(userId: string, promotionId: string) {
+        const promo = await this.prisma.promotions.findUnique({
+            where: { id: promotionId }
+        });
+
+        if (!promo) throw new NotFoundException('Không tìm thấy khuyến mãi');
+        if (promo.status !== 'ACTIVE') throw new BadRequestException('Khuyến mãi hiện không khả dụng');
+
+        const existing = await this.prisma.user_vouchers.findFirst({
+            where: { user_id: userId, promotion_id: promotionId }
+        });
+
+        if (existing) throw new BadRequestException('Bạn đã lưu khuyến mãi này rồi');
+
+        return this.prisma.user_vouchers.create({
+            data: {
+                user_id: userId,
+                promotion_id: promotionId,
+                status: 'UNUSED'
+            }
+        });
+    }
+
+    async getMyVouchers(userId: string) {
+        const vouchers = await this.prisma.user_vouchers.findMany({
+            where: { user_id: userId },
+            include: { promotions: true },
+            orderBy: { created_at: 'desc' }
+        });
+
+        return vouchers.map(v => ({
+            ...v,
+            promotion: {
+                ...v.promotions,
+                discount_value: Number(v.promotions.discount_value),
+                max_discount_amount: v.promotions.max_discount_amount ? Number(v.promotions.max_discount_amount) : null,
+                min_booking_amount: Number(v.promotions.min_booking_amount),
+            }
+        }));
+    }
 }

@@ -68,4 +68,30 @@ export class TicketsService {
             }
         });
     }
+
+    async getMyTickets(customerId: string) {
+        return this.prisma.support_tickets.findMany({
+            where: { customer_id: customerId },
+            include: {
+                agents: {
+                    select: { full_name: true }
+                }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+    }
+
+    async createTicket(customerId: string, data: any) {
+        const ticket_number = `TK${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 100)}`;
+        return this.prisma.support_tickets.create({
+            data: {
+                ...data,
+                ticket_number,
+                customer_id: customerId,
+                status: 'OPEN',
+                priority: data.priority || 'MEDIUM',
+                category: data.category || 'OTHER'
+            }
+        });
+    }
 }
