@@ -208,9 +208,14 @@ export class AuthService {
         });
         if (!user) throw new BadRequestException('User not found');
 
+        const venueStaffRecord = await this.prisma.venue_staff.findFirst({
+            where: { user_id: userId, is_active: true },
+            select: { id: true },
+        });
+
         return {
             ...user,
-            is_venue_staff: (user as any).is_venue_staff === true
+            is_venue_staff: !!venueStaffRecord,
         };
     }
 }

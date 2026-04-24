@@ -35,8 +35,6 @@ async function fixData() {
                 start_date: yesterday,
                 end_date: nextMonth,
                 is_active: true,
-                mobile_image_url: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1200',
-                desktop_image_url: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1200',
             }
         });
         console.log('Updated Banners count:', updatedBanners.count);

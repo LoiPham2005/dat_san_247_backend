@@ -235,17 +235,11 @@ export class VenueStaffService {
             // 3. Update invite status
             await tx.venue_staff_invites.update({
                 where: { id: invite.id },
-                data: { 
+                data: {
                     status: VenueStaffInviteStatus.ACCEPTED,
                     receiver_id: userId,
                     responded_at: new Date()
                 }
-            });
-
-            // 4. Set is_venue_staff in user profile
-            await tx.users.update({
-                where: { id: userId },
-                data: { is_venue_staff: true } as any
             });
 
             return { message: 'Chấp nhận lời mời thành công!' };

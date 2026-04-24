@@ -178,6 +178,8 @@ export class BookingsService {
                 const hours = (endAt.getTime() - startAt.getTime()) / (1000 * 60 * 60);
                 const subTotal = hours * Number(court.price_per_hour);
 
+                const isBankTransfer = data.payment_method === PaymentMethod.BANK_TRANSFER;
+
                 const booking = await tx.bookings.create({
                     data: {
                         customer_id: userId,
@@ -188,8 +190,12 @@ export class BookingsService {
                         end_time: endAt,
                         booking_code: bookingCode,
                         check_in_code: checkInCode,
-                        status: BookingStatus.CONFIRMED,
-                        payment_status: PaymentStatus.PAID,
+                        // status: BookingStatus.CONFIRMED,
+                        // payment_status: PaymentStatus.PAID,
+
+                        // Chuyển khoản: giữ PENDING cho đến khi webhook xác nhận
+                        status: isBankTransfer ? BookingStatus.PENDING : BookingStatus.CONFIRMED,
+                        payment_status: isBankTransfer ? PaymentStatus.PENDING : PaymentStatus.PAID,
                         payment_method: (data.payment_method as PaymentMethod) || PaymentMethod.WALLET,
                         total_hours: hours,
                         price_per_hour: Number(court.price_per_hour),
@@ -369,7 +375,7 @@ export class BookingsService {
     // --- OWNER METHODS ---
     private async _verifyVenueAccess(userId: string, venueId: string) {
         let finalVenueId = venueId;
-        
+
         // Handle Mock patterns (v1, VN-1, vId, etc.) OR non-UUID strings
         const isUuid = /^[0-9a-fA-F-]{36}$/.test(venueId);
 
@@ -380,7 +386,7 @@ export class BookingsService {
             if (staffRecord) {
                 finalVenueId = staffRecord.venue_id;
             } else {
-                 const ownedVenue = await this.prisma.venues.findFirst({
+                const ownedVenue = await this.prisma.venues.findFirst({
                     where: { owner_id: userId, deleted_at: null }
                 });
                 if (ownedVenue) {
@@ -417,6 +423,7 @@ export class BookingsService {
             include: {
                 customers: true,
                 courts: true,
+                promotions: { select: { code: true } },
                 booking_addons: {
                     include: { venue_services: true }
                 }
@@ -447,7 +454,7 @@ export class BookingsService {
             total_amount: Number(b.total_amount),
             commission_amount: Number(b.commission_amount),
             note: b.note,
-            promotion_code: b.promotion_code,
+            promotion_code: b.promotions?.code ?? null,
             payment_status: b.payment_status,
             created_at: b.created_at,
             addons: b.booking_addons.map(a => ({
@@ -549,14 +556,14 @@ export class BookingsService {
 
         // Nếu venueId là mock VN-1 hoặc rỗng, ta tìm cơ sở mà nhân viên này đang làm
         if (!finalVenueId || finalVenueId === 'VN-1') {
-             const staffRecord = await this.prisma.venue_staff.findFirst({
-                 where: { user_id: userId, is_active: true }
-             });
-             if (staffRecord) {
-                 finalVenueId = staffRecord.venue_id;
-             } else {
-                 throw new BadRequestException('Bạn không được gán cho bất kỳ cơ sở nào trong hệ thống.');
-             }
+            const staffRecord = await this.prisma.venue_staff.findFirst({
+                where: { user_id: userId, is_active: true }
+            });
+            if (staffRecord) {
+                finalVenueId = staffRecord.venue_id;
+            } else {
+                throw new BadRequestException('Bạn không được gán cho bất kỳ cơ sở nào trong hệ thống.');
+            }
         }
 
         // 1. Verify that user is staff at this venue OR is a platform staff/admin
@@ -565,10 +572,10 @@ export class BookingsService {
         });
 
         if (!isVenueStaff) {
-             const user = await this.prisma.users.findUnique({ where: { id: userId }, include: { role: true } });
-             if (user?.role?.slug !== 'staff' && user?.role?.slug !== 'admin' && user?.role?.slug !== 'super_admin') {
-                 throw new BadRequestException('Bạn không có quyền truy cập lịch trình của cơ sở này.');
-             }
+            const user = await this.prisma.users.findUnique({ where: { id: userId }, include: { role: true } });
+            if (user?.role?.slug !== 'staff' && user?.role?.slug !== 'admin' && user?.role?.slug !== 'super_admin') {
+                throw new BadRequestException('Bạn không có quyền truy cập lịch trình của cơ sở này.');
+            }
         }
 
         const skip = (page - 1) * limit;
@@ -594,9 +601,9 @@ export class BookingsService {
         const [bookings, total] = await Promise.all([
             this.prisma.bookings.findMany({
                 where,
-                include: { 
-                    customers: true, 
-                    courts: true, 
+                include: {
+                    customers: true,
+                    courts: true,
                     venues: true,
                     booking_addons: {
                         include: { venue_services: true }

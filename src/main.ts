@@ -2,6 +2,8 @@
 // 📁 src/main.ts - TỐI ƯU
 // ==========================================
 import { NestFactory, Reflector } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
@@ -29,7 +31,7 @@ async function bootstrap() {
         logger.log('✅ Sentry initialized');
     }
 
-    const app = await NestFactory.create(AppModule, {
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'], // Default, but Winston will override if injected properly via app.useLogger
     });
 
@@ -60,6 +62,7 @@ async function bootstrap() {
 
     // Global config
     app.setGlobalPrefix('api'); // Removed v1 because versioning handles it
+    // app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
     // Global Pipes
     app.useGlobalPipes(
