@@ -7,6 +7,9 @@ import { PayoutService } from './payout.service';
 import { CommissionService } from './commission.service';
 import { BankTransferService } from './bank-transfer.service';
 import { BankTransferSchedulerService } from './bank-transfer-scheduler.service';
+import { VNPayGateway } from './gateways/vnpay.gateway';
+import { MoMoGateway } from './gateways/momo.gateway';
+import { ZaloPayGateway } from './gateways/zalopay.gateway';
 import { CustomerController } from './controllers/customer.controller';
 import { OwnerController } from './controllers/owner.controller';
 import { WebhookController } from './controllers/webhook.controller';
@@ -28,7 +31,10 @@ import { AdminController } from './controllers/admin.controller';
         CommissionService,
         BankTransferService,
         BankTransferSchedulerService,
+        VNPayGateway,
+        MoMoGateway,
+        ZaloPayGateway,
     ],
-    exports: [PaymentsService, WalletService, BankTransferService],
+    exports: [PaymentsService, WalletService, BankTransferService, VNPayGateway, MoMoGateway, ZaloPayGateway],
 })
 export class PaymentsModule {}

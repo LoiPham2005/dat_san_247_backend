@@ -178,7 +178,11 @@ export class BookingsService {
                 const hours = (endAt.getTime() - startAt.getTime()) / (1000 * 60 * 60);
                 const subTotal = hours * Number(court.price_per_hour);
 
-                const isBankTransfer = data.payment_method === PaymentMethod.BANK_TRANSFER;
+                const isPendingPayment =
+                    data.payment_method === PaymentMethod.BANK_TRANSFER ||
+                    data.payment_method === PaymentMethod.VNPAY ||
+                    data.payment_method === PaymentMethod.MOMO ||
+                    data.payment_method === PaymentMethod.ZALOPAY;
 
                 const booking = await tx.bookings.create({
                     data: {
@@ -190,12 +194,10 @@ export class BookingsService {
                         end_time: endAt,
                         booking_code: bookingCode,
                         check_in_code: checkInCode,
-                        // status: BookingStatus.CONFIRMED,
-                        // payment_status: PaymentStatus.PAID,
-
-                        // Chuyển khoản: giữ PENDING cho đến khi webhook xác nhận
-                        status: isBankTransfer ? BookingStatus.PENDING : BookingStatus.CONFIRMED,
-                        payment_status: isBankTransfer ? PaymentStatus.PENDING : PaymentStatus.PAID,
+                        // Gateway (VNPAY/MOMO/...) và bank transfer: PENDING đến khi webhook confirm
+                        // Tiền mặt (CASH): CONFIRMED ngay
+                        status: isPendingPayment ? BookingStatus.PENDING : BookingStatus.CONFIRMED,
+                        payment_status: isPendingPayment ? PaymentStatus.PENDING : PaymentStatus.PAID,
                         payment_method: (data.payment_method as PaymentMethod) || PaymentMethod.WALLET,
                         total_hours: hours,
                         price_per_hour: Number(court.price_per_hour),
